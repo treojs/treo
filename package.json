@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "postinstall": "./node_modules/component/bin/component install",
+    "test": "./node_modules/testem/testem.js ci",
+    "start": "./node_modules/testem/testem.js",
+    "build": "./node_modules/component/bin/component build",
+    "release": "./node_modules/component/bin/component build --standalone schema && mv build/build.js dist/schema.js",
+    "stat": "cloc index.js --quiet && cloc test/test.js --quiet"
+  },
+  "devDependencies": {
+    "component": "*",
+    "chai": "*",
+    "testem": "*"
+  }
+}

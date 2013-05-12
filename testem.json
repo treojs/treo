@@ -1,0 +1,14 @@
+{
+  "framework": "mocha",
+  "before_tests": "npm run build",
+  "launch_in_dev": ["chrome"],
+  "src_files": [
+    "index.js",
+    "test/*"
+  ],
+  "serve_files": [
+    "build/build.js",
+    "node_modules/chai/chai.js",
+    "test/*"
+  ]
+}

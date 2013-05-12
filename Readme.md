@@ -52,6 +52,12 @@ indexed(3, { name: 'note 3' }, function(err) {})
   - share db connection and manage migrations smoothly
   - add docs and api description
 
+## Development
+
+  - `npm install` to install dependencies
+  - `npm test` to ensure that all tests pass
+  - `npm start` to run local test server and watcher
+
 ## License
 
   Aleksey Kulikov, MIT
