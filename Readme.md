@@ -47,6 +47,7 @@ indexed(3, { name: 'note 3' }, function(err) {})
 
 ## TODO
 
+  - finish 0.1.0 version
   - use indexes, not only primary key
   - use ranges and cursors
   - share db connection and manage migrations smoothly
@@ -56,7 +57,7 @@ indexed(3, { name: 'note 3' }, function(err) {})
 
   - `npm install` to install dependencies
   - `npm test` to ensure that all tests pass
-  - `npm start` to run local test server and watcher
+  - `npm start` to run local mocha test server and watcher
 
 ## License
 
