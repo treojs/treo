@@ -27,16 +27,14 @@ describe('Indexed.create', function(){
 
     it('returns a list of objects', function(done) {
       async.series([
-        function(next) { indexed(1, { name: 'note 1' }, next); },
-        function(next) { indexed(2, { name: 'note 2' }, next); },
-        function(next) { indexed(3, { name: 'note 3' }, next); },
-        function(next) { indexed(4, { name: 'note 4' }, next); }
-      ], function(err) {
-        if (err) return done(err);
-
-        indexed(function(err, notes) {
+        function(cb) { indexed(1, { name: 'note 1' }, cb); },
+        function(cb) { indexed(2, { name: 'note 2' }, cb); },
+        function(cb) { indexed(3, { name: 'note 3' }, cb); },
+        function(cb) { indexed(4, { name: 'note 4' }, cb); }
+      ], function(err1) {
+        indexed(function(err2, notes) {
           expect(notes).length(4);
-          done(err);
+          done(err1 || err2);
         });
       });
     });
@@ -53,18 +51,16 @@ describe('Indexed.create', function(){
       });
     });
 
-    it('clears store when key is null', function() {
+    it('clears store when key is null', function(done) {
       async.series([
-        function(next) { indexed(1, { name: 'note 1' }, next); },
-        function(next) { indexed(2, { name: 'note 2' }, next); },
-        function(next) { indexed(3, { name: 'note 3' }, next); },
-        function(next) { indexed(null, next); }
-      ], function(err) {
-        if (err) return done(err);
-
-        indexed(function(err, notes) {
-          expect(notes).length(1);
-          done(err);
+        function(cb) { indexed(1, { name: 'note 1' }, cb); },
+        function(cb) { indexed(2, { name: 'note 2' }, cb); },
+        function(cb) { indexed(3, { name: 'note 3' }, cb); },
+        function(cb) { indexed(null, cb); }
+      ], function(err1) {
+        indexed(function(err2, notes) {
+          expect(notes).length(0);
+          done(err1 || err2);
         });
       });
     });

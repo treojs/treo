@@ -50,13 +50,22 @@ function createIndexed(name, options) {
 
 /**
  * Shortcut method to return Indexed error
- *
- * @api private
  */
 
 function onerror(msg) {
   throw new TypeError('Indexed: ' + msg);
 }
+
+/**
+ * Get current db version
+ * if store with `storeName` was not initialized,
+ * it will increment current version and add it to config.
+ * Config stores in localStorage in indexed-`dbName`
+ *
+ * @options {String} dbName
+ * @options {String} storeName
+ * @return {Number}
+ */
 
 function getVersion(dbName, storeName) {
   var name   = 'indexed-' + dbName;
@@ -71,13 +80,18 @@ function getVersion(dbName, storeName) {
   return config.version;
 }
 
-function getStores(dbName) {
-  return localStore('indexed-' + dbName).stores;
-}
+/**
+ * Construtor for `Store` object
+ * to wrap IndexedDB methods to nice async API
+ *
+ * @options {String} dbName
+ * @options {String} storeName
+ * @options {String} key
+ */
 
-function Store(dbName, name, key) {
+function Store(dbName, storeName, key) {
   this.dbName = dbName;
-  this.name   = name;
+  this.name   = storeName;
   this.key    = key;
 }
 
@@ -120,7 +134,10 @@ Store.prototype.put = function(key, val, cb) {
     val[keyPath] = key;
     var req = store.put(val);
     req.onerror = cb;
-    req.onsuccess = function(event) { cb(); };
+    req.onsuccess = function(event) {
+      // FIXME: probably use transaction.oncomplete
+      setTimeout(cb); // IndexedDB magic
+    };
   });
 };
 
@@ -140,7 +157,9 @@ Store.prototype.clear = function(cb) {
 
     var req = store.clear();
     req.onerror = cb;
-    req.onsuccess = function(event) { cb(); };
+    req.onsuccess = function(event) {
+      setTimeout(cb); // IndexedDB magic
+    };
   });
 };
 
@@ -169,7 +188,7 @@ Store.prototype.getDb = function(cb) {
 
   req.onupgradeneeded = function(event) {
     var db     = req.result;
-    var stores = getStores(that.dbName);
+    var stores = localStore('indexed-' + that.dbName).stores;
 
     for (var i = 0; i < stores.length; i++) {
       db.createObjectStore(stores[i], { keyPath: that.key });
