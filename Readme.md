@@ -20,7 +20,7 @@
 
 ```js
 var Indexed = require('indexed');
-var indexed = new Indexed('notepad:notes', { key: '_id' });
+var indexed = Indexed.create('notepad:notes', { key: '_id' });
 
 // get
 indexed(function(err, all) {}); // get all with cursor
