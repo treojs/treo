@@ -10,6 +10,7 @@
   "devDependencies": {
     "component": "*",
     "chai": "*",
-    "testem": "*"
+    "testem": "*",
+    "async": "*"
   }
 }

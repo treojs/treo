@@ -47,11 +47,10 @@ indexed(3, { name: 'note 3' }, function(err) {})
 
 ## TODO
 
-  - finish 0.1.0 version
-  - use indexes, not only primary key
-  - use ranges and cursors
   - share db connection and manage migrations smoothly
   - add docs and api description
+  - use indexes, not only primary key
+  - use ranges and cursors
 
 ## Development
 
