@@ -4,7 +4,9 @@
   "description": "High-level wrapper around IndexedDB API",
   "version": "0.0.1",
   "keywords": [],
-  "dependencies": {},
+  "dependencies": {
+    "yields/store": "*"
+  },
   "development": {},
   "license": "MIT",
   "main": "index.js",

@@ -3,7 +3,8 @@
  * Module dependencies.
  */
 
-var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
+var indexedDB  = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
+var localStore = require('store');
 
 /**
  * Expose `supported` and `createIndexed`.
@@ -40,8 +41,8 @@ function createIndexed(name, options) {
   return function(key, val, cb) {
     switch (arguments.length) {
       case 3: return val === null ? store.del(key, cb) : store.put(key, val, cb);
-      case 2: return key === null ? store.clear(cb)    : store.get(key, cb);
-      case 1: return store.all(cb);
+      case 2: return key === null ? store.clear(val)   : store.get(key, val);
+      case 1: return store.all(key);
       case 0: return onerror('callback required');
     }
   };
@@ -58,11 +59,20 @@ function onerror(msg) {
 }
 
 function getVersion(dbName, storeName) {
-  return 1;
+  var name   = 'indexed-' + dbName;
+  var config = localStore(name) || { version: 0, stores: [] };
+
+  if (config.stores.indexOf(storeName) < 0) {
+    config.version += 1;
+    config.stores.push(storeName);
+    localStore(name, config);
+  }
+
+  return config.version;
 }
 
 function getStores(dbName) {
-  return [];
+  return localStore('indexed-' + dbName).stores;
 }
 
 function Store(dbName, name, key) {
@@ -75,7 +85,8 @@ Store.prototype.all = function(cb) {
   this.getStore('readonly', function(err, store) {
     if (err) return cb(err);
 
-    var req = store.openCursor();
+    var result = [];
+    var req    = store.openCursor();
     req.onerror = cb;
     req.onsuccess = function(event) {
       var cursor = event.target.result;
@@ -124,7 +135,13 @@ Store.prototype.del = function(key, cb) {
 };
 
 Store.prototype.clear = function(cb) {
-  cb('coming soon');
+  this.getStore('readwrite', function(err, store) {
+    if (err) return cb(err);
+
+    var req = store.clear();
+    req.onerror = cb;
+    req.onsuccess = function(event) { cb(); };
+  });
 };
 
 Store.prototype.getStore = function(mode, cb) {
@@ -142,7 +159,7 @@ Store.prototype.getDb = function(cb) {
   if (this.db) return cb(null, this.db);
 
   var that = this;
-  var req  = indexedDB.open(this.name, getVersion(this.dbName, this.store));
+  var req  = indexedDB.open(this.dbName, getVersion(this.dbName, this.name));
 
   req.onerror = cb;
   req.onsuccess = function(event) {
