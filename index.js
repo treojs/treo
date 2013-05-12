@@ -95,6 +95,13 @@ function Store(dbName, storeName, key) {
   this.key    = key;
 }
 
+/**
+ * Returns all values from the object store
+ * Use cursor to iterate values
+ *
+ * @options {Function} cb
+ */
+
 Store.prototype.all = function(cb) {
   this.getStore('readonly', function(err, store) {
     if (err) return cb(err);
@@ -114,66 +121,104 @@ Store.prototype.all = function(cb) {
   });
 };
 
+/**
+ * Delete all objects in store
+ *
+ * @options {Function} cb
+ */
+
+Store.prototype.clear = function(cb) {
+  this.getStore('readwrite', function(err, store, transaction) {
+    if (err) return cb(err);
+
+    var req = store.clear();
+    req.onerror = cb;
+    transaction.oncomplete = function(event) { cb(); };
+  });
+};
+
+/**
+ * Get object by `key`
+ *
+ * @options {Number|String} key
+ * @options {Function} cb
+ */
+
 Store.prototype.get = function(key, cb) {
   this.getStore('readonly', function(err, store) {
     if (err) return cb(err);
 
     var req = store.get(key);
     req.onerror = cb;
-    req.onsuccess = function(event) {
-      cb(null, req.result);
-    };
+    req.onsuccess = function(event) { cb(null, req.result); };
   });
 };
 
-Store.prototype.put = function(key, val, cb) {
-  var keyPath = this.key;
-  this.getStore('readwrite', function(err, store) {
-    if (err) return cb(err);
-
-    val[keyPath] = key;
-    var req = store.put(val);
-    req.onerror = cb;
-    req.onsuccess = function(event) {
-      // FIXME: probably use transaction.oncomplete
-      setTimeout(cb); // IndexedDB magic
-    };
-  });
-};
+/**
+ * Delete object by `key`
+ *
+ * @options {Number|String} key
+ * @options {Function} cb
+ */
 
 Store.prototype.del = function(key, cb) {
-  this.getStore('readwrite', function(err, store) {
+  this.getStore('readwrite', function(err, store, transaction) {
     if (err) return cb(err);
 
     var req = store.delete(key);
     req.onerror = cb;
-    req.onsuccess = function(event) { cb(); };
+    transaction.oncomplete = function(event) { cb(); };
   });
 };
 
-Store.prototype.clear = function(cb) {
-  this.getStore('readwrite', function(err, store) {
+/**
+ * Put - replace or create object by `key` with `val`
+ * Mix `key` to `val`
+ *
+ * @options {Number|String} key
+ * @options {Function} cb
+ */
+
+Store.prototype.put = function(key, val, cb) {
+  this.getStore('readwrite', function(err, store, transaction) {
     if (err) return cb(err);
 
-    var req = store.clear();
+    val[this.key] = key;
+    var req = store.put(val);
     req.onerror = cb;
-    req.onsuccess = function(event) {
-      setTimeout(cb); // IndexedDB magic
-    };
+    transaction.oncomplete = function(event) { cb(); };
   });
 };
 
+/**
+ * Creates new transaction and returns object store
+ * Calls calback in current context
+ *
+ * @options {String} mode - readwrite|readonly
+ * @options {Function} cb
+ * @api private
+ */
+
 Store.prototype.getStore = function(mode, cb) {
-  var name = this.name;
+  var that = this;
   this.getDb(function(err, db) {
     if (err) return cb(err);
 
-    var transaction = db.transaction([name], mode);
-    var objectStore = transaction.objectStore(name);
-    cb(null, objectStore);
+    var transaction = db.transaction([that.name], mode);
+    var objectStore = transaction.objectStore(that.name);
+    cb.call(that, null, objectStore, transaction);
   });
 };
 
+/**
+ * Returns db instance
+ * Performs connection and upgrade if needed
+ *
+ * @options {Function} cb
+ * @api private
+ */
+
+// TODO: share one connection between different stores
 Store.prototype.getDb = function(cb) {
   if (this.db) return cb(null, this.db);
 
