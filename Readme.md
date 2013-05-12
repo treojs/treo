@@ -9,8 +9,10 @@
   MM    MM    MM `Mb    MM YM.    ,  ,V' VA. YM.    , `Mb    MM
 .JMML..JMML  JMML.`Wbmd"MML.`Mbmmd'.AM.   .MA.`Mbmmd'  `Wbmd"MML.
 
-                        `High-level wrapper around IndexedDB API`
 ```
+
+High-level wrapper around IndexedDB. Inspired by [yields/store](https://github.com/yields/store)
+It tryes to simplify low-level IndexedDB API in one function. Callback follows node.js style, where `error` is a first argument.
 
 ## Installation
 
@@ -20,19 +22,26 @@
 
 ```js
 var Indexed = require('indexed');
+
+// create function to manage object store `notes` from `notepad` db
 var indexed = Indexed.create('notepad:notes', { key: '_id' });
 
-// get
-indexed(function(err, all) {}); // get all with cursor
-indexed(1, function(err, one) {});
-
-// del
-indexed(null, function(err) {});
-indexed(1, null, function(err) {});
-
-// put
+// put - replace value by key
 indexed(2, { name: 'note 2' }, function(err) {})
 indexed(3, { name: 'note 3' }, function(err) {})
+
+// get all
+indexed(function(err, all) {}); // [{_id: 2, name: 'note 2'}, {_id: 3, name: 'note 3'}]
+
+// get one object
+indexed(3, function(err, one) {}); // {_id: 3, name: 'note 3'}
+indexed(1, function(err, one) {}); // undefined
+
+// delete object by key
+indexed(2, null, function(err) {});
+
+// clear object store
+indexed(null, function(err) {});
 ```
 
 ### Links for learning IndexedDB
@@ -45,14 +54,15 @@ indexed(3, { name: 'note 3' }, function(err) {})
   - [levelidb - levelup interface on top of IndexedDb](https://github.com/Raynos/levelidb)
   - [IDBWrapper - a cross-browser wrapper for IndexedDB](https://github.com/jensarps/IDBWrapper)
 
-## TODO
+### TODO
 
   - share db one connection and manage migrations (more tests)
+  - update version when key attribute is changed
   - use indexes, not only primary key
   - use ranges and cursors
   - add docs and api description
 
-## Development
+### Development
 
   - `npm install` to install dependencies
   - `npm test` to ensure that all tests pass

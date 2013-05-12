@@ -1,7 +1,7 @@
 describe('Indexed.create', function(){
   var expect  = chai.expect;
   var Indexed = require('indexed');
-  var indexed = Indexed.create('notepad:notes');
+  var indexed = Indexed.create('notepad:notes', { key: '_id' });
 
   beforeEach(function(done) {
     indexed(null, done);
@@ -48,12 +48,19 @@ describe('Indexed.create', function(){
     it('gets value by key', function(done) {
       indexed(1, { name: 'note 1' }, function(err1) {
         indexed(1, function(err2, note) {
-          expect(note.id).equal(1);
+          expect(note._id).equal(1);
           expect(note.name).equal('note 1');
           done(err1 || err2);
         });
       });
     });
+
+    it('returns undefined when key is not found', function(done) {
+      indexed(5, function(err, note) {
+        expect(note).undefined;
+        done(err);
+      });
+    })
 
     it('clears store when key is null', function(done) {
       async.series([
