@@ -47,10 +47,10 @@ indexed(3, { name: 'note 3' }, function(err) {})
 
 ## TODO
 
-  - share db connection and manage migrations smoothly
-  - add docs and api description
+  - share db one connection and manage migrations (more tests)
   - use indexes, not only primary key
   - use ranges and cursors
+  - add docs and api description
 
 ## Development
 

@@ -11,7 +11,15 @@ describe('Indexed.create', function(){
     expect(indexed).a('function');
   });
 
-  it('validates name paramether');
+  it('throws error when cb is not defined', function() {
+    expect(indexed).throw(/callback required/);
+  });
+
+  it('validates name paramether', function() {
+    expect(function() {
+      Indexed.create('smth here');
+    }).throw(/format/);
+  });
 
   describe('indexed(cb)', function() {
     it('returns an empty array', function(done) {
@@ -19,10 +27,6 @@ describe('Indexed.create', function(){
         expect(values).length(0);
         done(err);
       });
-    });
-
-    it('throws error when cb is not defined', function() {
-      expect(indexed).throw(/callback required/);
     });
 
     it('returns a list of objects', function(done) {
@@ -61,6 +65,26 @@ describe('Indexed.create', function(){
         indexed(function(err2, notes) {
           expect(notes).length(0);
           done(err1 || err2);
+        });
+      });
+    });
+  });
+
+  describe('indexed(key, val, cb)', function() {
+    it('puts value to store', function(done) {
+      indexed(5, { name: 'note 5' }, function(err) {
+        expect(err).undefined;
+        done(err);
+      });
+    });
+
+    it('delete objetc by key if val is null', function(done) {
+      indexed(5, { name: 'note 5' }, function(err1) {
+        indexed(5, null, function(err2) {
+          indexed(function(err3, notes) {
+            expect(notes).length(0);
+            done(err1 || err2 || err3);
+          });
         });
       });
     });
