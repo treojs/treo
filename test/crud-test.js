@@ -97,7 +97,7 @@ describe('Indexed.create instance', function(){
     });
   });
 
-  describe('access methods', function() {
+  describe('shortcut methods', function() {
     beforeEach(function(done) {
       async.series([
         function(cb) { indexed(1, { name: 'note 1' }, cb); },

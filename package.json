@@ -11,6 +11,7 @@
     "component": "*",
     "chai": "*",
     "testem": "*",
-    "async": "*"
+    "async": "*",
+    "underscore": "*"
   }
 }

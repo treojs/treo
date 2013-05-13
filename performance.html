@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+<head>
+  <title>Check performance of Indexed</title>
+  <style type="text/css">
+    #result {
+      padding: 50px;
+      font: 20px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+  </style>
+  <script src="build/build.js"></script>
+  <script src="node_modules/async/lib/async.js"></script>
+  <script src="node_modules/underscore/underscore.js"></script>
+</head>
+<body>
+  <div id="result"></div>
+
+  <script type="text/javascript">
+    var Indexed  = require('indexed');
+
+    Indexed.drop('notepad', function(err) {
+      var notes    = Indexed.create('notepad:notes');
+      var tags     = Indexed.create('notepad:tags');
+      var notepads = Indexed.create('notepad:notepads');
+
+      function fibonacci(n) {
+        return (n <= 0) ? 0 : (n === 1) ? 1 : fibonacci(n-1) + fibonacci(n-2);
+      }
+
+      function sum(arr) {
+        return _.reduce(arr, function(memo, num){ return memo + num; }, 0);
+      }
+
+      function append(text) {
+        var block = document.createElement('p')
+        block.innerHTML = text
+        document.getElementById('result').appendChild(block);
+      }
+
+      /**
+       * Random get/put/del
+       * 2000/2000/2000 times
+       *
+       * Use fiboncacci to emulate massice put and than massive del
+       * Every iteration read 100 random items
+       */
+
+      var id = 0;
+      var putTimes = [], delTimes = [], getTimes = [];
+
+      append('Calculating Random get/put/del');
+
+      async.eachSeries(_.range(15, 0, -1), function(createIndex, nextIter) {
+        async.eachSeries(_.range(1, fibonacci(createIndex)), function(item, next) {
+          var date  = new Date;
+          var start = +date;
+          var attrs = { note: 'note ' + id, createdAt: date, updatedAt: date };
+          id += 1;
+          notes.put(id, attrs, function(err) {
+            putTimes.push(+(new Date) - start);
+            next(err);
+          });
+        }, function(err) {
+          createIndex += 1;
+          nextIter(err);
+        })
+      }, function(err) {
+        if (err) throw new Error(err);
+
+        var time  = sum(putTimes);
+        append('Put = times: '
+          + putTimes.length
+          + '; time: '
+          + time
+          + 'ms; middle: '
+          + (time / putTimes.length).toFixed(2)
+          + 'ms;');
+      });
+
+      /**
+       * Batch & clear
+       * 20000 items + get all every 1000 items
+       */
+    });
+  </script>
+</body>
+</html>
