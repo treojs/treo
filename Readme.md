@@ -56,9 +56,7 @@ indexed(null, function(err) {});
 
 ### TODO
 
-  - update version when key attribute is changed (more tests)
   - use db.version to get initial value for config.version, when localStorage were cleared (more tests)
-  - share db one connection and manage migrations (more tests)
   - test error cases: invalid key, delete with wrong key
   - make put smarter: be able to update, not replace
   - check that callback is a function

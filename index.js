@@ -67,6 +67,8 @@ function createIndexed(name, options) {
  */
 
 function drop(dbName, cb) {
+  localStore('indexed-' + dbName, null);
+
   if (dbs[dbName]) {
     db.close();
     delete dbs[dbName];
@@ -308,12 +310,12 @@ Store.prototype.upgrade = function(db, cb) {
  * Returns config for upgrade of `db`. New version and action.
  * Check existing of store with valid keyPath.
  * Save config to localStorage when `save` is true
+ * Prefer info from db to stored config
  *
  * @options {Object} db
  * @options {Boolean} save
  */
 
-// FIXME: DRY, split on small methods
 Store.prototype.getUpgradeConfig = function(db, save) {
   var name    = 'indexed-' + this.dbName;
   var version = db.version || 1;
