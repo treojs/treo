@@ -9,8 +9,8 @@ var localStore = require('store');
  * Local variables.
  */
 
-var indexedDB     = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
-var dbs           = {};
+var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
+var dbs = {};
 var defaultConfig = { version: 0, stores: [], keys: {} };
 
 /**
@@ -186,7 +186,6 @@ Store.prototype.put = function(key, val, cb) {
  *
  * @options {String} mode - readwrite|readonly
  * @options {Function} cb
- * @api private
  */
 
 Store.prototype.getStore = function(mode, cb) {
@@ -206,7 +205,6 @@ Store.prototype.getStore = function(mode, cb) {
  * Use dbs to manage db connections
  *
  * @options {Function} cb
- * @api private
  */
 
 Store.prototype.getDb = function(cb) {
@@ -215,73 +213,59 @@ Store.prototype.getDb = function(cb) {
 
   if (db) {
     if (this.connected) return cb(null, db);
-    this.connectOrUpgrade(db, db.version, cb);
+    this.connectOrUpgrade(db, cb);
   } else {
     var req = indexedDB.open(this.dbName);
     req.onerror = onerror(cb);
     req.onsuccess = function(event) {
       var db = event.target.result;
-      that.connectOrUpgrade(db, db.version, cb);
+      dbs[that.dbName] = db;
+      that.connectOrUpgrade(db, cb);
     };
   }
 };
 
-Store.prototype.connectOrUpgrade = function(db, version, cb) {
-  if (this.needUpgrade(version))
+/**
+ * Check that `db.version` is equal to config version
+ * Performs connect of db upgrade
+ *
+ * @options {Object} db
+ * @options {Function} cb
+ */
+
+Store.prototype.connectOrUpgrade = function(db, cb) {
+  var config = localStore('indexed-' + this.dbName);
+
+  if (!config || config.version !== db.version)
     this.upgrade(db, version, cb);
   else
     this.connect(db, cb);
 };
 
-Store.prototype.needUpgrade = function(version) {
-  /**
-   * Get current db version
-   * if store with `storeName` was not initialized,
-   * it will increment current version and add it to config.
-   * Config stores in localStorage in indexed-`dbName`
-   *
-   * @options {String} dbName
-   * @options {String} storeName
-   * @return {Number}
-   */
-
-  function getVersion(store) {
-    var name   = 'indexed-' + store.dbName;
-    var config = localStore(name) || { version: 0, stores: [], keys: {} };
-
-    // если имени не существует мы должны создать store с выбранным ключом
-    // при изминении ключа store пересоздаётся
-    // в тот момент когда создаётся новый store, соединение должно закрыться, потом открыться заново
-    if (config.stores.indexOf(store.name) < 0) {
-      config.stores.push(store.name);
-      // DRY + fix req.onupgradeneeded
-      config.version += 1;
-      localStore(name, config);
-    } else if (config.keys[store.name] !== store.key) {
-      config.keys[store.name] = store.key;
-      config.version += 1;
-      localStore(name, config);
-    }
-
-    return config.version;
-  }
-};
+/**
+ * Mark current store as connected
+ *
+ * @options {Object} db
+ * @options {Function} cb
+ */
 
 Store.prototype.connect = function(db, cb) {
-  this.connected   = true;
-  dbs[this.dbName] = db;
+  this.connected = true;
   cb(null, db);
 };
 
 Store.prototype.upgrade = function(db, version, cb) {
+  var that = this;
   db.close();
   var req  = indexedDB.open(that.dbName, config.version);
   req.onerror = onerror(cb);
   req.onsuccess = function(event) {
+    var db = event.target.result;
+    dbs[that.dbName] = db;
     that.connect(event.target.result, cb);
   };
   req.onupgradeneeded = function(event) {
-    var db     = req.result;
+    var db     = event.target.result;
     var stores = localStore('indexed-' + that.dbName).stores;
 
     for (var i = 0; i < stores.length; i++) {
