@@ -1,18 +1,18 @@
 ```
 
   ,,                    ,,                                   ,,
-  db                  `7MM                                 `7MM
-                        MM                                   MM
-`7MM  `7MMpMMMb.   ,M""bMM  .gP"Ya `7M'   `MF'.gP"Ya    ,M""bMM
-  MM    MM    MM ,AP    MM ,M'   Yb  `VA ,V' ,M'   Yb ,AP    MM
-  MM    MM    MM 8MI    MM 8M""""""    XMX   8M"""""" 8MI    MM
-  MM    MM    MM `Mb    MM YM.    ,  ,V' VA. YM.    , `Mb    MM
-.JMML..JMML  JMML.`Wbmd"MML.`Mbmmd'.AM.   .MA.`Mbmmd'  `Wbmd"MML.
+  db                  `7db                                 `7db
+                        db                                   db
+`Idb  `7dbpMMMb.   ,M""bdb  .gP"Ya `7M'   `MF'.gP"Ya    ,M""bdb
+  db    db    db ,AP    db ,M'   Yb  `VA ,V' ,M'   Yb ,AP    db
+  db    db    db 8MI    db 8M""""""    XMX   8M"""""" 8MI    db
+  db    db    db `Mb    db YM.    ,  ,V' VA. YM.    , `Mb    db
+.JdbL..JdbL  JdbL.`Wbmd"dbL.`Mbmmd'.AM.   .MA.`Mbmmd'  `Wbmd"dbL.
 
 ```
 
-High-level wrapper around IndexedDB. Inspired by [yields/store](https://github.com/yields/store)
-It tryes to simplify low-level IndexedDB API in one function. Callback follows node.js style, where `error` is a first argument.
+Minimalistic high-level wrapper around IndexedDB inspired by [yields/store](https://github.com/yields/store).
+It tryes to simplify low-level IndexedDB API in one function. Callback follows node.js style, where `error` is a first argument. It works for simple cases, which covers 90% of tasks, when you need to get all values from store or one by key.
 
 ## Installation
 
@@ -56,11 +56,15 @@ indexed(null, function(err) {});
 
 ### TODO
 
-  - share db one connection and manage migrations (more tests)
   - update version when key attribute is changed
-  - use indexes, not only primary key
-  - use ranges and cursors
+  - test error cases: invalid key, delete with wrong key
+  - make put smarter: be able to update, not replace
+  - share db one connection and manage migrations (more tests)
+  - check that callback is a function
+  - batch method
+  - performance suite
   - add docs and api description
+  - standalone release
 
 ### Development
 

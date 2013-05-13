@@ -30,10 +30,10 @@ exports.create    = createIndexed;
  */
 
 function createIndexed(name, options) {
-  if (typeof name !== 'string') return onerror('name required');
+  if (typeof name !== 'string') throw new TypeError('name required');
   if (!options) options = {};
   var params = name.split(':');
-  if (params.length !== 2) return onerror('name has format "dbName:storeName"');
+  if (params.length !== 2) throw new TypeError('name has format "dbName:storeName"');
 
   var key   = options.key || 'id';
   var store = new Store(params[0], params[1], key);
@@ -43,17 +43,9 @@ function createIndexed(name, options) {
       case 3: return val === null ? store.del(key, cb) : store.put(key, val, cb);
       case 2: return key === null ? store.clear(val)   : store.get(key, val);
       case 1: return store.all(key);
-      case 0: return onerror('callback required');
+      case 0: throw new TypeError('callback required');
     }
   };
-}
-
-/**
- * Shortcut method to return Indexed error
- */
-
-function onerror(msg) {
-  throw new TypeError('Indexed: ' + msg);
 }
 
 /**
@@ -78,6 +70,20 @@ function getVersion(dbName, storeName) {
   }
 
   return config.version;
+}
+
+/**
+ * Handle request errors.
+ * Wrap callback and return function to manage event
+ *
+ * @options {Function} cb
+ * @return {Function}
+ */
+
+function onerror(cb) {
+  return function(event) {
+    cb(event.target.errorCode);
+  };
 }
 
 /**
@@ -108,7 +114,7 @@ Store.prototype.all = function(cb) {
 
     var result = [];
     var req    = store.openCursor();
-    req.onerror = cb;
+    req.onerror = onerror(cb);
     req.onsuccess = function(event) {
       var cursor = event.target.result;
       if (cursor) {
@@ -132,7 +138,7 @@ Store.prototype.clear = function(cb) {
     if (err) return cb(err);
 
     var req = store.clear();
-    req.onerror = cb;
+    req.onerror = onerror(cb);
     transaction.oncomplete = function(event) { cb(); };
   });
 };
@@ -149,7 +155,7 @@ Store.prototype.get = function(key, cb) {
     if (err) return cb(err);
 
     var req = store.get(key);
-    req.onerror = cb;
+    req.onerror = onerror(cb);
     req.onsuccess = function(event) { cb(null, req.result); };
   });
 };
@@ -166,7 +172,7 @@ Store.prototype.del = function(key, cb) {
     if (err) return cb(err);
 
     var req = store.delete(key);
-    req.onerror = cb;
+    req.onerror = onerror(cb);
     transaction.oncomplete = function(event) { cb(); };
   });
 };
@@ -185,7 +191,7 @@ Store.prototype.put = function(key, val, cb) {
 
     val[this.key] = key;
     var req = store.put(val);
-    req.onerror = cb;
+    req.onerror = onerror(cb);
     transaction.oncomplete = function(event) { cb(); };
   });
 };
@@ -225,7 +231,7 @@ Store.prototype.getDb = function(cb) {
   var that = this;
   var req  = indexedDB.open(this.dbName, getVersion(this.dbName, this.name));
 
-  req.onerror = cb;
+  req.onerror = onerror(cb);
   req.onsuccess = function(event) {
     that.db = this.result;
     cb(null, that.db);
