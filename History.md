@@ -1,9 +1,11 @@
-0.2.0 / 2013-05-..
+0.2.0 / 2013-05-13
 ==================
 
   * manage onerror callback
-  * share db one connection and manage migrations
+  * share one db connection and manage migrations
   * update db.version when key attribute was changed
+  * work correctly when localStorage is empty
+  * shortcut methods 'get', 'put', 'del', 'all', 'clear'
 
 0.1.0 / 2013-05-12
 ==================

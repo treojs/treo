@@ -5,7 +5,8 @@
   "version": "0.1.0",
   "keywords": [],
   "dependencies": {
-    "yields/store": "*"
+    "yields/store": "*",
+    "component/bind": "*"
   },
   "development": {},
   "license": "MIT",

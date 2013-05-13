@@ -43,4 +43,19 @@ describe('Connection and schema management', function() {
       });
     });
   });
+
+  it('handles empty localStorage', function(done) {
+    Indexed.drop('testapp3', function(err1) {
+      Indexed.create('testapp2:notes')(function(err, all) {
+        localStore('indexed-testapp3', null);
+
+        Indexed.create('testapp3:notes')(function(err2, all) {
+          expect(localStore('indexed-testapp3').version).equal(2);
+          done(err1 || err2);
+        });
+      });
+    });
+  });
+
+  it('connect to multiply databases');
 });

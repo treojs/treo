@@ -60,7 +60,7 @@ describe('Indexed.create instance', function(){
         expect(note).undefined;
         done(err);
       });
-    })
+    });
 
     it('clears store when key is null', function(done) {
       async.series([
@@ -92,6 +92,55 @@ describe('Indexed.create instance', function(){
             expect(notes).length(0);
             done(err1 || err2 || err3);
           });
+        });
+      });
+    });
+  });
+
+  describe('access methods', function() {
+    beforeEach(function(done) {
+      async.series([
+        function(cb) { indexed(1, { name: 'note 1' }, cb); },
+        function(cb) { indexed(2, { name: 'note 2' }, cb); },
+        function(cb) { indexed(3, { name: 'note 3' }, cb); }
+      ], done);
+    });
+
+    it('all - returns all values', function(done) {
+      indexed.all(function(err, notes) {
+        expect(notes).length(3);
+        done(err);
+      });
+    });
+
+    it('get - returns one value', function(done) {
+      indexed.get(2, function(err, note) {
+        expect(note._id).equal(2);
+        done(err);
+      });
+    });
+
+    it('put - updates existing value', function(done) {
+      indexed.put(3, { name: 'updated note 3' }, function(err) {
+        expect(err).undefined;
+        done(err);
+      });
+    });
+
+    it('del - delete object by key', function(done) {
+      indexed.del(2, function(err1) {
+        indexed.all(function(err2, notes) {
+          expect(notes).length(2);
+          done(err1 || err2);
+        });
+      });
+    });
+
+    it('clear - delete all objects', function(done) {
+      indexed.clear(function(err1) {
+        indexed.all(function(err2, notes) {
+          expect(notes).length(0);
+          done(err1 || err2);
         });
       });
     });

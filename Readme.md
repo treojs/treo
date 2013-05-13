@@ -11,8 +11,7 @@
 
 ```
 
-Minimalistic high-level wrapper around IndexedDB inspired by [yields/store](https://github.com/yields/store).
-It tryes to simplify low-level IndexedDB API in one function. Callback follows node.js style, where `error` is a first argument. It works for simple cases, which covers 90% of tasks, when you need to get all values from store or one by key.
+IndexedDB is not fun. That is the reason why I created indexed: minimalistic high-level wrapper around IndexedDB inspired by [yields/store](https://github.com/yields/store). It tryes to simplify low-level IndexedDB API in one function. Callback follows node.js style, where `error` is a first argument. It works for simple cases, when you need to get all values from store or one by key. I think, it covers 90% use-cases.
 
 ## Installation
 
@@ -56,7 +55,6 @@ indexed(null, function(err) {});
 
 ### TODO
 
-  - use db.version to get initial value for config.version, when localStorage were cleared (more tests)
   - test error cases: invalid key, delete with wrong key
   - make put smarter: be able to update, not replace
   - check that callback is a function

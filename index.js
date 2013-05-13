@@ -4,6 +4,7 @@
  */
 
 var localStore = require('store');
+var bind       = require('bind');
 
 /**
  * Local variables.
@@ -11,6 +12,7 @@ var localStore = require('store');
 
 var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
 var dbs       = {};
+var methods   = ['get', 'all', 'put', 'del', 'clear'];
 var indexOf   = [].indexOf;
 
 function include(array, object) {
@@ -50,7 +52,7 @@ function createIndexed(name, options) {
   var key   = options.key || 'id';
   var store = new Store(params[0], params[1], key);
 
-  return function(key, val, cb) {
+  var indexed = function(key, val, cb) {
     switch (arguments.length) {
       case 3: return val === null ? store.del(key, cb) : store.put(key, val, cb);
       case 2: return key === null ? store.clear(val)   : store.get(key, val);
@@ -58,6 +60,11 @@ function createIndexed(name, options) {
       case 0: throw new TypeError('callback required');
     }
   };
+  for (var i = 0; i < methods.length; i++) {
+    indexed[methods[i]] = bind(store, store[methods[i]]);
+  }
+
+  return indexed;
 }
 
 /**
