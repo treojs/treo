@@ -37,6 +37,20 @@
         document.getElementById('result').appendChild(block);
       }
 
+      function recap(array, name) {
+        var time  = sum(array);
+        var length = array.length;
+
+        append(name
+          + ' = times: '
+          + length
+          + '; time: '
+          + time
+          + 'ms; middle: '
+          + (time / length).toFixed(2)
+          + 'ms;');
+      }
+
       /**
        * Random get/put/del
        * 2000/2000/2000 times
@@ -45,42 +59,57 @@
        * Every iteration read 100 random items
        */
 
-      var id = 0;
-      var putTimes = [], delTimes = [], getTimes = [];
+      var putId = 0, delId = 0;
+      var createIndex = 15, deleteIndex = 0;
+      var putTimes = [], getTimes = [], delTimes = [];
 
-      append('Calculating Random get/put/del');
+      append('Calculating "random get/put/del"');
 
-      async.eachSeries(_.range(15, 0, -1), function(createIndex, nextIter) {
-        async.eachSeries(_.range(1, fibonacci(createIndex)), function(item, next) {
-          var date  = new Date;
-          var start = +date;
-          var attrs = { note: 'note ' + id, createdAt: date, updatedAt: date };
-          id += 1;
-          notes.put(id, attrs, function(err) {
-            putTimes.push(+(new Date) - start);
-            next(err);
-          });
-        }, function(err) {
-          createIndex += 1;
-          nextIter(err);
-        })
+      async.eachSeries(_.range(createIndex, 0, -1), function(i, nextIter) {
+        async.series([
+          function(cb) {
+            async.eachSeries(_.range(1, fibonacci(createIndex) + 1), function(item, next) {
+              var date  = new Date;
+              var start = +date;
+              var attrs = { note: 'note ' + putId, createdAt: date, updatedAt: date };
+              putId += 1;
+              notes.put(putId, attrs, function(err) {
+                putTimes.push(+(new Date) - start);
+                next(err);
+              });
+            }, cb);
+          },
+          function(cb) {
+            async.eachSeries(_.range(1, 101), function(item, next) {
+              var getId = _.random(delId, putId);
+              var start = +(new Date);
+              notes.get(getId, function(err, note) {
+                getTimes.push(+(new Date) - start);
+                next(err);
+              });
+            }, cb);
+          },
+          function(cb) {
+            async.eachSeries(_.range(1, fibonacci(deleteIndex) + 1), function(item, next) {
+              var start = +(new Date);
+              delId += 1;
+              notes.del(delId, function(err) {
+                delTimes.push(+(new Date) - start);
+                next(err);
+              });
+            }, cb);
+          }
+        ], nextIter);
+
+        createIndex -= 1;
+        deleteIndex += 1;
       }, function(err) {
         if (err) throw new Error(err);
 
-        var time  = sum(putTimes);
-        append('Put = times: '
-          + putTimes.length
-          + '; time: '
-          + time
-          + 'ms; middle: '
-          + (time / putTimes.length).toFixed(2)
-          + 'ms;');
+        recap(putTimes, 'Put');
+        recap(getTimes, 'Get');
+        recap(delTimes, 'Del');
       });
-
-      /**
-       * Batch & clear
-       * 20000 items + get all every 1000 items
-       */
     });
   </script>
 </body>

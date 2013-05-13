@@ -43,6 +43,32 @@ indexed(2, null, function(err) {});
 indexed(null, function(err) {});
 ```
 
+## API
+
+  coming soon ;)
+
+## Performance
+
+- Google Chrome 26
+
+    Put = times: 1596; time: 2900ms; middle: 1.82ms;
+    Get = times: 1500; time: 1151ms; middle: 0.77ms;
+    Del = times: 1596; time: 2412ms; middle: 1.51ms;
+
+- Firefox 20
+
+    Put = times: 1596; time: 9285ms; middle: 5.82ms;
+    Get = times: 1500; time: 1185ms; middle: 0.79ms;
+    Del = times: 1596; time: 9709ms; middle: 6.08ms;
+
+- IE 10 (Virtualbox)
+
+    Put = times: 1596; time: 2532ms; middle: 1.59ms;
+    Get = times: 1500; time: 1939ms; middle: 1.29ms;
+    Del = times: 1596; time: 2142ms; middle: 1.34ms;
+
+More about testing algorithm in [performance.html]().
+
 ### Links for learning IndexedDB
 
   - [Basic options and conceptions](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB)
@@ -58,9 +84,10 @@ indexed(null, function(err) {});
   - test error cases: invalid key, delete with wrong key
   - check that callback is a function
   - batch method
-  - performance suite
   - add docs and api description
   - standalone release
+  - performance: batch & clear - 20000 items + get all every 1000 items
+  - performance: use different stores + move suite to jsperf
 
 ### Development
 
