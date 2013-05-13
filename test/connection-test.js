@@ -4,17 +4,17 @@ describe('Connection and schema management', function() {
   var Indexed    = require('indexed');
 
   it('connect to multiply stores in one db', function(done) {
-    Indexed.drop('testapp', function(err) {
-      var notes    = Indexed.create('testapp:notes');
-      var tags     = Indexed.create('testapp:tags');
-      var notepads = Indexed.create('testapp:notepads');
+    Indexed.drop('testapp1', function(err) {
+      var notes    = Indexed.create('testapp1:notes');
+      var tags     = Indexed.create('testapp1:tags');
+      var notepads = Indexed.create('testapp1:notepads');
 
       async.series([
         function(cb) { notes(cb); },
         function(cb) { tags(cb); },
         function(cb) { notepads(cb); }
       ], function(err) {
-        var config = localStore('indexed-testapp');
+        var config = localStore('indexed-testapp1');
         expect(config.stores).length(3);
         expect(Object.keys(config.keys)).eql(['notes', 'tags', 'notepads']);
         expect(config.version).equal(4);
@@ -57,5 +57,26 @@ describe('Connection and schema management', function() {
     });
   });
 
-  it('connect to multiply databases');
+  it('connects to multiply databases', function(done) {
+    async.series([
+      function(cb) { Indexed.drop('testapp4', cb); },
+      function(cb) { Indexed.drop('testapp5', cb); },
+      function(cb) { Indexed.drop('testapp6', cb); }
+    ], function(err1) {
+      var notes    = Indexed.create('testapp4:notes');
+      var tags     = Indexed.create('testapp5:tags');
+      var notepads = Indexed.create('testapp6:notepads');
+
+      async.series([
+        function(cb) { notes(cb); },
+        function(cb) { tags(cb); },
+        function(cb) { notepads(cb); }
+      ], function(err2) {
+        expect(localStore('indexed-testapp4').version).equal(2);
+        expect(localStore('indexed-testapp5').version).equal(2);
+        expect(localStore('indexed-testapp6').version).equal(2);
+        done(err1 || err2);
+      });
+    });
+  });
 });
