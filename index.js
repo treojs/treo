@@ -3,8 +3,15 @@
  * Module dependencies.
  */
 
-var indexedDB  = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
 var localStore = require('store');
+
+/**
+ * Local variables.
+ */
+
+var indexedDB     = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
+var dbs           = {};
+var defaultConfig = { version: 0, stores: [], keys: {} };
 
 /**
  * Expose `supported` and `createIndexed`.
@@ -49,30 +56,6 @@ function createIndexed(name, options) {
 }
 
 /**
- * Get current db version
- * if store with `storeName` was not initialized,
- * it will increment current version and add it to config.
- * Config stores in localStorage in indexed-`dbName`
- *
- * @options {String} dbName
- * @options {String} storeName
- * @return {Number}
- */
-
-function getVersion(dbName, storeName) {
-  var name   = 'indexed-' + dbName;
-  var config = localStore(name) || { version: 0, stores: [] };
-
-  if (config.stores.indexOf(storeName) < 0) {
-    config.version += 1;
-    config.stores.push(storeName);
-    localStore(name, config);
-  }
-
-  return config.version;
-}
-
-/**
  * Handle request errors.
  * Wrap callback and return function to manage event
  *
@@ -96,9 +79,10 @@ function onerror(cb) {
  */
 
 function Store(dbName, storeName, key) {
-  this.dbName = dbName;
-  this.name   = storeName;
-  this.key    = key;
+  this.dbName    = dbName;
+  this.name      = storeName;
+  this.key       = key;
+  this.connected = false;
 }
 
 /**
@@ -219,24 +203,83 @@ Store.prototype.getStore = function(mode, cb) {
 /**
  * Returns db instance
  * Performs connection and upgrade if needed
+ * Use dbs to manage db connections
  *
  * @options {Function} cb
  * @api private
  */
 
-// TODO: share one connection between different stores
 Store.prototype.getDb = function(cb) {
-  if (this.db) return cb(null, this.db);
-
   var that = this;
-  var req  = indexedDB.open(this.dbName, getVersion(this.dbName, this.name));
+  var db   = dbs[this.dbName];
 
+  if (db) {
+    if (this.connected) return cb(null, db);
+    this.connectOrUpgrade(db, db.version, cb);
+  } else {
+    var req = indexedDB.open(this.dbName);
+    req.onerror = onerror(cb);
+    req.onsuccess = function(event) {
+      var db = event.target.result;
+      that.connectOrUpgrade(db, db.version, cb);
+    };
+  }
+};
+
+Store.prototype.connectOrUpgrade = function(db, version, cb) {
+  if (this.needUpgrade(version))
+    this.upgrade(db, version, cb);
+  else
+    this.connect(db, cb);
+};
+
+Store.prototype.needUpgrade = function(version) {
+  /**
+   * Get current db version
+   * if store with `storeName` was not initialized,
+   * it will increment current version and add it to config.
+   * Config stores in localStorage in indexed-`dbName`
+   *
+   * @options {String} dbName
+   * @options {String} storeName
+   * @return {Number}
+   */
+
+  function getVersion(store) {
+    var name   = 'indexed-' + store.dbName;
+    var config = localStore(name) || { version: 0, stores: [], keys: {} };
+
+    // если имени не существует мы должны создать store с выбранным ключом
+    // при изминении ключа store пересоздаётся
+    // в тот момент когда создаётся новый store, соединение должно закрыться, потом открыться заново
+    if (config.stores.indexOf(store.name) < 0) {
+      config.stores.push(store.name);
+      // DRY + fix req.onupgradeneeded
+      config.version += 1;
+      localStore(name, config);
+    } else if (config.keys[store.name] !== store.key) {
+      config.keys[store.name] = store.key;
+      config.version += 1;
+      localStore(name, config);
+    }
+
+    return config.version;
+  }
+};
+
+Store.prototype.connect = function(db, cb) {
+  this.connected   = true;
+  dbs[this.dbName] = db;
+  cb(null, db);
+};
+
+Store.prototype.upgrade = function(db, version, cb) {
+  db.close();
+  var req  = indexedDB.open(that.dbName, config.version);
   req.onerror = onerror(cb);
   req.onsuccess = function(event) {
-    that.db = this.result;
-    cb(null, that.db);
+    that.connect(event.target.result, cb);
   };
-
   req.onupgradeneeded = function(event) {
     var db     = req.result;
     var stores = localStore('indexed-' + that.dbName).stores;
