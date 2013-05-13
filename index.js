@@ -13,12 +13,17 @@ var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedD
 var dbs       = {};
 var indexOf   = [].indexOf;
 
+function include(array, object) {
+  return indexOf.call(array, object) >= 0;
+}
+
 /**
- * Expose `supported` and `createIndexed`.
+ * Expose public api.
  */
 
 exports.supported = !! indexedDB;
 exports.create    = createIndexed;
+exports.drop      = drop;
 
 /**
  * Create a new indexed instance.
@@ -53,6 +58,23 @@ function createIndexed(name, options) {
       case 0: throw new TypeError('callback required');
     }
   };
+}
+
+/**
+ * Drop IndexedDB instance by name.
+ *
+ * @api public
+ */
+
+function drop(dbName, cb) {
+  if (dbs[dbName]) {
+    db.close();
+    delete dbs[dbName];
+  }
+
+  var req = indexedDB.deleteDatabase(dbName);
+  req.onerror = onerror(cb);
+  req.onsuccess = function(event) { cb(); };
 }
 
 /**
@@ -234,9 +256,9 @@ Store.prototype.getDb = function(cb) {
  */
 
 Store.prototype.connectOrUpgrade = function(db, cb) {
-  var config = localStore('indexed-' + this.dbName);
+  var config = this.getUpgradeConfig(db, false);
 
-  if (!config || config.version !== db.version)
+  if (config.version !== db.version)
     this.upgrade(db, cb);
   else
     this.connect(db, cb);
@@ -254,13 +276,19 @@ Store.prototype.connect = function(db, cb) {
   cb(null, db);
 };
 
+/**
+ * Close current db connection and open new
+ * Create object store if needed and recreate it when key options changed
+ *
+ * @options {Object} db
+ * @options {Function} cb
+ */
+
 Store.prototype.upgrade = function(db, cb) {
   var that   = this;
-  var config = this.getConfig(db);
+  var config = this.getUpgradeConfig(db, true);
 
-  // close previous connection
   db.close();
-
   var req = indexedDB.open(this.dbName, config.version);
   req.onerror = onerror(cb);
   req.onsuccess = function(event) {
@@ -269,37 +297,49 @@ Store.prototype.upgrade = function(db, cb) {
     that.connect(db, cb);
   };
   req.onupgradeneeded = function(event) {
-    var db = event.target.result;
+    var db = this.result;
 
-    if (config.deleteStore) db.deleteObjectStore(that.name);
-    if (config.createStore) db.createObjectStore(that.name, { keyPath: that.key });
+    if (config.action === 'recreate') db.deleteObjectStore(that.name);
+    if (config.action) db.createObjectStore(that.name, { keyPath: that.key });
   };
 };
 
-// FIXME: DRY this method
-Store.prototype.getConfig = function(db) {
-  var version       = db.version;
-  var name          = 'indexed-' + this.dbName;
-  var defaultConfig = { version: version, stores: [], keys: {} };
-  var indexedConfig = localStore(name) || defaultConfig;
-  var config        = {};
+/**
+ * Returns config for upgrade of `db`. New version and action.
+ * Check existing of store with valid keyPath.
+ * Save config to localStorage when `save` is true
+ *
+ * @options {Object} db
+ * @options {Boolean} save
+ */
 
-  function saveConfig() {
-    indexedConfig.version += 1;
-    localStore(name, indexedConfig);
+// FIXME: DRY, split on small methods
+Store.prototype.getUpgradeConfig = function(db, save) {
+  var name    = 'indexed-' + this.dbName;
+  var version = db.version || 1;
+  var config  = localStore(name) || { version: version, stores: [], keys: {} };
+  var action  = null;
+
+  if (!include(config.stores, this.name)) {
+    config.stores.push(this.name);
+    if (!include(db.objectStoreNames, this.name)) {
+      config.version += 1;
+      action = 'create';
+    }
+  }
+  if (!config.keys[this.name] || config.keys[this.name] !== this.key) {
+    config.keys[this.name] = this.key;
+    if (!action) {
+      var objectStore = db.transaction([this.name], 'readonly')
+        .objectStore(this.name);
+
+      if (objectStore.keyPath !== this.key) {
+        config.version += 1;
+        action = 'recreate';
+      }
+    }
   }
 
-  if (indexedConfig.stores.indexOf(this.name) < 0) {
-    indexedConfig.stores.push(this.name);
-    saveConfig();
-    if (indexOf.call(db.objectStoreNames, that.name) < 0) config.createStore = true;
-  } else if (!indexedConfig.keys[this.name] || indexedConfig.keys[this.name] !== this.key) {
-    config.deleteStore = true;
-    config.createStore = true;
-    indexedConfig.keys[this.name] = this.key;
-    saveConfig();
-  }
-
-  config.version = indexedConfig.version;
-  return config;
+  if (save) localStore(name, config);
+  return { version: config.version, action: action };
 };

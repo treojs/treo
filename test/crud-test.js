@@ -1,4 +1,4 @@
-describe('Indexed.create', function(){
+describe('Indexed.create instance', function(){
   var expect  = chai.expect;
   var Indexed = require('indexed');
   var indexed = Indexed.create('notepad:notes', { key: '_id' });
