@@ -50,22 +50,25 @@ indexed(null, function(err) {});
 ## Performance
 
 - Google Chrome 26, OS X
-
-    Put = times: 1596; time: 2900ms; middle: 1.82ms;
-    Get = times: 1500; time: 1151ms; middle: 0.77ms;
-    Del = times: 1596; time: 2412ms; middle: 1.51ms;
+```
+Put = times: 1596; time: 2900ms; middle: 1.82ms;
+Get = times: 1500; time: 1151ms; middle: 0.77ms;
+Del = times: 1596; time: 2412ms; middle: 1.51ms;
+```
 
 - Firefox 20, OS X
-
-    Put = times: 1596; time: 9285ms; middle: 5.82ms;
-    Get = times: 1500; time: 1185ms; middle: 0.79ms;
-    Del = times: 1596; time: 9709ms; middle: 6.08ms;
+```
+Put = times: 1596; time: 9285ms; middle: 5.82ms;
+Get = times: 1500; time: 1185ms; middle: 0.79ms;
+Del = times: 1596; time: 9709ms; middle: 6.08ms;
+```
 
 - IE 10, Windows 7 (Virtualbox)
-
-    Put = times: 1596; time: 2532ms; middle: 1.59ms;
-    Get = times: 1500; time: 1939ms; middle: 1.29ms;
-    Del = times: 1596; time: 2142ms; middle: 1.34ms;
+```
+Put = times: 1596; time: 2532ms; middle: 1.59ms;
+Get = times: 1500; time: 1939ms; middle: 1.29ms;
+Del = times: 1596; time: 2142ms; middle: 1.34ms;
+```
 
 More about testing algorithm in [performance.html]().
 
