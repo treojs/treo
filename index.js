@@ -15,10 +15,6 @@ var dbs       = {};
 var methods   = ['get', 'all', 'put', 'del', 'clear'];
 var indexOf   = [].indexOf;
 
-function include(array, object) {
-  return indexOf.call(array, object) >= 0;
-}
-
 /**
  * Expose public api.
  */
@@ -87,20 +83,6 @@ function drop(dbName, cb) {
 }
 
 /**
- * Handle request errors.
- * Wrap callback and return function to manage event
- *
- * @options {Function} cb
- * @return {Function}
- */
-
-function onerror(cb) {
-  return function(event) {
-    cb(event.target.errorCode);
-  };
-}
-
-/**
  * Construtor for `Store` object
  * to wrap IndexedDB methods to nice async API
  *
@@ -121,6 +103,7 @@ function Store(dbName, storeName, key) {
  * Use cursor to iterate values
  *
  * @options {Function} cb
+ * @api public
  */
 
 Store.prototype.all = function(cb) {
@@ -128,7 +111,7 @@ Store.prototype.all = function(cb) {
     if (err) return cb(err);
 
     var result = [];
-    var req    = store.openCursor();
+    var req = store.openCursor();
     req.onerror = onerror(cb);
     req.onsuccess = function(event) {
       var cursor = event.target.result;
@@ -146,6 +129,7 @@ Store.prototype.all = function(cb) {
  * Delete all objects in store
  *
  * @options {Function} cb
+ * @api public
  */
 
 Store.prototype.clear = function(cb) {
@@ -163,6 +147,7 @@ Store.prototype.clear = function(cb) {
  *
  * @options {Mixin} key
  * @options {Function} cb
+ * @api public
  */
 
 Store.prototype.get = function(key, cb) {
@@ -180,6 +165,7 @@ Store.prototype.get = function(key, cb) {
  *
  * @options {Mixin} key
  * @options {Function} cb
+ * @api public
  */
 
 Store.prototype.del = function(key, cb) {
@@ -195,19 +181,25 @@ Store.prototype.del = function(key, cb) {
 /**
  * Put - replace or create object by `key` with `val`
  * Mix `key` to `val`
+ * Handle error for invalid key
  *
  * @options {Mixin} key
  * @options {Function} cb
+ * @api public
  */
 
 Store.prototype.put = function(key, val, cb) {
   this.getStore('readwrite', function(err, store, transaction) {
     if (err) return cb(err);
-
     val[this.key] = key;
-    var req = store.put(val);
-    req.onerror = onerror(cb);
-    transaction.oncomplete = function(event) { cb(null, val); };
+
+    try {
+      var req = store.put(val);
+      req.onerror = onerror(cb);
+      transaction.oncomplete = function(event) { cb(null, val); };
+    } catch (e) {
+      setTimeout(bind(null, cb, e));
+    }
   });
 };
 
@@ -217,6 +209,7 @@ Store.prototype.put = function(key, val, cb) {
  *
  * @options {String} mode - readwrite|readonly
  * @options {Function} cb
+ * @api private
  */
 
 Store.prototype.getStore = function(mode, cb) {
@@ -236,6 +229,7 @@ Store.prototype.getStore = function(mode, cb) {
  * Use dbs to manage db connections
  *
  * @options {Function} cb
+ * @api private
  */
 
 Store.prototype.getDb = function(cb) {
@@ -262,6 +256,7 @@ Store.prototype.getDb = function(cb) {
  *
  * @options {Object} db
  * @options {Function} cb
+ * @api private
  */
 
 Store.prototype.connectOrUpgrade = function(db, cb) {
@@ -278,6 +273,7 @@ Store.prototype.connectOrUpgrade = function(db, cb) {
  *
  * @options {Object} db
  * @options {Function} cb
+ * @api private
  */
 
 Store.prototype.connect = function(db, cb) {
@@ -291,6 +287,7 @@ Store.prototype.connect = function(db, cb) {
  *
  * @options {Object} db
  * @options {Function} cb
+ * @api private
  */
 
 Store.prototype.upgrade = function(db, cb) {
@@ -321,6 +318,7 @@ Store.prototype.upgrade = function(db, cb) {
  *
  * @options {Object} db
  * @options {Boolean} save
+ * @api private
  */
 
 Store.prototype.getUpgradeConfig = function(db, save) {
@@ -352,3 +350,25 @@ Store.prototype.getUpgradeConfig = function(db, save) {
   if (save) localStore(name, config);
   return { version: config.version, action: action };
 };
+
+/**
+ * Handle request errors.
+ * Wrap callback and return function to manage event
+ *
+ * @options {Function} cb
+ * @return {Function}
+ */
+
+function onerror(cb) {
+  return function(event) {
+    cb(event.target.errorCode);
+  };
+}
+
+/**
+ * Obvious include helper
+ */
+
+function include(array, object) {
+  return indexOf.call(array, object) >= 0;
+}

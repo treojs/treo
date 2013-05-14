@@ -154,14 +154,15 @@ describe('Indexed.create instance', function(){
         function(cb) { indexed([1], { name: 'note 1' }, cb); },
         function(cb) { indexed([2], { name: 'note 2' }, cb); },
         function(cb) { indexed('key', { name: 'note 3' }, cb); },
-        function(cb) { indexed(['doom', 3, [1, 2]], { name: 'note 4' }, cb); }
+        function(cb) { indexed(['doom', 3, [1, 2]], { name: 'note 4' }, cb); },
+        function(cb) { indexed('a b c', { name: 'note 5' }, cb); }
       ], done);
     });
 
     it('allows to delete by array key', function(done) {
       indexed.del([1], function(err1) {
         indexed.all(function(err2, values) {
-          expect(values).length(3);
+          expect(values).length(4);
           done(err1 || err2);
         });
       });
@@ -171,6 +172,15 @@ describe('Indexed.create instance', function(){
       indexed.get(['doom', 3, [1, 2]], function(err, note) {
         expect(note.name).equal('note 4');
         done(err);
+      });
+    });
+  });
+
+  describe('errors', function() {
+    it('returns error when key is invalid', function(done) {
+      indexed.put({ key: 1 }, {}, function(err, note) {
+        expect(err).not.null;
+        done();
       });
     });
   });
