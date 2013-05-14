@@ -3,6 +3,7 @@
 
   * added basic performance suite
   * put returns item as second argument and manage key value
+  * validate params: count + last one is always a function
 
 0.2.0 / 2013-05-13
 ==================

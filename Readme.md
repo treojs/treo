@@ -81,8 +81,6 @@ More about testing algorithm in [performance.html]().
 
 ### TODO
 
-  - validate params: count + last one is always a function
-  - DRY this.getStore around wrapper
   - add docs and api description
   - standalone release
   - performance: use different stores + move suite to jsperf

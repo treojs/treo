@@ -351,19 +351,26 @@ function onerror(cb) {
 
 /**
  * Helper to force transaction for current store
- * Also managed arguments and callback
+ * Also managed arguments count and callback
+ *
+ * @options {Number} argsCount
+ * @options {String} mode {readwrite|readonly}
+ * @options {Function} handler
+ * @return {Function}
  */
 
-function transaction(argsCount, mode, cb) {
+function transaction(argsCount, mode, handler) {
   return function() {
     var that = this;
     var args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+    var cb   = args[args.length - 1];
 
-    var originalCb = args[args.length - 1];
+    if (args.length !== argsCount) throw new TypeError('method has ' + argsCount + ' arguments');
+    if (typeof cb !== 'function')  throw new TypeError('callback required');
 
     this.getStore(mode, function(err, store, tr) {
-      if (err) return originalCb(err);
-      cb.apply(that, [store, tr].concat(args));
+      if (err) return cb(err);
+      handler.apply(that, [store, tr].concat(args));
     });
   };
 }

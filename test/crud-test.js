@@ -7,20 +7,6 @@ describe('Indexed.create instance', function(){
     indexed(null, done);
   });
 
-  it('returns a function', function(){
-    expect(indexed).a('function');
-  });
-
-  it('throws error when cb is not defined', function() {
-    expect(indexed).throw(/callback required/);
-  });
-
-  it('validates name paramether', function() {
-    expect(function() {
-      Indexed.create('smth here');
-    }).throw(/format/);
-  });
-
   describe('indexed(cb)', function() {
     it('returns an empty array', function(done) {
       indexed(function(err, values) {
@@ -177,11 +163,33 @@ describe('Indexed.create instance', function(){
   });
 
   describe('errors', function() {
+    it('throws error when cb is not defined', function() {
+      expect(indexed).throw(/callback required/);
+    });
+
+    it('validates name paramether', function() {
+      expect(function() {
+        Indexed.create('smth here');
+      }).throw(/format/);
+    });
+
     it('returns error when key is invalid', function(done) {
       indexed.put({ key: 1 }, {}, function(err, note) {
         expect(err).not.null;
         done();
       });
+    });
+
+    it('throws error when cb is not a function', function() {
+      expect(function() {
+        indexed('smth here');
+      }).throw(/callback/);
+    });
+
+    it('validates arguments count', function() {
+      expect(function() {
+        indexed.put(1, function() {});
+      }).throw(/method has 3 arguments/);
     });
   });
 });
