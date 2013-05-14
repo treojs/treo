@@ -207,7 +207,7 @@ Store.prototype.put = function(key, val, cb) {
     val[this.key] = key;
     var req = store.put(val);
     req.onerror = onerror(cb);
-    transaction.oncomplete = function(event) { cb(); };
+    transaction.oncomplete = function(event) { cb(null, val); };
   });
 };
 

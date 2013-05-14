@@ -79,7 +79,8 @@ describe('Indexed.create instance', function(){
 
   describe('indexed(key, val, cb)', function() {
     it('puts value to store', function(done) {
-      indexed(5, { name: 'note 5' }, function(err) {
+      indexed(5, { name: 'note 5' }, function(err, note) {
+        expect(note.name).equal('note 5');
         expect(err).undefined;
         done(err);
       });
@@ -121,7 +122,8 @@ describe('Indexed.create instance', function(){
     });
 
     it('put - updates existing value', function(done) {
-      indexed.put(3, { name: 'updated note 3' }, function(err) {
+      indexed.put(3, { name: 'updated note 3' }, function(err, note) {
+        expect(note._id).equal(3);
         expect(err).undefined;
         done(err);
       });
