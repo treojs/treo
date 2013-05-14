@@ -70,7 +70,7 @@ Get = times: 1500; time: 1939ms; middle: 1.29ms;
 Del = times: 1596; time: 2142ms; middle: 1.34ms;
 ```
 
-More about testing algorithm in [performance.html]().
+More about testing algorithm in [performance.html](https://github.com/ask11/indexed/blob/master/performance.html).
 
 ### Links for learning IndexedDB
 

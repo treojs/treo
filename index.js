@@ -189,7 +189,6 @@ Store.prototype.put = transaction(3, 'readwrite', function(store, tr, key, val, 
 
 /**
  * Creates new transaction and returns object store
- * Calls calback in current context
  *
  * @options {String} mode - readwrite|readonly
  * @options {Function} cb
@@ -203,7 +202,7 @@ Store.prototype.getStore = function(mode, cb) {
 
     var transaction = db.transaction([that.name], mode);
     var objectStore = transaction.objectStore(that.name);
-    cb.call(that, null, objectStore, transaction);
+    cb(null, objectStore, transaction);
   });
 };
 
@@ -351,7 +350,7 @@ function onerror(cb) {
 
 /**
  * Helper to force transaction for current store
- * Also managed arguments count and callback
+ * Also manages arguments count and callback
  *
  * @options {Number} argsCount
  * @options {String} mode {readwrite|readonly}
