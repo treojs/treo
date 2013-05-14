@@ -81,7 +81,7 @@ describe('Indexed.create instance', function(){
     it('puts value to store', function(done) {
       indexed(5, { name: 'note 5' }, function(err, note) {
         expect(note.name).equal('note 5');
-        expect(err).undefined;
+        expect(err).null;
         done(err);
       });
     });
@@ -124,7 +124,7 @@ describe('Indexed.create instance', function(){
     it('put - updates existing value', function(done) {
       indexed.put(3, { name: 'updated note 3' }, function(err, note) {
         expect(note._id).equal(3);
-        expect(err).undefined;
+        expect(err).null;
         done(err);
       });
     });
@@ -144,6 +144,33 @@ describe('Indexed.create instance', function(){
           expect(notes).length(0);
           done(err1 || err2);
         });
+      });
+    });
+  });
+
+  describe('keys', function() {
+    beforeEach(function(done) {
+      async.series([
+        function(cb) { indexed([1], { name: 'note 1' }, cb); },
+        function(cb) { indexed([2], { name: 'note 2' }, cb); },
+        function(cb) { indexed('key', { name: 'note 3' }, cb); },
+        function(cb) { indexed(['doom', 3, [1, 2]], { name: 'note 4' }, cb); }
+      ], done);
+    });
+
+    it('allows to delete by array key', function(done) {
+      indexed.del([1], function(err1) {
+        indexed.all(function(err2, values) {
+          expect(values).length(3);
+          done(err1 || err2);
+        });
+      });
+    });
+
+    it('allows to get access by complex key', function(done) {
+      indexed.get(['doom', 3, [1, 2]], function(err, note) {
+        expect(note.name).equal('note 4');
+        done(err);
       });
     });
   });

@@ -81,12 +81,9 @@ More about testing algorithm in [performance.html]().
 
 ### TODO
 
-  - test error cases: invalid key, delete with wrong key
-  - check that callback is a function
-  - batch method
+  - error cases: invalid key, callback is not a function
   - add docs and api description
   - standalone release
-  - performance: batch & clear - 20000 items + get all every 1000 items
   - performance: use different stores + move suite to jsperf
 
 ### Development

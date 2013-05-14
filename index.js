@@ -154,14 +154,14 @@ Store.prototype.clear = function(cb) {
 
     var req = store.clear();
     req.onerror = onerror(cb);
-    transaction.oncomplete = function(event) { cb(); };
+    transaction.oncomplete = function(event) { cb(null); };
   });
 };
 
 /**
  * Get object by `key`
  *
- * @options {Number|String} key
+ * @options {Mixin} key
  * @options {Function} cb
  */
 
@@ -178,7 +178,7 @@ Store.prototype.get = function(key, cb) {
 /**
  * Delete object by `key`
  *
- * @options {Number|String} key
+ * @options {Mixin} key
  * @options {Function} cb
  */
 
@@ -188,7 +188,7 @@ Store.prototype.del = function(key, cb) {
 
     var req = store.delete(key);
     req.onerror = onerror(cb);
-    transaction.oncomplete = function(event) { cb(); };
+    transaction.oncomplete = function(event) { cb(null); };
   });
 };
 
@@ -196,7 +196,7 @@ Store.prototype.del = function(key, cb) {
  * Put - replace or create object by `key` with `val`
  * Mix `key` to `val`
  *
- * @options {Number|String} key
+ * @options {Mixin} key
  * @options {Function} cb
  */
 
