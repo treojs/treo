@@ -1,17 +1,17 @@
-0.2.1 / 2013-05-..
+0.2.1 / 2013-05-14
 ==================
 
   * added basic performance suite
-  * put returns item as second argument
+  * put returns item as second argument and manage key value
 
 0.2.0 / 2013-05-13
 ==================
 
-  * manage onerror callback
   * share one db connection and manage migrations
   * update db.version when key attribute was changed
   * work correctly when localStorage is empty
   * shortcut methods: 'get', 'put', 'del', 'all', 'clear'
+  * manage onerror callback
 
 0.1.0 / 2013-05-12
 ==================

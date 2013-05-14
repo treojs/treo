@@ -14,14 +14,17 @@ var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedD
 var dbs       = {};
 var methods   = ['get', 'all', 'put', 'del', 'clear'];
 var indexOf   = [].indexOf;
+var slice     = [].slice;
 
 /**
  * Expose public api.
  */
 
-exports.supported = !! indexedDB;
 exports.create    = createIndexed;
 exports.drop      = drop;
+
+// https://github.com/Modernizr/Modernizr/blob/master/feature-detects/indexedDB.js
+exports.supported = !! indexedDB;
 
 /**
  * Create a new indexed instance.
@@ -106,41 +109,20 @@ function Store(dbName, storeName, key) {
  * @api public
  */
 
-Store.prototype.all = function(cb) {
-  this.getStore('readonly', function(err, store) {
-    if (err) return cb(err);
-
-    var result = [];
-    var req = store.openCursor();
-    req.onerror = onerror(cb);
-    req.onsuccess = function(event) {
-      var cursor = event.target.result;
-      if (cursor) {
-        result.push(cursor.value);
-        cursor.continue();
-      } else {
-        cb(null, result);
-      }
-    };
-  });
-};
-
-/**
- * Delete all objects in store
- *
- * @options {Function} cb
- * @api public
- */
-
-Store.prototype.clear = function(cb) {
-  this.getStore('readwrite', function(err, store, transaction) {
-    if (err) return cb(err);
-
-    var req = store.clear();
-    req.onerror = onerror(cb);
-    transaction.oncomplete = function(event) { cb(null); };
-  });
-};
+Store.prototype.all = transaction(1, 'readonly', function(store, tr, cb) {
+  var result = [];
+  var req = store.openCursor();
+  req.onerror = onerror(cb);
+  req.onsuccess = function(event) {
+    var cursor = event.target.result;
+    if (cursor) {
+      result.push(cursor.value);
+      cursor.continue();
+    } else {
+      cb(null, result);
+    }
+  };
+});
 
 /**
  * Get object by `key`
@@ -150,15 +132,24 @@ Store.prototype.clear = function(cb) {
  * @api public
  */
 
-Store.prototype.get = function(key, cb) {
-  this.getStore('readonly', function(err, store) {
-    if (err) return cb(err);
+Store.prototype.get = transaction(2, 'readonly', function(store, tr, key, cb) {
+  var req = store.get(key);
+  req.onerror = onerror(cb);
+  req.onsuccess = function(event) { cb(null, req.result); };
+});
 
-    var req = store.get(key);
-    req.onerror = onerror(cb);
-    req.onsuccess = function(event) { cb(null, req.result); };
-  });
-};
+/**
+ * Delete all objects in store
+ *
+ * @options {Function} cb
+ * @api public
+ */
+
+Store.prototype.clear = transaction(1, 'readwrite', function(store, tr, cb) {
+  var req = store.clear();
+  req.onerror = onerror(cb);
+  tr.oncomplete = function(event) { cb(null); };
+});
 
 /**
  * Delete object by `key`
@@ -168,15 +159,11 @@ Store.prototype.get = function(key, cb) {
  * @api public
  */
 
-Store.prototype.del = function(key, cb) {
-  this.getStore('readwrite', function(err, store, transaction) {
-    if (err) return cb(err);
-
-    var req = store.delete(key);
-    req.onerror = onerror(cb);
-    transaction.oncomplete = function(event) { cb(null); };
-  });
-};
+Store.prototype.del = transaction(2, 'readwrite', function(store, tr, key, cb) {
+  var req = store.delete(key);
+  req.onerror = onerror(cb);
+  tr.oncomplete = function(event) { cb(null); };
+});
 
 /**
  * Put - replace or create object by `key` with `val`
@@ -184,24 +171,21 @@ Store.prototype.del = function(key, cb) {
  * Handle error for invalid key
  *
  * @options {Mixin} key
+ * @options {Mixin} val
  * @options {Function} cb
  * @api public
  */
 
-Store.prototype.put = function(key, val, cb) {
-  this.getStore('readwrite', function(err, store, transaction) {
-    if (err) return cb(err);
-    val[this.key] = key;
-
-    try {
-      var req = store.put(val);
-      req.onerror = onerror(cb);
-      transaction.oncomplete = function(event) { cb(null, val); };
-    } catch (e) {
-      setTimeout(bind(null, cb, e));
-    }
-  });
-};
+Store.prototype.put = transaction(3, 'readwrite', function(store, tr, key, val, cb) {
+  val[this.key] = key;
+  try {
+    var req = store.put(val);
+    req.onerror = onerror(cb);
+    tr.oncomplete = function(event) { cb(null, val); };
+  } catch (err) {
+    setTimeout(bind(null, cb, err));
+  }
+});
 
 /**
  * Creates new transaction and returns object store
@@ -327,9 +311,9 @@ Store.prototype.getUpgradeConfig = function(db, save) {
   var config  = localStore(name) || { version: version, stores: [], keys: {} };
   var action  = null;
 
-  if (!include(config.stores, this.name)) {
+  if (config.stores.indexOf(this.name) < 0) {
     config.stores.push(this.name);
-    if (!include(db.objectStoreNames, this.name)) {
+    if (indexOf.call(db.objectStoreNames, this.name) < 0) {
       config.version += 1;
       action = 'create';
     }
@@ -366,9 +350,20 @@ function onerror(cb) {
 }
 
 /**
- * Obvious include helper
+ * Helper to force transaction for current store
+ * Also managed arguments and callback
  */
 
-function include(array, object) {
-  return indexOf.call(array, object) >= 0;
+function transaction(argsCount, mode, cb) {
+  return function() {
+    var that = this;
+    var args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+
+    var originalCb = args[args.length - 1];
+
+    this.getStore(mode, function(err, store, tr) {
+      if (err) return originalCb(err);
+      cb.apply(that, [store, tr].concat(args));
+    });
+  };
 }
