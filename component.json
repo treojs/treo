@@ -2,11 +2,11 @@
   "name": "indexed",
   "repo": "ask11/indexed",
   "description": "High-level wrapper around IndexedDB API",
-  "version": "0.2.1",
-  "keywords": [],
+  "version": "0.3.0",
+  "keywords": ["IndexedDB", "store", "data", "offline", "LevelDB"],
   "dependencies": {
     "yields/store": "*",
-    "component/bind": "*"
+    "timoxley/next-tick": "*"
   },
   "development": {},
   "license": "MIT",
