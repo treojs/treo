@@ -21,8 +21,6 @@ var slice     = [].slice;
 
 module.exports    = exports = Indexed;
 exports.drop      = drop;
-
-// https://github.com/Modernizr/Modernizr/blob/master/feature-detects/indexedDB.js
 exports.supported = !! indexedDB;
 
 /**
@@ -47,7 +45,7 @@ function drop(dbName, cb) {
 }
 
 /**
- * Construtor for `Indexed` object to wrap IndexedDB methods with nice async API.
+ * Construtor to wrap IndexedDB API with nice async methods.
  * `name` contains db-name and store-name splited with colon.
  *
  * Example:
@@ -74,8 +72,7 @@ function Indexed(name, options) {
 }
 
 /**
- * Returns all values from the object store.
- * Use cursor to iterate values.
+ * Get all values from the object store.
  *
  * @options {Function} cb
  * @api public
@@ -111,7 +108,7 @@ Indexed.prototype.get = transaction(2, 'readonly', function(store, tr, key, cb) 
 });
 
 /**
- * Delete all objects in store.
+ * Clear objects store.
  *
  * @options {Function} cb
  * @api public
@@ -138,9 +135,8 @@ Indexed.prototype.del = transaction(2, 'readwrite', function(store, tr, key, cb)
 });
 
 /**
- * Replace or create object by `key` with `val`.
+ * Put - replace or create object by `key` with `val`.
  * Extends `val` with `key` automatically.
- * Handles error for invalid key.
  *
  * @options {Mixin} key
  * @options {Mixin} val
@@ -160,16 +156,16 @@ Indexed.prototype.put = transaction(3, 'readwrite', function(store, tr, key, val
 });
 
 /**
- * Creates new transaction and returns object store
+ * Creates new transaction and returns object store.
  *
  * @options {String} mode - readwrite|readonly
  * @options {Function} cb
  * @api private
  */
 
-Indexed.prototype.getStore = function(mode, cb) {
+Indexed.prototype._getStore = function(mode, cb) {
   var that = this;
-  this.getDb(function(err, db) {
+  this._getDb(function(err, db) {
     if (err) return cb(err);
 
     var transaction = db.transaction([that.name], mode);
@@ -179,46 +175,44 @@ Indexed.prototype.getStore = function(mode, cb) {
 };
 
 /**
- * Returns db instance
- * Performs connection and upgrade if needed
- * Use dbs to manage db connections
+ * Returns db instance, performs connection and upgrade if needed.
  *
  * @options {Function} cb
  * @api private
  */
 
-Indexed.prototype.getDb = function(cb) {
+Indexed.prototype._getDb = function(cb) {
   var that = this;
   var db   = dbs[this.dbName];
 
   if (db) {
     if (this.connected) return cb(null, db);
-    this.connectOrUpgrade(db, cb);
+    this._connectOrUpgrade(db, cb);
   } else {
     var req = indexedDB.open(this.dbName);
     req.onerror = onerror(cb);
     req.onsuccess = function(event) {
       var db = event.target.result;
       dbs[that.dbName] = db;
-      that.connectOrUpgrade(db, cb);
+      that._connectOrUpgrade(db, cb);
     };
   }
 };
 
 /**
- * Check that `db.version` is equal to config version
- * Performs connect of db upgrade
+ * Check that `db.version` is equal to config version or
+ * Performs connect or db upgrade.
  *
  * @options {Object} db
  * @options {Function} cb
  * @api private
  */
 
-Indexed.prototype.connectOrUpgrade = function(db, cb) {
-  var config = this.getUpgradeConfig(db, false);
+Indexed.prototype._connectOrUpgrade = function(db, cb) {
+  var config = this._getUpgradeConfig(db, false);
 
   if (config.version !== db.version) {
-    this.upgrade(db, cb);
+    this._upgrade(db, cb);
   } else {
     this.connected = true;
     cb(null, db);
@@ -226,17 +220,17 @@ Indexed.prototype.connectOrUpgrade = function(db, cb) {
 };
 
 /**
- * Close current db connection and open new
- * Create object store if needed and recreate it when key options changed
+ * Close current db connection and open new.
+ * Create object store if needed and recreate it when keyPath changed.
  *
  * @options {Object} db
  * @options {Function} cb
  * @api private
  */
 
-Indexed.prototype.upgrade = function(db, cb) {
+Indexed.prototype._upgrade = function(db, cb) {
   var that   = this;
-  var config = this.getUpgradeConfig(db, true);
+  var config = this._getUpgradeConfig(db, true);
 
   db.close();
   var req = indexedDB.open(this.dbName, config.version);
@@ -256,17 +250,16 @@ Indexed.prototype.upgrade = function(db, cb) {
 };
 
 /**
- * Returns config for upgrade of `db`. New version and action.
- * Check existing of store with valid keyPath.
- * Save config to localStorage when `save` is true
- * Prefer info from db to stored config
+ * Returns config for upgrade of `db`: new version and action.
+ * Prefers info from db to stored config.
+ * Backup config to localStorage when `save` is true.
  *
  * @options {Object} db
  * @options {Boolean} save
  * @api private
  */
 
-Indexed.prototype.getUpgradeConfig = function(db, save) {
+Indexed.prototype._getUpgradeConfig = function(db, save) {
   var name    = 'indexed-' + this.dbName;
   var version = db.version || 1;
   var config  = store(name) || { version: version, stores: [], keys: {} };
@@ -297,8 +290,7 @@ Indexed.prototype.getUpgradeConfig = function(db, save) {
 };
 
 /**
- * Handle request errors.
- * Wrap callback and return function to manage event
+ * Helper to manage errors.
  *
  * @options {Function} cb
  * @return {Function}
@@ -311,8 +303,8 @@ function onerror(cb) {
 }
 
 /**
- * Helper to force transaction for current store
- * Also manages arguments count and callback
+ * Helper to force new transaction for current store.
+ * Also it manages arguments count and callback.
  *
  * @options {Number} argsCount
  * @options {String} mode {readwrite|readonly}
@@ -322,14 +314,15 @@ function onerror(cb) {
 
 function transaction(argsCount, mode, handler) {
   return function() {
-    var that = this;
-    var args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
-    var cb   = args[args.length - 1];
+    var that     = this;
+    var args     = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+    var cb       = args[args.length - 1];
+    var argsName = argsCount === 1 ? ' argument' : ' arguments';
 
-    if (args.length !== argsCount) throw new TypeError('method has ' + argsCount + ' arguments');
+    if (args.length !== argsCount) throw new TypeError('method has ' + argsCount + argsName);
     if (typeof cb !== 'function')  throw new TypeError('callback required');
 
-    this.getStore(mode, function(err, store, tr) {
+    this._getStore(mode, function(err, store, tr) {
       if (err) return cb(err);
       handler.apply(that, [store, tr].concat(args));
     });

@@ -88,7 +88,7 @@ See [performance.html](https://github.com/ask11/indexed/blob/master/performance.
   - `npm test` to ensure that all tests pass
   - `npm start` to run mocha's test server and watcher
 
-### TODO:
+### TODO
 
   - add API docs with description of migrations and callbacks
   - performance: use different stores + move suite to jsperf.
