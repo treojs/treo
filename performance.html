@@ -19,9 +19,9 @@
     var Indexed  = require('indexed');
 
     Indexed.drop('notepad', function(err) {
-      var notes    = Indexed.create('notepad:notes');
-      var tags     = Indexed.create('notepad:tags');
-      var notepads = Indexed.create('notepad:notepads');
+      var notes    = new Indexed('notepad:notes');
+      var tags     = new Indexed('notepad:tags');
+      var notepads = new Indexed('notepad:notepads');
 
       function fibonacci(n) {
         return (n <= 0) ? 0 : (n === 1) ? 1 : fibonacci(n-1) + fibonacci(n-2);
@@ -42,11 +42,11 @@
         var length = array.length;
 
         append(name
-          + ' = times: '
+          + ' = count: '
           + length
           + '; time: '
           + time
-          + 'ms; middle: '
+          + 'ms; mean: '
           + (time / length).toFixed(2)
           + 'ms;');
       }
