@@ -3,8 +3,8 @@
  * Module dependencies.
  */
 
-var localStore = require('store');
-var bind       = require('bind');
+var store    = require('store');
+var nextTick = require('next-tick');
 
 /**
  * Local variables.
@@ -12,7 +12,6 @@ var bind       = require('bind');
 
 var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
 var dbs       = {};
-var methods   = ['get', 'all', 'put', 'del', 'clear'];
 var indexOf   = [].indexOf;
 var slice     = [].slice;
 
@@ -20,60 +19,22 @@ var slice     = [].slice;
  * Expose public api.
  */
 
-exports.create    = createIndexed;
+module.exports    = exports = Indexed;
 exports.drop      = drop;
 
 // https://github.com/Modernizr/Modernizr/blob/master/feature-detects/indexedDB.js
 exports.supported = !! indexedDB;
 
 /**
- * Create a new indexed instance.
- * Name should contains db-name and store-name splited with colon
- *
- * Example:
- *
- *   // connect to db with name `notepad`, use store `notes`
- *   // use _id field as a key
- *   indexed = Indexed.create('notepad:notes', { key: '_id' });
- *
- * @options {String} name
- * @options {Object} options
- * @return {Object} self
- * @api public
- */
-
-function createIndexed(name, options) {
-  if (typeof name !== 'string') throw new TypeError('name required');
-  if (!options) options = {};
-  var params = name.split(':');
-  if (params.length !== 2) throw new TypeError('name has format "dbName:storeName"');
-
-  var key   = options.key || 'id';
-  var store = new Store(params[0], params[1], key);
-
-  var indexed = function(key, val, cb) {
-    switch (arguments.length) {
-      case 3: return val === null ? store.del(key, cb) : store.put(key, val, cb);
-      case 2: return key === null ? store.clear(val)   : store.get(key, val);
-      case 1: return store.all(key);
-      case 0: throw new TypeError('callback required');
-    }
-  };
-  for (var i = 0; i < methods.length; i++) {
-    indexed[methods[i]] = bind(store, store[methods[i]]);
-  }
-
-  return indexed;
-}
-
-/**
  * Drop IndexedDB instance by name.
  *
+ * @options {String} dbName
+ * @options {function} cb
  * @api public
  */
 
 function drop(dbName, cb) {
-  localStore('indexed-' + dbName, null);
+  store('indexed-' + dbName, null);
 
   if (dbs[dbName]) {
     db.close();
@@ -86,30 +47,41 @@ function drop(dbName, cb) {
 }
 
 /**
- * Construtor for `Store` object
- * to wrap IndexedDB methods to nice async API
+ * Construtor for `Indexed` object to wrap IndexedDB methods with nice async API.
+ * `name` contains db-name and store-name splited with colon.
  *
- * @options {String} dbName
- * @options {String} storeName
- * @options {String} key
+ * Example:
+ *
+ *   // connect to db with name `notepad`, use store `notes`
+ *   // use _id field as a key
+ *   indexed = new Indexed('notepad:notes', { key: '_id' });
+ *
+ * @options {String} name
+ * @options {Object} options
+ * @api public
  */
 
-function Store(dbName, storeName, key) {
-  this.dbName    = dbName;
-  this.name      = storeName;
-  this.key       = key;
+function Indexed(name, options) {
+  if (typeof name !== 'string') throw new TypeError('name required');
+  if (!options) options = {};
+  var params = name.split(':');
+  if (params.length !== 2) throw new TypeError('name has format "dbName:storeName"');
+
+  this.dbName    = params[0];
+  this.name      = params[1];
+  this.key       = options.key || 'id';
   this.connected = false;
 }
 
 /**
- * Returns all values from the object store
- * Use cursor to iterate values
+ * Returns all values from the object store.
+ * Use cursor to iterate values.
  *
  * @options {Function} cb
  * @api public
  */
 
-Store.prototype.all = transaction(1, 'readonly', function(store, tr, cb) {
+Indexed.prototype.all = transaction(1, 'readonly', function(store, tr, cb) {
   var result = [];
   var req = store.openCursor();
   req.onerror = onerror(cb);
@@ -125,50 +97,50 @@ Store.prototype.all = transaction(1, 'readonly', function(store, tr, cb) {
 });
 
 /**
- * Get object by `key`
+ * Get object by `key`.
  *
  * @options {Mixin} key
  * @options {Function} cb
  * @api public
  */
 
-Store.prototype.get = transaction(2, 'readonly', function(store, tr, key, cb) {
+Indexed.prototype.get = transaction(2, 'readonly', function(store, tr, key, cb) {
   var req = store.get(key);
   req.onerror = onerror(cb);
   req.onsuccess = function(event) { cb(null, req.result); };
 });
 
 /**
- * Delete all objects in store
+ * Delete all objects in store.
  *
  * @options {Function} cb
  * @api public
  */
 
-Store.prototype.clear = transaction(1, 'readwrite', function(store, tr, cb) {
+Indexed.prototype.clear = transaction(1, 'readwrite', function(store, tr, cb) {
   var req = store.clear();
   req.onerror = onerror(cb);
   tr.oncomplete = function(event) { cb(null); };
 });
 
 /**
- * Delete object by `key`
+ * Delete object by `key`.
  *
  * @options {Mixin} key
  * @options {Function} cb
  * @api public
  */
 
-Store.prototype.del = transaction(2, 'readwrite', function(store, tr, key, cb) {
+Indexed.prototype.del = transaction(2, 'readwrite', function(store, tr, key, cb) {
   var req = store.delete(key);
   req.onerror = onerror(cb);
   tr.oncomplete = function(event) { cb(null); };
 });
 
 /**
- * Put - replace or create object by `key` with `val`
- * Mix `key` to `val`
- * Handle error for invalid key
+ * Replace or create object by `key` with `val`.
+ * Extends `val` with `key` automatically.
+ * Handles error for invalid key.
  *
  * @options {Mixin} key
  * @options {Mixin} val
@@ -176,14 +148,14 @@ Store.prototype.del = transaction(2, 'readwrite', function(store, tr, key, cb) {
  * @api public
  */
 
-Store.prototype.put = transaction(3, 'readwrite', function(store, tr, key, val, cb) {
+Indexed.prototype.put = transaction(3, 'readwrite', function(store, tr, key, val, cb) {
   val[this.key] = key;
   try {
     var req = store.put(val);
     req.onerror = onerror(cb);
     tr.oncomplete = function(event) { cb(null, val); };
   } catch (err) {
-    setTimeout(bind(null, cb, err));
+    nextTick(function(){ cb(err); });
   }
 });
 
@@ -195,7 +167,7 @@ Store.prototype.put = transaction(3, 'readwrite', function(store, tr, key, val, 
  * @api private
  */
 
-Store.prototype.getStore = function(mode, cb) {
+Indexed.prototype.getStore = function(mode, cb) {
   var that = this;
   this.getDb(function(err, db) {
     if (err) return cb(err);
@@ -215,7 +187,7 @@ Store.prototype.getStore = function(mode, cb) {
  * @api private
  */
 
-Store.prototype.getDb = function(cb) {
+Indexed.prototype.getDb = function(cb) {
   var that = this;
   var db   = dbs[this.dbName];
 
@@ -242,26 +214,15 @@ Store.prototype.getDb = function(cb) {
  * @api private
  */
 
-Store.prototype.connectOrUpgrade = function(db, cb) {
+Indexed.prototype.connectOrUpgrade = function(db, cb) {
   var config = this.getUpgradeConfig(db, false);
 
-  if (config.version !== db.version)
+  if (config.version !== db.version) {
     this.upgrade(db, cb);
-  else
-    this.connect(db, cb);
-};
-
-/**
- * Mark current store as connected
- *
- * @options {Object} db
- * @options {Function} cb
- * @api private
- */
-
-Store.prototype.connect = function(db, cb) {
-  this.connected = true;
-  cb(null, db);
+  } else {
+    this.connected = true;
+    cb(null, db);
+  }
 };
 
 /**
@@ -273,7 +234,7 @@ Store.prototype.connect = function(db, cb) {
  * @api private
  */
 
-Store.prototype.upgrade = function(db, cb) {
+Indexed.prototype.upgrade = function(db, cb) {
   var that   = this;
   var config = this.getUpgradeConfig(db, true);
 
@@ -283,7 +244,8 @@ Store.prototype.upgrade = function(db, cb) {
   req.onsuccess = function(event) {
     var db = event.target.result;
     dbs[that.dbName] = db;
-    that.connect(db, cb);
+    that.connected = true;
+    cb(null, db);
   };
   req.onupgradeneeded = function(event) {
     var db = this.result;
@@ -304,10 +266,10 @@ Store.prototype.upgrade = function(db, cb) {
  * @api private
  */
 
-Store.prototype.getUpgradeConfig = function(db, save) {
+Indexed.prototype.getUpgradeConfig = function(db, save) {
   var name    = 'indexed-' + this.dbName;
   var version = db.version || 1;
-  var config  = localStore(name) || { version: version, stores: [], keys: {} };
+  var config  = store(name) || { version: version, stores: [], keys: {} };
   var action  = null;
 
   if (config.stores.indexOf(this.name) < 0) {
@@ -330,7 +292,7 @@ Store.prototype.getUpgradeConfig = function(db, save) {
     }
   }
 
-  if (save) localStore(name, config);
+  if (save) store(name, config);
   return { version: config.version, action: action };
 };
 
