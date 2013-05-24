@@ -49,13 +49,14 @@ indexed.clear(function(err) {});
 
 ## API
 
-All callbacks follow node.js style, where `err` is a first argument. In terms of IndexedDB, it helps to handle `onerror` event that exists in all requests. The power feature of Indexed and 50% of source code is a smooth migrations and DB connections. You don't need to worry about storing db-connections, manage [versions](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_version), adding new stores with `onupgradeneeded`. It just works in background.
+All callbacks follow node.js style, where `err` is a first argument. In terms of IndexedDB, it helps to handle `onerror` event that probably exists in all requests. The power feature of Indexed, that takes up 50% of source code, is a smooth migrations and DB connections. You don't need to worry about db connections, db [versions](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_version), adding new stores with `onupgradeneeded`. It just works in background.
+
 Indexed is strict about parameters to prevent silly typos. You always need to provide callback and use required amount of arguments for different methods.
 
-### new Indexed(name, options)
+### Indexed(name, options)
 
 Create a new Indexed instance to work with selected [store](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBObjectStore) and [db](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBDatabase). `name` follows simple convention `db-name:store-name`.
-`options` parameter is optional and you can define [keyPath](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_keypath) value as a `key` option. It will the primary unique key of the selected store. If you will change key for existing store it will recreated without data.
+`options` parameter is optional and helps you define [keyPath](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_keypath) value as a `key` option. If you change key for existing store, it will recreated without data.
 
 ```js
 var tags = new Indexed('notepad:tags', { key: 'updatedAt' });
@@ -63,16 +64,17 @@ var tags = new Indexed('notepad:tags', { key: 'updatedAt' });
 
 ### Indexed.supported
 
-Flag to control that IndexedDB is available. If it is false, you can use [ask11/weak-indexed] with indentical async API, that downgrades to localStorage and supports all brosers since IE6. Also check [caniuse page](http://caniuse.com/#search=indexeddb).
+Flag to control that IndexedDB is available. If it is false, you can use [ask11/weak-indexed](https://github.com/ask11/weak-indexed) with indentical async API, that downgrades to localStorage and supports all brosers since IE6. Also check caniuse [page](http://caniuse.com/#search=indexeddb).
 
 ### Indexed#put(key, val, cb)
 
-Put is the primary method for inserting data into the store. `key` will automatically mixed to the `val`. Put means insert or replace, so you can't update only one attribute.
+Put is the primary method for inserting data into the store, `key` will automatically mixed to the `val`. Put means insert or replace, so you can't update only one attribute.
 
 ```js
 tags.put(Date.now(), { name: 'tag 1' }, function(err, tag) {
   // tag is { updatedAt: 1369373813125, name: 'tag 1' }
 });
+```
 
 In order to add a lot of data use [async](https://github.com/caolan/async) control-flow library.
 
