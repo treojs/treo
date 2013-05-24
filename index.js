@@ -52,7 +52,7 @@ function drop(dbName, cb) {
  *
  *   // connect to db with name `notepad`, use store `notes`
  *   // use _id field as a key
- *   indexed = new Indexed('notepad:notes', { key: '_id' });
+ *   var indexed = new Indexed('notepad:notes', { key: '_id' });
  *
  * @options {String} name
  * @options {Object} options
@@ -108,7 +108,7 @@ Indexed.prototype.get = transaction(2, 'readonly', function(store, tr, key, cb) 
 });
 
 /**
- * Clear objects store.
+ * Clear object store.
  *
  * @options {Function} cb
  * @api public
