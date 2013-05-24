@@ -2,7 +2,7 @@
   "name": "indexed",
   "repo": "ask11/indexed",
   "description": "High-level wrapper around IndexedDB API",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "keywords": ["IndexedDB", "store", "data", "offline", "LevelDB"],
   "dependencies": {
     "yields/store": "*",

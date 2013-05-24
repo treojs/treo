@@ -1,3 +1,8 @@
+## 0.3.1 / 2013-05-24
+
+  * added API docs
+  * bug fixes
+
 ## 0.3.0 / 2013-05-23
 
   * removed function interface

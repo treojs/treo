@@ -362,8 +362,6 @@ var slice     = [].slice;
 
 module.exports    = exports = Indexed;
 exports.drop      = drop;
-
-// https://github.com/Modernizr/Modernizr/blob/master/feature-detects/indexedDB.js
 exports.supported = !! indexedDB;
 
 /**
@@ -388,14 +386,14 @@ function drop(dbName, cb) {
 }
 
 /**
- * Construtor for `Indexed` object to wrap IndexedDB methods with nice async API.
+ * Construtor to wrap IndexedDB API with nice async methods.
  * `name` contains db-name and store-name splited with colon.
  *
  * Example:
  *
  *   // connect to db with name `notepad`, use store `notes`
  *   // use _id field as a key
- *   indexed = new Indexed('notepad:notes', { key: '_id' });
+ *   var indexed = new Indexed('notepad:notes', { key: '_id' });
  *
  * @options {String} name
  * @options {Object} options
@@ -415,8 +413,7 @@ function Indexed(name, options) {
 }
 
 /**
- * Returns all values from the object store.
- * Use cursor to iterate values.
+ * Get all values from the object store.
  *
  * @options {Function} cb
  * @api public
@@ -452,7 +449,7 @@ Indexed.prototype.get = transaction(2, 'readonly', function(store, tr, key, cb) 
 });
 
 /**
- * Delete all objects in store.
+ * Clear object store.
  *
  * @options {Function} cb
  * @api public
@@ -479,9 +476,8 @@ Indexed.prototype.del = transaction(2, 'readwrite', function(store, tr, key, cb)
 });
 
 /**
- * Replace or create object by `key` with `val`.
+ * Put - replace or create object by `key` with `val`.
  * Extends `val` with `key` automatically.
- * Handles error for invalid key.
  *
  * @options {Mixin} key
  * @options {Mixin} val
@@ -501,7 +497,7 @@ Indexed.prototype.put = transaction(3, 'readwrite', function(store, tr, key, val
 });
 
 /**
- * Creates new transaction and returns object store
+ * Creates new transaction and returns object store.
  *
  * @options {String} mode - readwrite|readonly
  * @options {Function} cb
@@ -520,9 +516,7 @@ Indexed.prototype._getStore = function(mode, cb) {
 };
 
 /**
- * Returns db instance
- * Performs connection and upgrade if needed
- * Use dbs to manage db connections
+ * Returns db instance, performs connection and upgrade if needed.
  *
  * @options {Function} cb
  * @api private
@@ -547,8 +541,8 @@ Indexed.prototype._getDb = function(cb) {
 };
 
 /**
- * Check that `db.version` is equal to config version
- * Performs connect of db _upgrade
+ * Check that `db.version` is equal to config version or
+ * Performs connect or db upgrade.
  *
  * @options {Object} db
  * @options {Function} cb
@@ -567,8 +561,8 @@ Indexed.prototype._connectOrUpgrade = function(db, cb) {
 };
 
 /**
- * Close current db connection and open new
- * Create object store if needed and recreate it when key options changed
+ * Close current db connection and open new.
+ * Create object store if needed and recreate it when keyPath changed.
  *
  * @options {Object} db
  * @options {Function} cb
@@ -597,10 +591,9 @@ Indexed.prototype._upgrade = function(db, cb) {
 };
 
 /**
- * Returns config for _upgrade of `db`. New version and action.
- * Check existing of store with valid keyPath.
- * Save config to localStorage when `save` is true
- * Prefer info from db to stored config
+ * Returns config for upgrade of `db`: new version and action.
+ * Prefers info from db to stored config.
+ * Backup config to localStorage when `save` is true.
  *
  * @options {Object} db
  * @options {Boolean} save
@@ -638,8 +631,7 @@ Indexed.prototype._getUpgradeConfig = function(db, save) {
 };
 
 /**
- * Handle request errors.
- * Wrap callback and return function to manage event
+ * Helper to manage errors.
  *
  * @options {Function} cb
  * @return {Function}
@@ -652,8 +644,8 @@ function onerror(cb) {
 }
 
 /**
- * Helper to force transaction for current store
- * Also manages arguments count and callback
+ * Helper to force new transaction for current store.
+ * Also it manages arguments count and callback.
  *
  * @options {Number} argsCount
  * @options {String} mode {readwrite|readonly}
