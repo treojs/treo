@@ -1,6 +1,7 @@
 describe('CRUD', function(){
   var expect  = chai.expect;
   var Indexed = require('indexed');
+  if (!Indexed.supported) return;
   var indexed = new Indexed('notepad:notes', { key: '_id' });
 
   beforeEach(function(done) {

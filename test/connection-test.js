@@ -2,6 +2,7 @@ describe('Connection and schema management', function() {
   var expect  = chai.expect;
   var store   = require('store');
   var Indexed = require('indexed');
+  if (!Indexed.supported) return;
 
   it('connect to multiply stores in one db', function(done) {
     Indexed.drop('testapp1', function(err) {
