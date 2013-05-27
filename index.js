@@ -192,7 +192,7 @@ Indexed.prototype._getDb = function(cb) {
     var req = indexedDB.open(this.dbName);
     req.onerror = onerror(cb);
     req.onsuccess = function(event) {
-      var db = event.target.result;
+      var db = this.result;
       dbs[that.dbName] = db;
       that._connectOrUpgrade(db, cb);
     };
