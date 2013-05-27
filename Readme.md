@@ -66,6 +66,8 @@ var tags = new Indexed('notepad:tags', { key: 'updatedAt' });
 
 Flag to control that IndexedDB is available. If it is false, you can use [ask11/weak-indexed](https://github.com/ask11/weak-indexed) with indentical async API, that downgrades to localStorage and supports all brosers since IE6. Also check caniuse [page](http://caniuse.com/#search=indexeddb).
 
+Indexed tryes to build on top of latest standarts, so it works on Chrome 25+, IE10+, FF13+. The reasons for this requirements are *2-parameter open* and *string values for transaction modes*. Check [MDN Browser compatibility](https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase#Browser_Compatibility) for irrefragable answer.
+
 ### Indexed#put(key, val, cb)
 
 Put is the primary method for inserting data into the store, `key` will automatically mixed to the `val`. Put means insert or replace, so you can't update only one attribute.

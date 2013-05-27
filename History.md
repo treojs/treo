@@ -1,3 +1,7 @@
+## 0.3.2 / 2013-..-..
+
+  * improved `Indexed.supported` to check latest standart
+
 ## 0.3.1 / 2013-05-24
 
   * added API docs
