@@ -10,10 +10,21 @@ var nextTick = require('next-tick');
  * Local variables.
  */
 
-var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
-var dbs       = {};
-var indexOf   = [].indexOf;
-var slice     = [].slice;
+var indexedDB      = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
+var IDBDatabase    = window.webkitIDBDatabase || window.IDBDatabase;
+var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction;
+var dbs            = {};
+var indexOf        = [].indexOf;
+var slice          = [].slice;
+
+/**
+ * Check support of latest standarts.
+ * https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase#Browser_Compatibility
+ */
+
+var hasOnUpgradeEvent = ! IDBDatabase.prototype.setVersion;
+var hasStringModes    = IDBTransaction.READ_WRITE !== 1;
+var hasIndexedDB      = !! indexedDB;
 
 /**
  * Expose public api.
@@ -21,7 +32,7 @@ var slice     = [].slice;
 
 module.exports    = exports = Indexed;
 exports.drop      = drop;
-exports.supported = !! indexedDB;
+exports.supported = hasIndexedDB && hasOnUpgradeEvent && hasStringModes;
 
 /**
  * Drop IndexedDB instance by name.
