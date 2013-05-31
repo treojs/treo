@@ -1,9 +1,10 @@
-## 0.4.0 / 2013-06-..
+## 0.4.0 / 2013-05-31
 
   * refactoring
   * removed all unnecessary conditions
-  * made it low level by default
-  * ~ use IndexedDB to store configs
+  * made it less high level
+  * use IndexedDB to store configs
+  * simplified dependencies
 
 ### 0.3.2 / 2013-05-31
 

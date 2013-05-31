@@ -8,7 +8,7 @@
       font: 20px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
     }
   </style>
-  <script src="build/build.js"></script>
+  <script src="dist/indexed.js"></script>
   <script src="node_modules/async/lib/async.js"></script>
   <script src="node_modules/underscore/underscore.js"></script>
 </head>
@@ -16,8 +16,6 @@
   <div id="result"></div>
 
   <script type="text/javascript">
-    var Indexed  = require('indexed');
-
     Indexed.drop('notepad', function(err) {
       var notes    = new Indexed('notepad:notes');
       var tags     = new Indexed('notepad:tags');
