@@ -69,13 +69,6 @@ describe('CRUD', function(){
         done(err);
       });
     });
-
-    it('returns error when key is invalid', function(done) {
-      indexed.put({ key: 1 }, {}, function(err, note) {
-        expect(err).exists;
-        done();
-      });
-    });
   });
 
   describe('del', function() {

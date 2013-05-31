@@ -1,3 +1,7 @@
+### 0.4.1 / 2013-..-..
+
+  * removed nextTick
+
 ## 0.4.0 / 2013-05-31
 
   * refactoring

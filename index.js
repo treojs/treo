@@ -3,8 +3,7 @@
  * Module dependencies.
  */
 
-var nextTick = require('next-tick');
-var clone    = require('clone');
+var clone = require('clone');
 
 /**
  * Local variables.
@@ -145,11 +144,7 @@ Indexed.prototype.del = transaction('readwrite', function(store, tr, key, cb) {
 
 Indexed.prototype.put = transaction('readwrite', function(store, tr, key, val, cb) {
   val[this.key] = key;
-  try {
-    request(store.put(val), tr, function(err) { cb(err, val); });
-  } catch (err) {
-    cb(err);
-  }
+  request(store.put(val), tr, function(err) { cb(err, val); });
 });
 
 /**
@@ -182,8 +177,7 @@ Indexed.prototype._getDb = function(cb) {
   var db   = dbs[this.dbName];
 
   if (db) {
-    if (this.connected)
-      return nextTick(function() { cb.call(that, null, db); }); // prevent sync scenarious
+    if (this.connected) return cb.call(that, null, db);
     this._connectOrUpgrade(db, cb);
   } else {
     request(indexedDB.open(this.dbName), function(err) {
