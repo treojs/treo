@@ -200,6 +200,84 @@ require.relative = function(parent) {
 
   return localRequire;
 };
+require.register("component-each/index.js", function(exports, require, module){
+
+/**
+ * Module dependencies.
+ */
+
+var type = require('type');
+
+/**
+ * HOP reference.
+ */
+
+var has = Object.prototype.hasOwnProperty;
+
+/**
+ * Iterate the given `obj` and invoke `fn(val, i)`.
+ *
+ * @param {String|Array|Object} obj
+ * @param {Function} fn
+ * @api public
+ */
+
+module.exports = function(obj, fn){
+  switch (type(obj)) {
+    case 'array':
+      return array(obj, fn);
+    case 'object':
+      if ('number' == typeof obj.length) return array(obj, fn);
+      return object(obj, fn);
+    case 'string':
+      return string(obj, fn);
+  }
+};
+
+/**
+ * Iterate string chars.
+ *
+ * @param {String} obj
+ * @param {Function} fn
+ * @api private
+ */
+
+function string(obj, fn) {
+  for (var i = 0; i < obj.length; ++i) {
+    fn(obj.charAt(i), i);
+  }
+}
+
+/**
+ * Iterate object keys.
+ *
+ * @param {Object} obj
+ * @param {Function} fn
+ * @api private
+ */
+
+function object(obj, fn) {
+  for (var key in obj) {
+    if (has.call(obj, key)) {
+      fn(key, obj[key]);
+    }
+  }
+}
+
+/**
+ * Iterate array-ish.
+ *
+ * @param {Array|Object} obj
+ * @param {Function} fn
+ * @api private
+ */
+
+function array(obj, fn) {
+  for (var i = 0; i < obj.length; ++i) {
+    fn(obj[i], i);
+  }
+}
+});
 require.register("yields-unserialize/index.js", function(exports, require, module){
 
 /**
@@ -224,12 +302,14 @@ require.register("yields-store/index.js", function(exports, require, module){
  * dependencies.
  */
 
-var unserialize = require('unserialize')
-  , storage = window.localStorage;
+var each = require('each')
+  , unserialize = require('unserialize')
+  , storage = window.localStorage
+  , type = require('type');
 
 /**
  * Store the given `key` `val`.
- * 
+ *
  * @param {String} key
  * @param {Mixed} val
  * @return {Mixed}
@@ -238,8 +318,10 @@ var unserialize = require('unserialize')
 exports = module.exports = function(key, val){
   switch (arguments.length) {
     case 2: return set(key, val);
-    case 1: return get(key);
     case 0: return all();
+    case 1: return 'object' == type(key)
+      ? each(key, set)
+      : get(key);
   }
 };
 
@@ -259,7 +341,7 @@ exports.all = all;
 
 /**
  * Set `key` to `val`.
- * 
+ *
  * @param {String} key
  * @param {Mixed} val
  */
@@ -272,7 +354,7 @@ function set(key, val){
 
 /**
  * Get `key`.
- * 
+ *
  * @param {String} key
  * @return {Mixed}
  */
@@ -285,7 +367,7 @@ function get(key){
 
 /**
  * Get all.
- * 
+ *
  * @return {Object}
  */
 
@@ -338,6 +420,41 @@ else if (typeof window == 'undefined' || window.ActiveXObject || !window.postMes
 }
 
 });
+require.register("component-type/index.js", function(exports, require, module){
+
+/**
+ * toString ref.
+ */
+
+var toString = Object.prototype.toString;
+
+/**
+ * Return the type of `val`.
+ *
+ * @param {Mixed} val
+ * @return {String}
+ * @api public
+ */
+
+module.exports = function(val){
+  switch (toString.call(val)) {
+    case '[object Function]': return 'function';
+    case '[object Date]': return 'date';
+    case '[object RegExp]': return 'regexp';
+    case '[object Arguments]': return 'arguments';
+    case '[object Array]': return 'array';
+    case '[object String]': return 'string';
+  }
+
+  if (val === null) return 'null';
+  if (val === undefined) return 'undefined';
+  if (val && val.nodeType === 1) return 'element';
+  if (val === Object(val)) return 'object';
+
+  return typeof val;
+};
+
+});
 require.register("indexed/index.js", function(exports, require, module){
 
 /**
@@ -346,15 +463,27 @@ require.register("indexed/index.js", function(exports, require, module){
 
 var store    = require('store');
 var nextTick = require('next-tick');
+var type     = require('type');
 
 /**
  * Local variables.
  */
 
-var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
-var dbs       = {};
-var indexOf   = [].indexOf;
-var slice     = [].slice;
+var indexedDB      = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
+var IDBDatabase    = window.IDBDatabase || window.webkitIDBDatabase;
+var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction;
+var dbs            = {};
+var indexOf        = [].indexOf;
+var slice          = [].slice;
+
+/**
+ * Check support of latest standarts.
+ * https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase#Browser_Compatibility
+ */
+
+var hasOnUpgradeEvent = ! IDBDatabase.prototype.setVersion;
+var hasStringModes    = IDBTransaction.READ_WRITE !== 1;
+var hasIndexedDB      = !! indexedDB;
 
 /**
  * Expose public api.
@@ -362,7 +491,7 @@ var slice     = [].slice;
 
 module.exports    = exports = Indexed;
 exports.drop      = drop;
-exports.supported = !! indexedDB;
+exports.supported = hasIndexedDB && hasOnUpgradeEvent && hasStringModes;
 
 /**
  * Drop IndexedDB instance by name.
@@ -401,7 +530,7 @@ function drop(dbName, cb) {
  */
 
 function Indexed(name, options) {
-  if (typeof name !== 'string') throw new TypeError('name required');
+  if (type(name) !== 'string') throw new TypeError('name required');
   if (!options) options = {};
   var params = name.split(':');
   if (params.length !== 2) throw new TypeError('name has format "dbName:storeName"');
@@ -533,7 +662,7 @@ Indexed.prototype._getDb = function(cb) {
     var req = indexedDB.open(this.dbName);
     req.onerror = onerror(cb);
     req.onsuccess = function(event) {
-      var db = event.target.result;
+      var db = this.result;
       dbs[that.dbName] = db;
       that._connectOrUpgrade(db, cb);
     };
@@ -661,7 +790,7 @@ function transaction(argsCount, mode, handler) {
     var argsName = argsCount === 1 ? ' argument' : ' arguments';
 
     if (args.length !== argsCount) throw new TypeError('method has ' + argsCount + argsName);
-    if (typeof cb !== 'function')  throw new TypeError('callback required');
+    if (type(cb) !== 'function')  throw new TypeError('callback required');
 
     this._getStore(mode, function(err, store, tr) {
       if (err) return cb(err);
@@ -673,10 +802,18 @@ function transaction(argsCount, mode, handler) {
 });
 require.alias("yields-store/index.js", "indexed/deps/store/index.js");
 require.alias("yields-store/index.js", "store/index.js");
+require.alias("component-each/index.js", "yields-store/deps/each/index.js");
+require.alias("component-type/index.js", "component-each/deps/type/index.js");
+
+require.alias("component-type/index.js", "yields-store/deps/type/index.js");
+
 require.alias("yields-unserialize/index.js", "yields-store/deps/unserialize/index.js");
 
 require.alias("timoxley-next-tick/index.js", "indexed/deps/next-tick/index.js");
 require.alias("timoxley-next-tick/index.js", "next-tick/index.js");
+
+require.alias("component-type/index.js", "indexed/deps/type/index.js");
+require.alias("component-type/index.js", "type/index.js");
 
 require.alias("indexed/index.js", "indexed/index.js");
 

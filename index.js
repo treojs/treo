@@ -12,7 +12,7 @@ var type     = require('type');
  */
 
 var indexedDB      = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
-var IDBDatabase    = window.webkitIDBDatabase || window.IDBDatabase;
+var IDBDatabase    = window.IDBDatabase || window.webkitIDBDatabase;
 var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction;
 var dbs            = {};
 var indexOf        = [].indexOf;

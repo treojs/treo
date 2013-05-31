@@ -1,6 +1,7 @@
-## 0.3.2 / 2013-..-..
+## 0.3.2 / 2013-05-31
 
   * improved `Indexed.supported` to check latest standart
+  * use less-broken type
 
 ## 0.3.1 / 2013-05-24
 
