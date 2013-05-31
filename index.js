@@ -77,7 +77,6 @@ function Indexed(name, options) {
   this.dbName    = params[0];
   this.name      = params[1];
   this.key       = options.key || 'id';
-  this.autoKey   = options.autoKey || true;
   this.connected = false;
 }
 
@@ -147,7 +146,7 @@ Indexed.prototype.del = transaction('readwrite', function(store, tr, key, cb) {
  */
 
 Indexed.prototype.put = transaction('readwrite', function(store, tr, key, val, cb) {
-  if (this.autoKey) val[this.key] = key;
+  val[this.key] = key;
   try {
     request(bind(store, 'put', val), tr, function(err) { cb(err, val); });
   } catch (err) {
@@ -164,13 +163,12 @@ Indexed.prototype.put = transaction('readwrite', function(store, tr, key, val, c
  */
 
 Indexed.prototype._getStore = function(mode, cb) {
-  var that = this;
   this._getDb(function(err, db) {
     if (err) return cb(err);
 
-    var transaction = db.transaction([that.name], mode);
-    var objectStore = transaction.objectStore(that.name);
-    cb.call(that, null, objectStore, transaction);
+    var transaction = db.transaction([this.name], mode);
+    var objectStore = transaction.objectStore(this.name);
+    cb.call(this, null, objectStore, transaction);
   });
 };
 
@@ -186,7 +184,7 @@ Indexed.prototype._getDb = function(cb) {
   var db   = dbs[this.dbName];
 
   if (db) {
-    if (this.connected) return cb(null, db);
+    if (this.connected) return cb.call(this, null, db);
     this._connectOrUpgrade(db, cb);
   } else {
     request(bind(indexedDB, 'open', this.dbName), function(err) {
@@ -214,7 +212,7 @@ Indexed.prototype._connectOrUpgrade = function(db, cb) {
     this._upgrade(db, cb);
   } else {
     this.connected = true;
-    cb(null, db);
+    cb.call(this, null, db);
   }
 };
 
@@ -238,13 +236,12 @@ Indexed.prototype._upgrade = function(db, cb) {
 
     dbs[that.dbName] = this.result;
     that.connected = true;
-    cb(null, this.result);
+    cb.call(that, null, this.result);
   });
 
   req.onupgradeneeded = function(event) {
-    var db = this.result;
-    if (config.action === 'recreate') db.deleteObjectStore(that.name);
-    if (config.action) db.createObjectStore(that.name, { keyPath: that.key });
+    if (config.action === 'recreate') this.result.deleteObjectStore(that.name);
+    if (config.action) this.result.createObjectStore(that.name, { keyPath: that.key });
   };
 };
 
