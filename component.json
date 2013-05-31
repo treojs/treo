@@ -11,11 +11,9 @@
     "LevelDB"
   ],
   "dependencies": {
-    "yields/store": "*",
     "timoxley/next-tick": "*",
-    "component/type": "*"
+    "component/clone": "*"
   },
-  "development": {},
   "license": "MIT",
   "main": "index.js",
   "scripts": [

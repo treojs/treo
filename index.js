@@ -4,7 +4,6 @@
  */
 
 var nextTick = require('next-tick');
-var bind     = require('bind');
 var clone    = require('clone');
 
 /**
@@ -50,7 +49,7 @@ function drop(dbName, cb) {
   if (dbs[dbName]) db.close();
   delete configs[dbName];
   delete dbs[dbName];
-  request(bind(indexedDB, 'deleteDatabase', dbName), cb);
+  request(indexedDB.deleteDatabase(dbName), cb);
 }
 
 /**
@@ -88,7 +87,7 @@ function Indexed(name, options) {
 
 Indexed.prototype.all = transaction('readonly', function(store, tr, cb) {
   var result = [];
-  request(bind(store, 'openCursor'), function(err) {
+  request(store.openCursor(), function(err) {
     var cursor = this.result;
     if (cursor) {
       result.push(cursor.value);
@@ -108,7 +107,7 @@ Indexed.prototype.all = transaction('readonly', function(store, tr, cb) {
  */
 
 Indexed.prototype.get = transaction('readonly', function(store, tr, key, cb) {
-  request(bind(store, 'get', key), function(err) { cb(err, this.result); });
+  request(store.get(key), function(err) { cb(err, this.result); });
 });
 
 /**
@@ -119,7 +118,7 @@ Indexed.prototype.get = transaction('readonly', function(store, tr, key, cb) {
  */
 
 Indexed.prototype.clear = transaction('readwrite', function(store, tr, cb) {
-  request(bind(store, 'clear'), tr, cb);
+  request(store.clear(), tr, cb);
 });
 
 /**
@@ -131,7 +130,7 @@ Indexed.prototype.clear = transaction('readwrite', function(store, tr, cb) {
  */
 
 Indexed.prototype.del = transaction('readwrite', function(store, tr, key, cb) {
-  request(bind(store, 'delete', key), tr, cb);
+  request(store.delete(key), tr, cb);
 });
 
 /**
@@ -147,7 +146,7 @@ Indexed.prototype.del = transaction('readwrite', function(store, tr, key, cb) {
 Indexed.prototype.put = transaction('readwrite', function(store, tr, key, val, cb) {
   val[this.key] = key;
   try {
-    request(bind(store, 'put', val), tr, function(err) { cb(err, val); });
+    request(store.put(val), tr, function(err) { cb(err, val); });
   } catch (err) {
     cb(err);
   }
@@ -183,11 +182,11 @@ Indexed.prototype._getDb = function(cb) {
   var db   = dbs[this.dbName];
 
   if (db) {
-    // prevent sync scenarious
-    if (this.connected) return nextTick(bind(this, cb, null, db));
+    if (this.connected)
+      return nextTick(function() { cb.call(that, null, db); }); // prevent sync scenarious
     this._connectOrUpgrade(db, cb);
   } else {
-    request(bind(indexedDB, 'open', this.dbName), function(err) {
+    request(indexedDB.open(this.dbName), function(err) {
       if (err) return cb(err);
 
       dbs[that.dbName] = this.result;
@@ -230,8 +229,7 @@ Indexed.prototype._upgrade = function(db, cb) {
   var config = this._getUpgradeConfig(db, true);
 
   db.close();
-  var openDB = bind(indexedDB, 'open', this.dbName, config.version);
-  var req = request(openDB, function(err) {
+  var req = request(indexedDB.open(this.dbName, config.version), function(err) {
     if (err) return cb(err);
 
     dbs[that.dbName] = this.result;
@@ -295,8 +293,7 @@ Indexed.prototype._getUpgradeConfig = function(db, save) {
  * @return {IDBRequest} req
  */
 
-function request(method, tr, cb) {
-  var req = method();
+function request(req, tr, cb) {
   req.onerror = function(event) { cb.call(this, event); };
 
   if (!cb)
