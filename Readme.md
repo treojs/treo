@@ -51,8 +51,6 @@ indexed.clear(function(err) {});
 
 All callbacks follow node.js style, where `err` is a first argument. In terms of IndexedDB, it helps to handle `onerror` event that probably exists in all requests. The power feature of Indexed, that takes up 50% of source code, is a smooth migrations and DB connections. You don't need to worry about db connections, db [versions](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_version), adding new stores with `onupgradeneeded`. It just works in background.
 
-Indexed is strict about parameters to prevent silly typos. You always need to provide callback and use required amount of arguments for different methods.
-
 ### Indexed(name, options)
 
 Create a new Indexed instance to work with selected [store](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBObjectStore) and [db](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBDatabase). `name` follows simple convention `db-name:store-name`.

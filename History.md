@@ -1,9 +1,16 @@
-## 0.3.2 / 2013-05-31
+## 0.4.0 / 2013-06-..
+
+  * refactoring
+  * removed all unnecessary conditions
+  * made it low level by default
+  * ~ use IndexedDB to store configs
+
+### 0.3.2 / 2013-05-31
 
   * improved `Indexed.supported` to check latest standart
   * use less-broken type
 
-## 0.3.1 / 2013-05-24
+### 0.3.1 / 2013-05-24
 
   * added API docs
   * bug fixes
@@ -15,7 +22,7 @@
   * standalone release
   * updated Readme.md and docs
 
-## 0.2.1 / 2013-05-14
+### 0.2.1 / 2013-05-14
 
   * added basic performance suite
   * put returns item as second argument and manage key value
