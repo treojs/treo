@@ -11,18 +11,18 @@ var type     = require('type');
  * Local variables.
  */
 
-var indexedDB      = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
-var IDBDatabase    = window.IDBDatabase || window.webkitIDBDatabase;
-var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction;
-var dbs            = {};
-var indexOf        = [].indexOf;
-var slice          = [].slice;
+var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
+var dbs       = {};
+var indexOf   = [].indexOf;
+var slice     = [].slice;
 
 /**
  * Check support of latest standarts.
  * https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase#Browser_Compatibility
  */
 
+var IDBDatabase       = window.IDBDatabase || window.webkitIDBDatabase;
+var IDBTransaction    = window.IDBTransaction || window.webkitIDBTransaction;
 var hasOnUpgradeEvent = ! IDBDatabase.prototype.setVersion;
 var hasStringModes    = IDBTransaction.READ_WRITE !== 1;
 var hasIndexedDB      = !! indexedDB;
@@ -75,11 +75,11 @@ function Indexed(name, options) {
   if (type(name) !== 'string') throw new TypeError('name required');
   if (!options) options = {};
   var params = name.split(':');
-  if (params.length !== 2) throw new TypeError('name has format "dbName:storeName"');
 
   this.dbName    = params[0];
   this.name      = params[1];
   this.key       = options.key || 'id';
+  this.autoKey   = options.autoKey || true;
   this.connected = false;
 }
 
@@ -90,7 +90,7 @@ function Indexed(name, options) {
  * @api public
  */
 
-Indexed.prototype.all = transaction(1, 'readonly', function(store, tr, cb) {
+Indexed.prototype.all = transaction('readonly', function(store, tr, cb) {
   var result = [];
   var req = store.openCursor();
   req.onerror = onerror(cb);
@@ -113,7 +113,7 @@ Indexed.prototype.all = transaction(1, 'readonly', function(store, tr, cb) {
  * @api public
  */
 
-Indexed.prototype.get = transaction(2, 'readonly', function(store, tr, key, cb) {
+Indexed.prototype.get = transaction('readonly', function(store, tr, key, cb) {
   var req = store.get(key);
   req.onerror = onerror(cb);
   req.onsuccess = function(event) { cb(null, req.result); };
@@ -126,7 +126,7 @@ Indexed.prototype.get = transaction(2, 'readonly', function(store, tr, key, cb) 
  * @api public
  */
 
-Indexed.prototype.clear = transaction(1, 'readwrite', function(store, tr, cb) {
+Indexed.prototype.clear = transaction('readwrite', function(store, tr, cb) {
   var req = store.clear();
   req.onerror = onerror(cb);
   tr.oncomplete = function(event) { cb(null); };
@@ -140,7 +140,7 @@ Indexed.prototype.clear = transaction(1, 'readwrite', function(store, tr, cb) {
  * @api public
  */
 
-Indexed.prototype.del = transaction(2, 'readwrite', function(store, tr, key, cb) {
+Indexed.prototype.del = transaction('readwrite', function(store, tr, key, cb) {
   var req = store.delete(key);
   req.onerror = onerror(cb);
   tr.oncomplete = function(event) { cb(null); };
@@ -156,8 +156,8 @@ Indexed.prototype.del = transaction(2, 'readwrite', function(store, tr, key, cb)
  * @api public
  */
 
-Indexed.prototype.put = transaction(3, 'readwrite', function(store, tr, key, val, cb) {
-  val[this.key] = key;
+Indexed.prototype.put = transaction('readwrite', function(store, tr, key, val, cb) {
+  if (this.autoKey) val[this.key] = key;
   try {
     var req = store.put(val);
     req.onerror = onerror(cb);
@@ -182,7 +182,7 @@ Indexed.prototype._getStore = function(mode, cb) {
 
     var transaction = db.transaction([that.name], mode);
     var objectStore = transaction.objectStore(that.name);
-    cb(null, objectStore, transaction);
+    cb.call(that, null, objectStore, transaction);
   });
 };
 
@@ -316,27 +316,20 @@ function onerror(cb) {
 
 /**
  * Helper to force new transaction for current store.
- * Also it manages arguments count and callback.
  *
- * @options {Number} argsCount
  * @options {String} mode {readwrite|readonly}
  * @options {Function} handler
  * @return {Function}
  */
 
-function transaction(argsCount, mode, handler) {
+function transaction(mode, handler) {
   return function() {
-    var that     = this;
-    var args     = 1 <= arguments.length ? slice.call(arguments, 0) : [];
-    var cb       = args[args.length - 1];
-    var argsName = argsCount === 1 ? ' argument' : ' arguments';
-
-    if (args.length !== argsCount) throw new TypeError('method has ' + argsCount + argsName);
-    if (type(cb) !== 'function')  throw new TypeError('callback required');
+    var args = slice.call(arguments, 0);
+    var cb   = args[args.length - 1];
 
     this._getStore(mode, function(err, store, tr) {
       if (err) return cb(err);
-      handler.apply(that, [store, tr].concat(args));
+      handler.apply(this, [store, tr].concat(args));
     });
   };
 }

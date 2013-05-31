@@ -8,6 +8,12 @@ describe('CRUD', function(){
     indexed.clear(done);
   });
 
+  it('validates name paramether', function() {
+    expect(function() {
+      new Indexed();
+    }).throw(/name/);
+  });
+
   describe('all', function() {
     it('returns an empty array', function(done) {
       indexed.all(function(err, values) {
@@ -63,6 +69,13 @@ describe('CRUD', function(){
         done(err);
       });
     });
+
+    it('returns error when key is invalid', function(done) {
+      indexed.put({ key: 1 }, {}, function(err, note) {
+        expect(err).exists;
+        done();
+      });
+    });
   });
 
   describe('del', function() {
@@ -100,33 +113,6 @@ describe('CRUD', function(){
         expect(note.name).equal('note 4');
         done(err);
       });
-    });
-  });
-
-  describe('errors', function() {
-    it('validates name paramether', function() {
-      expect(function() {
-        new Indexed('smth here');
-      }).throw(/format/);
-    });
-
-    it('returns error when key is invalid', function(done) {
-      indexed.put({ key: 1 }, {}, function(err, note) {
-        expect(err).exists;
-        done();
-      });
-    });
-
-    it('throws error when cb is not a function', function() {
-      expect(function() {
-        indexed.all('smth here');
-      }).throw(/callback/);
-    });
-
-    it('validates arguments count', function() {
-      expect(function() {
-        indexed.put(1, function() {});
-      }).throw(/method has 3 arguments/);
     });
   });
 });
