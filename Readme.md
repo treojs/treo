@@ -9,7 +9,7 @@
   db    db    db `Mb    db YM.    ,  ,V' VA. YM.    , `Mb    db
 .JdbL..JdbL  JdbL.`Wbmd"dbL.`Mbmmd'.AM.   .MA.`Mbmmd'  `Wbmd"dbL.
 
-                                    Because IndexedDB is not fun.
+                                              IndexedDB with fun.
 ```
 
 Indexed is a minimalistic high-level wrapper around IndexedDB inspired by [LevelDB](https://code.google.com/p/leveldb/).
@@ -18,8 +18,6 @@ It tryes to simplify low-level IndexedDB API in 5 nice function: `all`, `get`, `
 ## Installation
 
     $ component install ask11/indexed
-
-Standalone version is available as well. Add [dist/indexed.js](https://github.com/ask11/indexed/blob/master/dist/indexed.js) to your scripts and use `window.Indexed`.
 
 ## Example
 
@@ -120,32 +118,7 @@ tags.del(3, function(err) {
 
 Clear object store.
 
-## Performance
-
-- Google Chrome 26, OS X
-```
-Put = count: 1596; time: 2900ms; mean: 1.82ms;
-Get = count: 1500; time: 1151ms; mean: 0.77ms;
-Del = count: 1596; time: 2412ms; mean: 1.51ms;
-```
-
-- Firefox 20, OS X
-```
-Put = count: 1596; time: 9285ms; mean: 5.82ms;
-Get = count: 1500; time: 1185ms; mean: 0.79ms;
-Del = count: 1596; time: 9709ms; mean: 6.08ms;
-```
-
-- IE 10, Windows 7 (Virtualbox)
-```
-Put = count: 1596; time: 2532ms; mean: 1.59ms;
-Get = count: 1500; time: 1939ms; mean: 1.29ms;
-Del = count: 1596; time: 2142ms; mean: 1.34ms;
-```
-
-See [performance.html](https://github.com/ask11/indexed/blob/master/performance.html) for more information. In general it is IndexedDB performance on different platforms.
-
-### Links for learning IndexedDB
+## Links for learning IndexedDB
 
   - [MDN - IndexedDB](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB) - Basic options and conceptions
   - Learn basics with [Using IndexedDB](https://developer.mozilla.org/en-US/docs/IndexedDB/Using_IndexedDB) and [TODO list example](http://www.html5rocks.com/en/tutorials/indexeddb/todo/)
@@ -155,11 +128,12 @@ See [performance.html](https://github.com/ask11/indexed/blob/master/performance.
   - [bongo.js](https://github.com/aaronshaf/bongo.js) - rich query API + good list of links at [see also](https://github.com/aaronshaf/bongo.js#see-also) block.
   - [Trialtool](http://nparashuram.com/trialtool/index.html#example=/IndexedDB/trialtool/webkitIndexedDB.html&selected=#prereq&) - good examples
 
-### Development
+## Development
 
-  - `npm install` to install dependencies
-  - `npm test` to ensure that all tests pass
-  - `npm start` to run mocha's test server and watcher
+  - `npm install` to install dependencies;
+  - `npm test` to ensure that all tests pass;
+  - `npm start` to run mocha's test server and watcher;
+  - `npm run release` to generate standalone version to build/build.js.
 
 ## License
 
