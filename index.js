@@ -6,6 +6,7 @@
 var store    = require('store');
 var nextTick = require('next-tick');
 var type     = require('type');
+var bind     = require('bind');
 
 /**
  * Local variables.
@@ -50,10 +51,7 @@ function drop(dbName, cb) {
     db.close();
     delete dbs[dbName];
   }
-
-  var req = indexedDB.deleteDatabase(dbName);
-  req.onerror = onerror(cb);
-  req.onsuccess = function(event) { cb(); };
+  request(bind(indexedDB, 'deleteDatabase', dbName), cb);
 }
 
 /**
@@ -92,17 +90,15 @@ function Indexed(name, options) {
 
 Indexed.prototype.all = transaction('readonly', function(store, tr, cb) {
   var result = [];
-  var req = store.openCursor();
-  req.onerror = onerror(cb);
-  req.onsuccess = function(event) {
-    var cursor = event.target.result;
+  request(bind(store, 'openCursor'), function(err) {
+    var cursor = this.result;
     if (cursor) {
       result.push(cursor.value);
       cursor.continue();
     } else {
       cb(null, result);
     }
-  };
+  });
 });
 
 /**
@@ -114,9 +110,7 @@ Indexed.prototype.all = transaction('readonly', function(store, tr, cb) {
  */
 
 Indexed.prototype.get = transaction('readonly', function(store, tr, key, cb) {
-  var req = store.get(key);
-  req.onerror = onerror(cb);
-  req.onsuccess = function(event) { cb(null, req.result); };
+  request(bind(store, 'get', key), function(err) { cb(err, this.result); });
 });
 
 /**
@@ -127,9 +121,7 @@ Indexed.prototype.get = transaction('readonly', function(store, tr, key, cb) {
  */
 
 Indexed.prototype.clear = transaction('readwrite', function(store, tr, cb) {
-  var req = store.clear();
-  req.onerror = onerror(cb);
-  tr.oncomplete = function(event) { cb(null); };
+  request(bind(store, 'clear'), tr, cb);
 });
 
 /**
@@ -141,9 +133,7 @@ Indexed.prototype.clear = transaction('readwrite', function(store, tr, cb) {
  */
 
 Indexed.prototype.del = transaction('readwrite', function(store, tr, key, cb) {
-  var req = store.delete(key);
-  req.onerror = onerror(cb);
-  tr.oncomplete = function(event) { cb(null); };
+  request(bind(store, 'delete', key), tr, cb);
 });
 
 /**
@@ -159,11 +149,9 @@ Indexed.prototype.del = transaction('readwrite', function(store, tr, key, cb) {
 Indexed.prototype.put = transaction('readwrite', function(store, tr, key, val, cb) {
   if (this.autoKey) val[this.key] = key;
   try {
-    var req = store.put(val);
-    req.onerror = onerror(cb);
-    tr.oncomplete = function(event) { cb(null, val); };
+    request(bind(store, 'put', val), tr, function(err) { cb(err, val); });
   } catch (err) {
-    nextTick(function(){ cb(err); });
+    nextTick(bind(null, cb, err));
   }
 });
 
@@ -201,13 +189,12 @@ Indexed.prototype._getDb = function(cb) {
     if (this.connected) return cb(null, db);
     this._connectOrUpgrade(db, cb);
   } else {
-    var req = indexedDB.open(this.dbName);
-    req.onerror = onerror(cb);
-    req.onsuccess = function(event) {
-      var db = this.result;
-      dbs[that.dbName] = db;
-      that._connectOrUpgrade(db, cb);
-    };
+    request(bind(indexedDB, 'open', this.dbName), function(err) {
+      if (err) return cb(err);
+
+      dbs[that.dbName] = this.result;
+      that._connectOrUpgrade(this.result, cb);
+    });
   }
 };
 
@@ -245,17 +232,17 @@ Indexed.prototype._upgrade = function(db, cb) {
   var config = this._getUpgradeConfig(db, true);
 
   db.close();
-  var req = indexedDB.open(this.dbName, config.version);
-  req.onerror = onerror(cb);
-  req.onsuccess = function(event) {
-    var db = event.target.result;
-    dbs[that.dbName] = db;
+  var openDB = bind(indexedDB, 'open', this.dbName, config.version);
+  var req = request(openDB, function(err) {
+    if (err) return cb(err);
+
+    dbs[that.dbName] = this.result;
     that.connected = true;
-    cb(null, db);
-  };
+    cb(null, this.result);
+  });
+
   req.onupgradeneeded = function(event) {
     var db = this.result;
-
     if (config.action === 'recreate') db.deleteObjectStore(that.name);
     if (config.action) db.createObjectStore(that.name, { keyPath: that.key });
   };
@@ -301,17 +288,27 @@ Indexed.prototype._getUpgradeConfig = function(db, save) {
   return { version: config.version, action: action };
 };
 
+
 /**
- * Helper to manage errors.
+ * Helper to simplify requests to IndexedDB API.
+ * Helps to manage errors, and `onsuccess` and `oncomplete` events
  *
+ * @options {Function} method - ready to call request
+ * @options {IDBTransaction} tr
  * @options {Function} cb
- * @return {Function}
+ * @return {IDBRequest} req
  */
 
-function onerror(cb) {
-  return function(event) {
-    cb(event.target.errorCode);
-  };
+function request(method, tr, cb) {
+  var req = method();
+  req.onerror = function(event) { cb.call(this, event); };
+
+  if (!cb)
+    req.onsuccess = function(event) { tr.call(this, null); };
+  else
+    tr.oncomplete = function(event) { cb.call(this, null); };
+
+  return req;
 }
 
 /**
