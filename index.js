@@ -5,6 +5,7 @@
 
 var store    = require('store');
 var nextTick = require('next-tick');
+var type     = require('type');
 
 /**
  * Local variables.
@@ -71,7 +72,7 @@ function drop(dbName, cb) {
  */
 
 function Indexed(name, options) {
-  if (typeof name !== 'string') throw new TypeError('name required');
+  if (type(name) !== 'string') throw new TypeError('name required');
   if (!options) options = {};
   var params = name.split(':');
   if (params.length !== 2) throw new TypeError('name has format "dbName:storeName"');
@@ -331,7 +332,7 @@ function transaction(argsCount, mode, handler) {
     var argsName = argsCount === 1 ? ' argument' : ' arguments';
 
     if (args.length !== argsCount) throw new TypeError('method has ' + argsCount + argsName);
-    if (typeof cb !== 'function')  throw new TypeError('callback required');
+    if (type(cb) !== 'function')  throw new TypeError('callback required');
 
     this._getStore(mode, function(err, store, tr) {
       if (err) return cb(err);

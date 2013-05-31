@@ -3,10 +3,17 @@
   "repo": "ask11/indexed",
   "description": "High-level wrapper around IndexedDB API",
   "version": "0.3.1",
-  "keywords": ["IndexedDB", "store", "data", "offline", "LevelDB"],
+  "keywords": [
+    "IndexedDB",
+    "store",
+    "data",
+    "offline",
+    "LevelDB"
+  ],
   "dependencies": {
     "yields/store": "*",
-    "timoxley/next-tick": "*"
+    "timoxley/next-tick": "*",
+    "component/type": "*"
   },
   "development": {},
   "license": "MIT",
