@@ -200,195 +200,9 @@ require.relative = function(parent) {
 
   return localRequire;
 };
-require.register("component-each/index.js", function(exports, require, module){
-
-/**
- * Module dependencies.
- */
-
-var type = require('type');
-
-/**
- * HOP reference.
- */
-
-var has = Object.prototype.hasOwnProperty;
-
-/**
- * Iterate the given `obj` and invoke `fn(val, i)`.
- *
- * @param {String|Array|Object} obj
- * @param {Function} fn
- * @api public
- */
-
-module.exports = function(obj, fn){
-  switch (type(obj)) {
-    case 'array':
-      return array(obj, fn);
-    case 'object':
-      if ('number' == typeof obj.length) return array(obj, fn);
-      return object(obj, fn);
-    case 'string':
-      return string(obj, fn);
-  }
-};
-
-/**
- * Iterate string chars.
- *
- * @param {String} obj
- * @param {Function} fn
- * @api private
- */
-
-function string(obj, fn) {
-  for (var i = 0; i < obj.length; ++i) {
-    fn(obj.charAt(i), i);
-  }
-}
-
-/**
- * Iterate object keys.
- *
- * @param {Object} obj
- * @param {Function} fn
- * @api private
- */
-
-function object(obj, fn) {
-  for (var key in obj) {
-    if (has.call(obj, key)) {
-      fn(key, obj[key]);
-    }
-  }
-}
-
-/**
- * Iterate array-ish.
- *
- * @param {Array|Object} obj
- * @param {Function} fn
- * @api private
- */
-
-function array(obj, fn) {
-  for (var i = 0; i < obj.length; ++i) {
-    fn(obj[i], i);
-  }
-}
-});
-require.register("yields-unserialize/index.js", function(exports, require, module){
-
-/**
- * Unserialize the given "stringified" javascript.
- * 
- * @param {String} val
- * @return {Mixed}
- */
-
-module.exports = function(val){
-  try {
-    return JSON.parse(val);
-  } catch (e) {
-    return val || undefined;
-  }
-};
-
-});
-require.register("yields-store/index.js", function(exports, require, module){
-
-/**
- * dependencies.
- */
-
-var each = require('each')
-  , unserialize = require('unserialize')
-  , storage = window.localStorage
-  , type = require('type');
-
-/**
- * Store the given `key` `val`.
- *
- * @param {String} key
- * @param {Mixed} val
- * @return {Mixed}
- */
-
-exports = module.exports = function(key, val){
-  switch (arguments.length) {
-    case 2: return set(key, val);
-    case 0: return all();
-    case 1: return 'object' == type(key)
-      ? each(key, set)
-      : get(key);
-  }
-};
-
-/**
- * supported flag.
- */
-
-exports.supported = !! storage;
-
-/**
- * export methods.
- */
-
-exports.set = set;
-exports.get = get;
-exports.all = all;
-
-/**
- * Set `key` to `val`.
- *
- * @param {String} key
- * @param {Mixed} val
- */
-
-function set(key, val){
-  return null == val
-    ? storage.removeItem(key)
-    : storage.setItem(key, JSON.stringify(val));
-}
-
-/**
- * Get `key`.
- *
- * @param {String} key
- * @return {Mixed}
- */
-
-function get(key){
-  return null == key
-    ? storage.clear()
-    : unserialize(storage.getItem(key));
-}
-
-/**
- * Get all.
- *
- * @return {Object}
- */
-
-function all(){
-  var len = storage.length
-    , ret = {}
-    , key
-    , val;
-
-  for (var i = 0; i < len; ++i) {
-    key = storage.key(i);
-    ret[key] = get(key);
-  }
-
-  return ret;
-}
-
-});
 require.register("timoxley-next-tick/index.js", function(exports, require, module){
 if (typeof setImmediate == 'function') {
-  module.exports = function(ƒ){ setImmediate(ƒ) }
+  module.exports = function(f){ setImmediate(f) }
 }
 // legacy node.js
 else if (typeof process != 'undefined' && typeof process.nextTick == 'function') {
@@ -396,7 +210,7 @@ else if (typeof process != 'undefined' && typeof process.nextTick == 'function')
 }
 // fallback for other environments / postMessage behaves badly on IE8
 else if (typeof window == 'undefined' || window.ActiveXObject || !window.postMessage) {
-  module.exports = function(ƒ){ setTimeout(ƒ) };
+  module.exports = function(f){ setTimeout(f) };
 } else {
   var q = [];
 
@@ -455,35 +269,98 @@ module.exports = function(val){
 };
 
 });
+require.register("component-clone/index.js", function(exports, require, module){
+
+/**
+ * Module dependencies.
+ */
+
+var type;
+
+try {
+  type = require('type');
+} catch(e){
+  type = require('type-component');
+}
+
+/**
+ * Module exports.
+ */
+
+module.exports = clone;
+
+/**
+ * Clones objects.
+ *
+ * @param {Mixed} any object
+ * @api public
+ */
+
+function clone(obj){
+  switch (type(obj)) {
+    case 'object':
+      var copy = {};
+      for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          copy[key] = clone(obj[key]);
+        }
+      }
+      return copy;
+
+    case 'array':
+      var copy = new Array(obj.length);
+      for (var i = 0, l = obj.length; i < l; i++) {
+        copy[i] = clone(obj[i]);
+      }
+      return copy;
+
+    case 'regexp':
+      // from millermedeiros/amd-utils - MIT
+      var flags = '';
+      flags += obj.multiline ? 'm' : '';
+      flags += obj.global ? 'g' : '';
+      flags += obj.ignoreCase ? 'i' : '';
+      return new RegExp(obj.source, flags);
+
+    case 'date':
+      return new Date(obj.getTime());
+
+    default: // string, number, boolean, …
+      return obj;
+  }
+}
+
+});
 require.register("indexed/index.js", function(exports, require, module){
 
 /**
  * Module dependencies.
  */
 
-var store    = require('store');
 var nextTick = require('next-tick');
-var type     = require('type');
+var clone    = require('clone');
 
 /**
  * Local variables.
  */
 
-var indexedDB      = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
-var IDBDatabase    = window.IDBDatabase || window.webkitIDBDatabase;
-var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction;
-var dbs            = {};
-var indexOf        = [].indexOf;
-var slice          = [].slice;
+var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
+var dbs       = {};
+var configs   = {};
+var indexOf   = [].indexOf;
+var slice     = [].slice;
 
 /**
  * Check support of latest standarts.
  * https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase#Browser_Compatibility
  */
 
+var IDBDatabase       = window.IDBDatabase || window.webkitIDBDatabase;
+var IDBTransaction    = window.IDBTransaction || window.webkitIDBTransaction;
 var hasOnUpgradeEvent = ! IDBDatabase.prototype.setVersion;
 var hasStringModes    = IDBTransaction.READ_WRITE !== 1;
 var hasIndexedDB      = !! indexedDB;
+var supported         = hasIndexedDB && hasOnUpgradeEvent && hasStringModes;
 
 /**
  * Expose public api.
@@ -491,7 +368,8 @@ var hasIndexedDB      = !! indexedDB;
 
 module.exports    = exports = Indexed;
 exports.drop      = drop;
-exports.supported = hasIndexedDB && hasOnUpgradeEvent && hasStringModes;
+exports.supported = supported;
+exports.configs   = configs;
 
 /**
  * Drop IndexedDB instance by name.
@@ -502,16 +380,10 @@ exports.supported = hasIndexedDB && hasOnUpgradeEvent && hasStringModes;
  */
 
 function drop(dbName, cb) {
-  store('indexed-' + dbName, null);
-
-  if (dbs[dbName]) {
-    db.close();
-    delete dbs[dbName];
-  }
-
-  var req = indexedDB.deleteDatabase(dbName);
-  req.onerror = onerror(cb);
-  req.onsuccess = function(event) { cb(); };
+  if (dbs[dbName]) db.close();
+  delete configs[dbName];
+  delete dbs[dbName];
+  request(indexedDB.deleteDatabase(dbName), cb);
 }
 
 /**
@@ -530,10 +402,9 @@ function drop(dbName, cb) {
  */
 
 function Indexed(name, options) {
-  if (type(name) !== 'string') throw new TypeError('name required');
+  if (typeof name !== 'string') throw new TypeError('name required');
   if (!options) options = {};
   var params = name.split(':');
-  if (params.length !== 2) throw new TypeError('name has format "dbName:storeName"');
 
   this.dbName    = params[0];
   this.name      = params[1];
@@ -548,19 +419,17 @@ function Indexed(name, options) {
  * @api public
  */
 
-Indexed.prototype.all = transaction(1, 'readonly', function(store, tr, cb) {
+Indexed.prototype.all = transaction('readonly', function(store, tr, cb) {
   var result = [];
-  var req = store.openCursor();
-  req.onerror = onerror(cb);
-  req.onsuccess = function(event) {
-    var cursor = event.target.result;
+  request(store.openCursor(), function(err) {
+    var cursor = this.result;
     if (cursor) {
       result.push(cursor.value);
       cursor.continue();
     } else {
       cb(null, result);
     }
-  };
+  });
 });
 
 /**
@@ -571,10 +440,8 @@ Indexed.prototype.all = transaction(1, 'readonly', function(store, tr, cb) {
  * @api public
  */
 
-Indexed.prototype.get = transaction(2, 'readonly', function(store, tr, key, cb) {
-  var req = store.get(key);
-  req.onerror = onerror(cb);
-  req.onsuccess = function(event) { cb(null, req.result); };
+Indexed.prototype.get = transaction('readonly', function(store, tr, key, cb) {
+  request(store.get(key), function(err) { cb(err, this.result); });
 });
 
 /**
@@ -584,10 +451,8 @@ Indexed.prototype.get = transaction(2, 'readonly', function(store, tr, key, cb) 
  * @api public
  */
 
-Indexed.prototype.clear = transaction(1, 'readwrite', function(store, tr, cb) {
-  var req = store.clear();
-  req.onerror = onerror(cb);
-  tr.oncomplete = function(event) { cb(null); };
+Indexed.prototype.clear = transaction('readwrite', function(store, tr, cb) {
+  request(store.clear(), tr, cb);
 });
 
 /**
@@ -598,10 +463,8 @@ Indexed.prototype.clear = transaction(1, 'readwrite', function(store, tr, cb) {
  * @api public
  */
 
-Indexed.prototype.del = transaction(2, 'readwrite', function(store, tr, key, cb) {
-  var req = store.delete(key);
-  req.onerror = onerror(cb);
-  tr.oncomplete = function(event) { cb(null); };
+Indexed.prototype.del = transaction('readwrite', function(store, tr, key, cb) {
+  request(store.delete(key), tr, cb);
 });
 
 /**
@@ -614,14 +477,12 @@ Indexed.prototype.del = transaction(2, 'readwrite', function(store, tr, key, cb)
  * @api public
  */
 
-Indexed.prototype.put = transaction(3, 'readwrite', function(store, tr, key, val, cb) {
+Indexed.prototype.put = transaction('readwrite', function(store, tr, key, val, cb) {
   val[this.key] = key;
   try {
-    var req = store.put(val);
-    req.onerror = onerror(cb);
-    tr.oncomplete = function(event) { cb(null, val); };
+    request(store.put(val), tr, function(err) { cb(err, val); });
   } catch (err) {
-    nextTick(function(){ cb(err); });
+    cb(err);
   }
 });
 
@@ -634,13 +495,12 @@ Indexed.prototype.put = transaction(3, 'readwrite', function(store, tr, key, val
  */
 
 Indexed.prototype._getStore = function(mode, cb) {
-  var that = this;
   this._getDb(function(err, db) {
     if (err) return cb(err);
 
-    var transaction = db.transaction([that.name], mode);
-    var objectStore = transaction.objectStore(that.name);
-    cb(null, objectStore, transaction);
+    var transaction = db.transaction([this.name], mode);
+    var objectStore = transaction.objectStore(this.name);
+    cb.call(this, null, objectStore, transaction);
   });
 };
 
@@ -656,16 +516,16 @@ Indexed.prototype._getDb = function(cb) {
   var db   = dbs[this.dbName];
 
   if (db) {
-    if (this.connected) return cb(null, db);
+    if (this.connected)
+      return nextTick(function() { cb.call(that, null, db); }); // prevent sync scenarious
     this._connectOrUpgrade(db, cb);
   } else {
-    var req = indexedDB.open(this.dbName);
-    req.onerror = onerror(cb);
-    req.onsuccess = function(event) {
-      var db = this.result;
-      dbs[that.dbName] = db;
-      that._connectOrUpgrade(db, cb);
-    };
+    request(indexedDB.open(this.dbName), function(err) {
+      if (err) return cb(err);
+
+      dbs[that.dbName] = this.result;
+      that._connectOrUpgrade(this.result, cb);
+    });
   }
 };
 
@@ -685,7 +545,7 @@ Indexed.prototype._connectOrUpgrade = function(db, cb) {
     this._upgrade(db, cb);
   } else {
     this.connected = true;
-    cb(null, db);
+    cb.call(this, null, db);
   }
 };
 
@@ -703,19 +563,17 @@ Indexed.prototype._upgrade = function(db, cb) {
   var config = this._getUpgradeConfig(db, true);
 
   db.close();
-  var req = indexedDB.open(this.dbName, config.version);
-  req.onerror = onerror(cb);
-  req.onsuccess = function(event) {
-    var db = event.target.result;
-    dbs[that.dbName] = db;
-    that.connected = true;
-    cb(null, db);
-  };
-  req.onupgradeneeded = function(event) {
-    var db = this.result;
+  var req = request(indexedDB.open(this.dbName, config.version), function(err) {
+    if (err) return cb(err);
 
-    if (config.action === 'recreate') db.deleteObjectStore(that.name);
-    if (config.action) db.createObjectStore(that.name, { keyPath: that.key });
+    dbs[that.dbName] = this.result;
+    that.connected = true;
+    cb.call(that, null, this.result);
+  });
+
+  req.onupgradeneeded = function(event) {
+    if (config.action === 'recreate') this.result.deleteObjectStore(that.name);
+    if (config.action) this.result.createObjectStore(that.name, { keyPath: that.key });
   };
 };
 
@@ -730,10 +588,9 @@ Indexed.prototype._upgrade = function(db, cb) {
  */
 
 Indexed.prototype._getUpgradeConfig = function(db, save) {
-  var name    = 'indexed-' + this.dbName;
-  var version = db.version || 1;
-  var config  = store(name) || { version: version, stores: [], keys: {} };
-  var action  = null;
+  var defaults = { version: db.version || 1, stores: [], keys: {} };
+  var config   = clone(configs[this.dbName] || defaults);
+  var action   = null;
 
   if (config.stores.indexOf(this.name) < 0) {
     config.stores.push(this.name);
@@ -755,65 +612,59 @@ Indexed.prototype._getUpgradeConfig = function(db, save) {
     }
   }
 
-  if (save) store(name, config);
+  if (save) configs[this.dbName] = config;
   return { version: config.version, action: action };
 };
 
+
 /**
- * Helper to manage errors.
+ * Helper to simplify requests to IndexedDB API.
+ * Helps to manage errors, and `onsuccess` and `oncomplete` events
  *
+ * @options {Function} method - ready to call request
+ * @options {IDBTransaction} tr
  * @options {Function} cb
- * @return {Function}
+ * @return {IDBRequest} req
  */
 
-function onerror(cb) {
-  return function(event) {
-    cb(event.target.errorCode);
-  };
+function request(req, tr, cb) {
+  req.onerror = function(event) { cb.call(this, event); };
+
+  if (!cb)
+    req.onsuccess = function(event) { tr.call(this, null); };
+  else
+    tr.oncomplete = function(event) { cb.call(this, null); };
+
+  return req;
 }
 
 /**
  * Helper to force new transaction for current store.
- * Also it manages arguments count and callback.
  *
- * @options {Number} argsCount
  * @options {String} mode {readwrite|readonly}
  * @options {Function} handler
  * @return {Function}
  */
 
-function transaction(argsCount, mode, handler) {
+function transaction(mode, handler) {
   return function() {
-    var that     = this;
-    var args     = 1 <= arguments.length ? slice.call(arguments, 0) : [];
-    var cb       = args[args.length - 1];
-    var argsName = argsCount === 1 ? ' argument' : ' arguments';
-
-    if (args.length !== argsCount) throw new TypeError('method has ' + argsCount + argsName);
-    if (type(cb) !== 'function')  throw new TypeError('callback required');
+    var args = slice.call(arguments, 0);
+    var cb   = args[args.length - 1];
 
     this._getStore(mode, function(err, store, tr) {
       if (err) return cb(err);
-      handler.apply(that, [store, tr].concat(args));
+      handler.apply(this, [store, tr].concat(args));
     });
   };
 }
 
 });
-require.alias("yields-store/index.js", "indexed/deps/store/index.js");
-require.alias("yields-store/index.js", "store/index.js");
-require.alias("component-each/index.js", "yields-store/deps/each/index.js");
-require.alias("component-type/index.js", "component-each/deps/type/index.js");
-
-require.alias("component-type/index.js", "yields-store/deps/type/index.js");
-
-require.alias("yields-unserialize/index.js", "yields-store/deps/unserialize/index.js");
-
 require.alias("timoxley-next-tick/index.js", "indexed/deps/next-tick/index.js");
 require.alias("timoxley-next-tick/index.js", "next-tick/index.js");
 
-require.alias("component-type/index.js", "indexed/deps/type/index.js");
-require.alias("component-type/index.js", "type/index.js");
+require.alias("component-clone/index.js", "indexed/deps/clone/index.js");
+require.alias("component-clone/index.js", "clone/index.js");
+require.alias("component-type/index.js", "component-clone/deps/type/index.js");
 
 require.alias("indexed/index.js", "indexed/index.js");
 
