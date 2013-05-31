@@ -1,6 +1,5 @@
 describe('Connection and schema management', function() {
   var expect  = chai.expect;
-  var store   = require('store');
   var Indexed = require('indexed');
   if (!Indexed.supported) return;
 
@@ -15,7 +14,7 @@ describe('Connection and schema management', function() {
         function(cb) { tags.all(cb); },
         function(cb) { notepads.all(cb); }
       ], function(err) {
-        var config = store('indexed-testapp1');
+        var config = Indexed.configs.testapp1;
         expect(config.stores).length(3);
         expect(Object.keys(config.keys)).eql(['notes', 'tags', 'notepads']);
         expect(config.version).equal(4);
@@ -34,26 +33,10 @@ describe('Connection and schema management', function() {
           function(cb) { changedNotes.all(cb); },
           function(cb) { notes.all(cb); }
         ], function(err3, result) {
-          var config = store('indexed-testapp2');
-
+          var config = Indexed.configs.testapp2;
           expect(result).length(2);
           expect(result[0]).length(0);
           expect(config.version).equal(3);
-          done(err1 || err2 || err3);
-        });
-      });
-    });
-  });
-
-  it('handles empty localStorage', function(done) {
-    Indexed.drop('testapp3', function(err1) {
-      var notes = new Indexed('testapp2:notes');
-      notes.all(function(err2, all) {
-        store('indexed-testapp3', null);
-
-        notes = new Indexed('testapp3:notes');
-        notes.all(function(err3, all) {
-          expect(store('indexed-testapp3').version).equal(2);
           done(err1 || err2 || err3);
         });
       });
@@ -75,9 +58,9 @@ describe('Connection and schema management', function() {
         function(cb) { tags.all(cb); },
         function(cb) { notepads.all(cb); }
       ], function(err2) {
-        expect(store('indexed-testapp4').version).equal(2);
-        expect(store('indexed-testapp5').version).equal(2);
-        expect(store('indexed-testapp6').version).equal(2);
+        expect(Indexed.configs.testapp4.version).equal(2);
+        expect(Indexed.configs.testapp5.version).equal(2);
+        expect(Indexed.configs.testapp6.version).equal(2);
         done(err1 || err2);
       });
     });

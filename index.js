@@ -3,10 +3,9 @@
  * Module dependencies.
  */
 
-var store    = require('store');
 var nextTick = require('next-tick');
-var type     = require('type');
 var bind     = require('bind');
+var clone    = require('clone');
 
 /**
  * Local variables.
@@ -14,6 +13,7 @@ var bind     = require('bind');
 
 var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
 var dbs       = {};
+var configs   = {};
 var indexOf   = [].indexOf;
 var slice     = [].slice;
 
@@ -27,6 +27,7 @@ var IDBTransaction    = window.IDBTransaction || window.webkitIDBTransaction;
 var hasOnUpgradeEvent = ! IDBDatabase.prototype.setVersion;
 var hasStringModes    = IDBTransaction.READ_WRITE !== 1;
 var hasIndexedDB      = !! indexedDB;
+var supported         = hasIndexedDB && hasOnUpgradeEvent && hasStringModes;
 
 /**
  * Expose public api.
@@ -34,7 +35,8 @@ var hasIndexedDB      = !! indexedDB;
 
 module.exports    = exports = Indexed;
 exports.drop      = drop;
-exports.supported = hasIndexedDB && hasOnUpgradeEvent && hasStringModes;
+exports.supported = supported;
+exports.configs   = configs;
 
 /**
  * Drop IndexedDB instance by name.
@@ -45,12 +47,9 @@ exports.supported = hasIndexedDB && hasOnUpgradeEvent && hasStringModes;
  */
 
 function drop(dbName, cb) {
-  store('indexed-' + dbName, null);
-
-  if (dbs[dbName]) {
-    db.close();
-    delete dbs[dbName];
-  }
+  if (dbs[dbName]) db.close();
+  delete configs[dbName];
+  delete dbs[dbName];
   request(bind(indexedDB, 'deleteDatabase', dbName), cb);
 }
 
@@ -70,7 +69,7 @@ function drop(dbName, cb) {
  */
 
 function Indexed(name, options) {
-  if (type(name) !== 'string') throw new TypeError('name required');
+  if (typeof name !== 'string') throw new TypeError('name required');
   if (!options) options = {};
   var params = name.split(':');
 
@@ -150,7 +149,7 @@ Indexed.prototype.put = transaction('readwrite', function(store, tr, key, val, c
   try {
     request(bind(store, 'put', val), tr, function(err) { cb(err, val); });
   } catch (err) {
-    nextTick(bind(null, cb, err));
+    cb(err);
   }
 });
 
@@ -184,7 +183,8 @@ Indexed.prototype._getDb = function(cb) {
   var db   = dbs[this.dbName];
 
   if (db) {
-    if (this.connected) return cb.call(this, null, db);
+    // prevent sync scenarious
+    if (this.connected) return nextTick(bind(this, cb, null, db));
     this._connectOrUpgrade(db, cb);
   } else {
     request(bind(indexedDB, 'open', this.dbName), function(err) {
@@ -256,10 +256,9 @@ Indexed.prototype._upgrade = function(db, cb) {
  */
 
 Indexed.prototype._getUpgradeConfig = function(db, save) {
-  var name    = 'indexed-' + this.dbName;
-  var version = db.version || 1;
-  var config  = store(name) || { version: version, stores: [], keys: {} };
-  var action  = null;
+  var defaults = { version: db.version || 1, stores: [], keys: {} };
+  var config   = clone(configs[this.dbName] || defaults);
+  var action   = null;
 
   if (config.stores.indexOf(this.name) < 0) {
     config.stores.push(this.name);
@@ -281,7 +280,7 @@ Indexed.prototype._getUpgradeConfig = function(db, save) {
     }
   }
 
-  if (save) store(name, config);
+  if (save) configs[this.dbName] = config;
   return { version: config.version, action: action };
 };
 
