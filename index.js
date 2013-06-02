@@ -23,7 +23,7 @@ var slice     = [].slice;
 var IDBDatabase       = window.IDBDatabase || window.webkitIDBDatabase;
 var IDBTransaction    = window.IDBTransaction || window.webkitIDBTransaction;
 var hasOnUpgradeEvent = IDBDatabase && ! IDBDatabase.prototype.setVersion;
-var hasStringModes    = IDBTransaction.READ_WRITE !== 1;
+var hasStringModes    = IDBTransaction && IDBTransaction.READ_WRITE !== 1;
 var hasIndexedDB      = !! indexedDB;
 var supported         = hasIndexedDB && hasOnUpgradeEvent && hasStringModes;
 
