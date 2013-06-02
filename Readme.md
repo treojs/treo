@@ -15,6 +15,8 @@
 Indexed is a minimalistic high-level wrapper around IndexedDB inspired by [LevelDB](https://code.google.com/p/leveldb/).
 It tryes to simplify low-level IndexedDB API in 5 nice function: `all`, `get`, `put`, `del`, `clear`. It manages all db migrations and complexity, so... you just enjoy powerful async storage in the browser.
 
+If you support old browsers take a look at [ask11/weak-indexed](https://github.com/ask11/weak-indexed) for localStorage downgrade with exact same api.
+
 ## Installation
 
     $ component install ask11/indexed
