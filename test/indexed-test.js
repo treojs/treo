@@ -1,5 +1,9 @@
+// tap output for browserling
+if (location.port !== '7357') mocha.setup({ reporter: 'tap' });
+
 describe('Indexed', function() {
   var expect  = chai.expect;
+  localStorage.clear();
 
   ['indexeddb', 'localstorage'].forEach(function(adapter) {
     var Indexed = require('indexed/lib/' + adapter);
@@ -137,10 +141,10 @@ describe('Indexed', function() {
             function(cb) { tags.all(cb); },
             function(cb) { notepads.all(cb); }
           ], function(err) {
-            var config = Indexed.configs.testapp1;
-            expect(config.stores).length(3);
-            expect(Object.keys(config.keys)).eql(['notes', 'tags', 'notepads']);
-            expect(config.version).equal(4);
+            // var config = Indexed.configs.testapp1;
+            // expect(config.stores).length(3);
+            // expect(Object.keys(config.keys)).eql(['notes', 'tags', 'notepads']);
+            // expect(config.version).equal(4);
             done(err);
           });
         });
@@ -156,10 +160,10 @@ describe('Indexed', function() {
               function(cb) { changedNotes.all(cb); },
               function(cb) { notes.all(cb); }
             ], function(err3, result) {
-              var config = Indexed.configs.testapp2;
+              // var config = Indexed.configs.testapp2;
               expect(result).length(2);
               expect(result[0]).length(0);
-              expect(config.version).equal(3);
+              // expect(config.version).equal(3);
               done(err || err2 || err3);
             });
           });
@@ -171,7 +175,7 @@ describe('Indexed', function() {
           function(cb) { Indexed.dropDb('testapp4', cb); },
           function(cb) { Indexed.dropDb('testapp5', cb); },
           function(cb) { Indexed.dropDb('testapp6', cb); }
-        ], function(err1) {
+        ], function(err) {
           var notes    = new Indexed('testapp4:notes');
           var tags     = new Indexed('testapp5:tags');
           var notepads = new Indexed('testapp6:notepads');
@@ -181,10 +185,10 @@ describe('Indexed', function() {
             function(cb) { tags.all(cb); },
             function(cb) { notepads.all(cb); }
           ], function(err2) {
-            expect(Indexed.configs.testapp4.version).equal(2);
-            expect(Indexed.configs.testapp5.version).equal(2);
-            expect(Indexed.configs.testapp6.version).equal(2);
-            done(err1 || err2);
+            // expect(Indexed.configs.testapp4.version).equal(2);
+            // expect(Indexed.configs.testapp5.version).equal(2);
+            // expect(Indexed.configs.testapp6.version).equal(2);
+            done(err || err2);
           });
         });
       });
