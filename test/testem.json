@@ -1,17 +1,11 @@
 {
-  "framework": "mocha",
   "before_tests": "npm run build",
   "launch_in_dev": ["phantomjs"],
   "launch_in_ci": ["phantomjs", "chrome", "firefox"],
+  "test_page": "test/test-runner.html",
   "src_files": [
     "index.js",
     "lib/*",
     "test/*"
-  ],
-  "serve_files": [
-    "build/build.js",
-    "node_modules/async/lib/async.js",
-    "node_modules/chai/chai.js",
-    "test/indexed-test.js"
   ]
 }

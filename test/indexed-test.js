@@ -1,6 +1,3 @@
-// tap output for browserling
-if (location.port !== '7357') mocha.setup({ reporter: 'tap' });
-
 describe('Indexed', function() {
   var expect  = chai.expect;
   localStorage.clear();
