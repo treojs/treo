@@ -17,6 +17,8 @@ It tryes to simplify low-level IndexedDB API in 5 nice function: `all`, `get`, `
 
   If you support old browsers take a look at [ask11/weak-indexed](https://github.com/ask11/weak-indexed) for localStorage downgrade with exact same api.
 
+  [![browser support](https://ci.testling.com/ask11/indexed.png)](https://ci.testling.com/ask11/indexed)
+
 ## Installation
 
     $ component install ask11/indexed
