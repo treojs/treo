@@ -1,3 +1,8 @@
+## 0.5.0 / 2013-07-..
+
+  * ~ merge with weak-indexed
+  * ~ use testling to test browsers support
+
 ### 0.4.1 / 2013-06-02
 
   * removed nextTick

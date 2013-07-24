@@ -11,6 +11,6 @@
     "build/build.js",
     "node_modules/async/lib/async.js",
     "node_modules/chai/chai.js",
-    "test/index-test.js"
+    "test/indexed-test.js"
   ]
 }

@@ -1,21 +1,27 @@
 {
   "name": "indexed",
   "repo": "ask11/indexed",
-  "description": "High-level wrapper around IndexedDB API",
-  "version": "0.4.0",
+  "description": "High-level wrapper around IndexedDB API with downgrade to localStorage",
+  "version": "0.5.0",
   "keywords": [
     "IndexedDB",
     "store",
     "data",
-    "offline",
+    "localStorage",
     "LevelDB"
   ],
   "dependencies": {
-    "component/clone": "*"
+    "timoxley/next-tick": "*",
+    "marcuswestin/store.js": "*",
+    "component/clone": "*",
+    "component/type": "*",
+    "component/each": "*"
   },
   "license": "MIT",
   "main": "index.js",
   "scripts": [
-    "index.js"
+    "index.js",
+    "lib/indexeddb-adapter.js",
+    "lib/localstorage-adapter.js"
   ]
 }

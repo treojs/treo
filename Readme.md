@@ -12,10 +12,10 @@
                                               IndexedDB with fun.
 ```
 
-Indexed is a minimalistic high-level wrapper around IndexedDB inspired by [LevelDB](https://code.google.com/p/leveldb/).
+  Indexed is a minimalistic high-level wrapper around IndexedDB inspired by [LevelDB](https://code.google.com/p/leveldb/).
 It tryes to simplify low-level IndexedDB API in 5 nice function: `all`, `get`, `put`, `del`, `clear`. It manages all db migrations and complexity, so... you just enjoy powerful async storage in the browser.
 
-If you support old browsers take a look at [ask11/weak-indexed](https://github.com/ask11/weak-indexed) for localStorage downgrade with exact same api.
+  If you support old browsers take a look at [ask11/weak-indexed](https://github.com/ask11/weak-indexed) for localStorage downgrade with exact same api.
 
 ## Installation
 
@@ -27,34 +27,34 @@ If you support old browsers take a look at [ask11/weak-indexed](https://github.c
 var Indexed = require('indexed');
 
 // manage object store `notes` from `notepad` db
-var indexed = new Indexed('notepad:notes', { key: '_id' });
+var notes = new Indexed('notepad:notes', { key: '_id' });
 
 // put - replace value by key
-indexed.put(2, { name: 'note 2' }, function(err, note) {})
-indexed.put(3, { name: 'note 3' }, function(err, note) {})
+notes.put(2, { name: 'note 2' }, function(err, note) {})
+notes.put(3, { name: 'note 3' }, function(err, note) {})
 
 // get all
-indexed.all(function(err, all) {}); // [{_id: 2, name: 'note 2'}, {_id: 3, name: 'note 3'}]
+notes.all(function(err, all) {}); // [{_id: 2, name: 'note 2'}, {_id: 3, name: 'note 3'}]
 
 // get one object
-indexed.get(3, function(err, one) {}); // {_id: 3, name: 'note 3'}
-indexed.get(1, function(err, one) {}); // undefined
+notes.get(3, function(err, one) {}); // {_id: 3, name: 'note 3'}
+notes.get(1, function(err, one) {}); // undefined
 
 // delete object by key
-indexed.del(2, function(err) {});
+notes.del(2, function(err) {});
 
 // clear object store
-indexed.clear(function(err) {});
+notes.clear(function(err) {});
 ```
 
 ## API
 
-All callbacks follow node.js style, where `err` is a first argument. In terms of IndexedDB, it helps to handle `onerror` event that probably exists in all requests. The power feature of Indexed, that takes up 50% of source code, is a smooth migrations and DB connections. You don't need to worry about db connections, db [versions](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_version), adding new stores with `onupgradeneeded`. It just works in background.
+  All callbacks follow node.js style, where `err` is a first argument. In terms of IndexedDB, it helps to handle `onerror` event that probably exists in all requests. The power feature of Indexed, that takes up 50% of source code, is a smooth migrations and DB connections. You don't need to worry about db connections, db [versions](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_version), adding new stores with `onupgradeneeded`. It just works in background.
 
 ### Indexed(name, options)
 
-Create a new Indexed instance to work with selected [store](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBObjectStore) and [db](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBDatabase). `name` follows simple convention `db-name:store-name`.
-`options` parameter is optional and helps you define [keyPath](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_keypath) value as a `key` option. If you change key for existing store, it will recreated without data.
+  Create a new Indexed instance to work with selected [store](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBObjectStore) and [db](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBDatabase). `name` follows simple convention `db-name:store-name`.
+  `options` parameter is optional and helps you define [keyPath](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_keypath) value as a `key` option. If you change key for existing store, it will recreated without data.
 
 ```js
 var tags = new Indexed('notepad:tags', { key: 'updatedAt' });
@@ -62,13 +62,13 @@ var tags = new Indexed('notepad:tags', { key: 'updatedAt' });
 
 ### Indexed.supported
 
-Flag to control that IndexedDB is available. If it is false, you can use [ask11/weak-indexed](https://github.com/ask11/weak-indexed) with indentical async API, that downgrades to localStorage and supports all brosers since IE6. Also check caniuse [page](http://caniuse.com/#search=indexeddb).
+  Flag to control that IndexedDB is available. If it is false, you can use [ask11/weak-indexed](https://github.com/ask11/weak-indexed) with indentical async API, that downgrades to localStorage and supports all brosers since IE6. Also check caniuse [page](http://caniuse.com/#search=indexeddb).
 
-Indexed tryes to build on top of latest standarts, so it works on Chrome 25+, IE10+, FF13+. The reasons for this requirements are *2-parameter open* and *string values for transaction modes*. Check [MDN Browser compatibility](https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase#Browser_Compatibility) for irrefragable answer.
+  Indexed tryes to build on top of latest standarts, so it works on Chrome 25+, IE10+, FF13+. The reasons for this requirements are *2-parameter open* and *string values for transaction modes*. Check [MDN Browser compatibility](https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase#Browser_Compatibility) for irrefragable answer.
 
 ### Indexed#put(key, val, cb)
 
-Put is the primary method for inserting data into the store, `key` will automatically mixed to the `val`. Put means insert or replace, so you can't update only one attribute.
+  Put is the primary method for inserting data into the store, `key` will automatically mixed to the `val`. Put means insert or replace, so you can't update only one attribute.
 
 ```js
 tags.put(Date.now(), { name: 'tag 1' }, function(err, tag) {
@@ -76,7 +76,7 @@ tags.put(Date.now(), { name: 'tag 1' }, function(err, tag) {
 });
 ```
 
-In order to add a lot of data use [async](https://github.com/caolan/async) control-flow library.
+  In order to add a lot of data use [async](https://github.com/caolan/async) control-flow library.
 
 ```js
 async.series([
@@ -88,7 +88,7 @@ async.series([
 
 ### Indexed#all(cb)
 
-Returns all data from the object store.
+  Returns all data from the object store.
 
 ```js
 tags.all(function(err, values) {
@@ -98,7 +98,7 @@ tags.all(function(err, values) {
 
 ### Indexed#get(key, cb)
 
-Returns value by `key` from the object store.
+  Returns value by `key` from the object store.
 
 ```js
 tags.get(4, function(err, tag) {
@@ -108,7 +108,7 @@ tags.get(4, function(err, tag) {
 
 ### Indexed#del(key, cb)
 
-Delete object by `key`.
+  Delete object by `key`.
 
 ```js
 tags.del(3, function(err) {
@@ -118,7 +118,7 @@ tags.del(3, function(err) {
 
 ### Indexed#clear(cb)
 
-Clear object store.
+  Clear object store.
 
 ## Links for learning IndexedDB
 
@@ -139,4 +139,4 @@ Clear object store.
 
 ## License
 
-  Aleksey Kulikov, MIT
+  Aleksey Kulikov, [MIT](http://ask11.mit-license.org/).
