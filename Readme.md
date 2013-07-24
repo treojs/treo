@@ -16,11 +16,11 @@
 
   [![browser support](https://ci.testling.com/ask11/indexed.png)](https://ci.testling.com/ask11/indexed)
 
-## Key features:
+## Key features
 
   * It works in all browsers since IE6, thanks [store.js](https://github.com/marcuswestin/store.js);
   * It smoothly manages db connections, errors, migrations, [versions](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_version), creating new stores with `onupgradeneeded`. It just works;
-  * It has simple API in 5 nice functions: `all`, `get`, `put`, `del`, and `clear`. Inspired by [LevelDB](https://code.google.com/p/leveldb/).
+  * It has simple and nice API: `all`, `get`, `put`, `del`, and `clear`, which inspired by [LevelDB](https://code.google.com/p/leveldb/).
 
 So... you just enjoy modern powerful async storage and don't worry about browser's environment and complicated IndexedDB API.
 
@@ -41,7 +41,8 @@ notes.put(2, { name: 'note 2' }, function(err, note) {})
 notes.put(3, { name: 'note 3' }, function(err, note) {})
 
 // get all
-notes.all(function(err, all) {}); // [{_id: 2, name: 'note 2'}, {_id: 3, name: 'note 3'}]
+notes.all(function(err, all) {});
+// => [{_id: 2, name: 'note 2'}, {_id: 3, name: 'note 3'}]
 
 // get one object
 notes.get(3, function(err, one) {}); // {_id: 3, name: 'note 3'}
@@ -58,10 +59,10 @@ notes.clear(function(err) {});
 
   All callbacks follow node.js style, where `err` is a first argument. In terms of IndexedDB, it helps to handle `onerror` event, which probably exists in all requests.
 
-### new Indexed(name, options)
+### new Indexed(name, [options])
 
-  Create a new Indexed instance to work with selected [store](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBObjectStore) and [db](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBDatabase). `name` follows simple convention `db:store`.
-  `options` parameter is optional and helps you define [keyPath](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_keypath) value as a `key` option. If you will change key for existing store, it recreates storage and deletes existing data associted with store.
+  Create a new Indexed instance to work with selected [store](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBObjectStore) and [db](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBDatabase). **Name** follows simple convention `db-name:store-name`.
+  **Options** helps you define [keyPath](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_keypath) value as a `key` option. If you will change key for existing store, it recreates storage and deletes existing data associted with store.
 
 ```js
 var tags = new Indexed('notepad:tags', { key: 'updatedAt' });
