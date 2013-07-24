@@ -1,0 +1,14 @@
+{
+  "name": "indexed",
+  "version": "0.5.0",
+  "description": "High-level wrapper around IndexedDB API with downgrade to localStorage",
+  "main": "dist/indexed.js",
+  "ignore": [
+    "**/.*",
+    "lib",
+    "test",
+    "index.js",
+    "component.json",
+    "package.json"
+  ]
+}
