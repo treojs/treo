@@ -1,13 +1,14 @@
 ### 0.5.1 / 2013-..-..
 
   * fix all TODO's in localStorage fallback.
+  * correct typos and misprints in Readme and docs
 
-## 0.5.0 / 2013-07-..
+## 0.5.0 / 2013-07-24
 
   * merge with weak-indexed
   * use testling to test browsers support
-  * ~ update Readme
-  * ~ add bower support
+  * update Readme
+  * add bower support
 
 ### 0.4.1 / 2013-06-02
 
