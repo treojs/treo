@@ -4,12 +4,13 @@
   "launch_in_ci": ["chrome", "firefox"],
   "src_files": [
     "index.js",
+    "lib/*",
     "test/*"
   ],
   "serve_files": [
     "build/build.js",
     "node_modules/async/lib/async.js",
     "node_modules/chai/chai.js",
-    "test/*"
+    "test/index-test.js"
   ]
 }

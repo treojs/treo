@@ -95,7 +95,7 @@ describe('Indexed', function() {
 
   describe('Schema management', function() {
     it('connect to multiply stores in one db', function(done) {
-      Indexed.drop('testapp1', function(err) {
+      Indexed.dropDb('testapp1', function(err) {
         var notes    = new Indexed('testapp1:notes');
         var tags     = new Indexed('testapp1:tags');
         var notepads = new Indexed('testapp1:notepads');
@@ -115,7 +115,7 @@ describe('Indexed', function() {
     });
 
     it('updates db.version when key was changed', function(done) {
-      Indexed.drop('testapp2', function(err1) {
+      Indexed.dropDb('testapp2', function(err1) {
         var notes = new Indexed('testapp2:notes', { key: '_id' });
         notes.put(1, { name: 'note 1' }, function(err2) {
           var changedNotes = new Indexed('testapp2:notes', { key: 'id' });
@@ -136,9 +136,9 @@ describe('Indexed', function() {
 
     it('connects to multiply databases', function(done) {
       async.series([
-        function(cb) { Indexed.drop('testapp4', cb); },
-        function(cb) { Indexed.drop('testapp5', cb); },
-        function(cb) { Indexed.drop('testapp6', cb); }
+        function(cb) { Indexed.dropDb('testapp4', cb); },
+        function(cb) { Indexed.dropDb('testapp5', cb); },
+        function(cb) { Indexed.dropDb('testapp6', cb); }
       ], function(err1) {
         var notes    = new Indexed('testapp4:notes');
         var tags     = new Indexed('testapp5:tags');
