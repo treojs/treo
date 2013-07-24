@@ -21,7 +21,7 @@
   "main": "index.js",
   "scripts": [
     "index.js",
-    "lib/indexeddb-adapter.js",
-    "lib/localstorage-adapter.js"
+    "lib/indexeddb.js",
+    "lib/localstorage.js"
   ]
 }
