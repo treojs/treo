@@ -7,6 +7,7 @@
   * merge with weak-indexed
   * use testling to test browsers support
   * ~ update Readme
+  * ~ add bower support
 
 ### 0.4.1 / 2013-06-02
 

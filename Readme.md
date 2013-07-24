@@ -12,12 +12,17 @@
                                               IndexedDB with fun.
 ```
 
-  Indexed is a minimalistic high-level wrapper around IndexedDB inspired by [LevelDB](https://code.google.com/p/leveldb/).
-It tryes to simplify low-level IndexedDB API in 5 nice function: `all`, `get`, `put`, `del`, `clear`. It manages all db migrations and complexity, so... you just enjoy powerful async storage in the browser.
-
-  If you support old browsers take a look at [ask11/weak-indexed](https://github.com/ask11/weak-indexed) for localStorage downgrade with exact same api.
+  Indexed is a minimalistic high-level wrapper around IndexedDB with downgrade to localStorage.
 
   [![browser support](https://ci.testling.com/ask11/indexed.png)](https://ci.testling.com/ask11/indexed)
+
+## Key features:
+
+  * It works in all browsers since IE6, thanks [store.js](https://github.com/marcuswestin/store.js);
+  * It smoothly manages db connections, errors, migrations, [versions](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_version), creating new stores with `onupgradeneeded`. It just works;
+  * It has simple API in 5 nice functions: `all`, `get`, `put`, `del`, and `clear`. Inspired by [LevelDB](https://code.google.com/p/leveldb/).
+
+So... you just enjoy modern powerful async storage and don't worry about browser's environment and complicated IndexedDB API.
 
 ## Installation
 
@@ -51,22 +56,16 @@ notes.clear(function(err) {});
 
 ## API
 
-  All callbacks follow node.js style, where `err` is a first argument. In terms of IndexedDB, it helps to handle `onerror` event that probably exists in all requests. The power feature of Indexed, that takes up 50% of source code, is a smooth migrations and DB connections. You don't need to worry about db connections, db [versions](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_version), adding new stores with `onupgradeneeded`. It just works in background.
+  All callbacks follow node.js style, where `err` is a first argument. In terms of IndexedDB, it helps to handle `onerror` event, which probably exists in all requests.
 
-### Indexed(name, options)
+### new Indexed(name, options)
 
-  Create a new Indexed instance to work with selected [store](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBObjectStore) and [db](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBDatabase). `name` follows simple convention `db-name:store-name`.
-  `options` parameter is optional and helps you define [keyPath](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_keypath) value as a `key` option. If you change key for existing store, it will recreated without data.
+  Create a new Indexed instance to work with selected [store](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBObjectStore) and [db](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBDatabase). `name` follows simple convention `db:store`.
+  `options` parameter is optional and helps you define [keyPath](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_keypath) value as a `key` option. If you will change key for existing store, it recreates storage and deletes existing data associted with store.
 
 ```js
 var tags = new Indexed('notepad:tags', { key: 'updatedAt' });
 ```
-
-### Indexed.supported
-
-  Flag to control that IndexedDB is available. If it is false, you can use [ask11/weak-indexed](https://github.com/ask11/weak-indexed) with indentical async API, that downgrades to localStorage and supports all brosers since IE6. Also check caniuse [page](http://caniuse.com/#search=indexeddb).
-
-  Indexed tryes to build on top of latest standarts, so it works on Chrome 25+, IE10+, FF13+. The reasons for this requirements are *2-parameter open* and *string values for transaction modes*. Check [MDN Browser compatibility](https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase#Browser_Compatibility) for irrefragable answer.
 
 ### Indexed#put(key, val, cb)
 
@@ -122,22 +121,24 @@ tags.del(3, function(err) {
 
   Clear object store.
 
-## Links for learning IndexedDB
+### Indexed.dropDb(name, cb)
+
+  Drop existing database. Useful for testing and development.
+
+## Learn IndexedDB
 
   - [MDN - IndexedDB](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB) - Basic options and conceptions
   - Learn basics with [Using IndexedDB](https://developer.mozilla.org/en-US/docs/IndexedDB/Using_IndexedDB) and [TODO list example](http://www.html5rocks.com/en/tutorials/indexeddb/todo/)
-  - [db.js](https://github.com/aaronpowell/db.js) - IndexedDB query wrapper
-  - [levelidb](https://github.com/Raynos/levelidb) - levelup interface on top of IndexedDb
+  - [Db.js](https://github.com/aaronpowell/db.js) - IndexedDB query wrapper
+  - [Levelidb](https://github.com/Raynos/levelidb) - levelup interface on top of IndexedDb
   - [IDBWrapper](https://github.com/jensarps/IDBWrapper) - a cross-browser wrapper for IndexedDB
-  - [bongo.js](https://github.com/aaronshaf/bongo.js) - rich query API + good list of links at [see also](https://github.com/aaronshaf/bongo.js#see-also) block.
-  - [Trialtool](http://nparashuram.com/trialtool/index.html#example=/IndexedDB/trialtool/webkitIndexedDB.html&selected=#prereq&) - good examples
+  - [Bongo.js](https://github.com/aaronshaf/bongo.js) - rich query API + good list of links in [see also](https://github.com/aaronshaf/bongo.js#see-also) block.
 
 ## Development
 
   - `npm install` to install dependencies;
   - `npm test` to ensure that all tests pass;
-  - `npm start` to run mocha's test server and watcher;
-  - `npm run release` to generate standalone version to build/build.js.
+  - `npm start` to run test server and watcher.
 
 ## License
 
