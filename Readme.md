@@ -26,6 +26,14 @@ So... you just enjoy modern powerful async storage and don't worry about browser
 
 ## Installation
 
+  In the browser, include [dist/indexed.js](https://raw.github.com/ask11/indexed/master/dist/indexed.js) with a <script> tag. It does not have any dependencies.
+
+  In bower:
+
+    $ bower install indexed --save
+
+  Originally, it builds with [component(1)](http://component.io/) and has obvious install command:
+
     $ component install ask11/indexed
 
 ## Example
