@@ -1,7 +1,8 @@
 {
   "framework": "mocha",
   "before_tests": "npm run build",
-  "launch_in_ci": ["chrome", "firefox"],
+  "launch_in_dev": ["phantomjs"],
+  "launch_in_ci": ["phantomjs", "chrome", "firefox"],
   "src_files": [
     "index.js",
     "lib/*",

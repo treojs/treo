@@ -5,7 +5,7 @@
     "start": "./node_modules/testem/testem.js -f test/testem.json",
     "build": "./node_modules/component/bin/component build",
     "release": "./node_modules/component/bin/component build --standalone Indexed",
-    "stat": "cloc index.js --quiet && cloc test/ --quiet"
+    "stat": "cloc index.js lib/ --quiet && cloc test/*.js --quiet"
   },
   "devDependencies": {
     "component": "*",
