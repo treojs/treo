@@ -20,13 +20,13 @@
 
   * It works in all browsers since IE6, thanks [store.js](https://github.com/marcuswestin/store.js);
   * It smoothly manages db connections, errors, migrations, [versions](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_version), creating new stores with `onupgradeneeded`. It just works;
-  * It has simple and nice API: `all`, `get`, `put`, `del`, and `clear`, which inspired by [LevelDB](https://code.google.com/p/leveldb/).
+  * It has simple and nice API inspired by [LevelDB](https://code.google.com/p/leveldb/): `all`, `get`, `put`, `del`, and `clear`.
 
 So... you just enjoy modern powerful async storage and don't worry about browser's environment and complicated IndexedDB API.
 
 ## Installation
 
-  In the browser, include [dist/indexed.js](https://raw.github.com/ask11/indexed/master/dist/indexed.js) with a <script> tag. It does not have any dependencies.
+  In the browser, include [dist/indexed.js](https://raw.github.com/ask11/indexed/master/dist/indexed.js) with a script tag. It does not have any dependencies.
 
   In bower:
 
@@ -86,7 +86,7 @@ tags.put(Date.now(), { name: 'tag 1' }, function(err, tag) {
 });
 ```
 
-  In order to add a lot of data use [async](https://github.com/caolan/async) control-flow library.
+  In order to add more data, try to use [async](https://github.com/caolan/async) library.
 
 ```js
 async.series([
