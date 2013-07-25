@@ -31,16 +31,19 @@
     "async": "*"
   },
   "testling": {
-    "preprocess" : "npm run build",
-    "html" : "test/test-runner.html",
+    "preprocess": "npm run build",
+    "html": "test/test-runner.html",
     "browsers": [
       "ie/6..latest",
-      "firefox/3..5", "firefox/19..nightly",
-      "chrome/4..7", "chrome/24..canary",
+      "firefox/3..5",
+      "firefox/19..nightly",
+      "chrome/4..7",
+      "chrome/25..canary",
       "opera/10..next",
       "safari/4..latest",
       "iphone/6",
-      "ipad/6"
+      "ipad/6",
+      "android/4.2"
     ]
   }
 }
