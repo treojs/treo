@@ -1,4 +1,19 @@
 {
+  "name": "indexed",
+  "version": "0.5.1",
+  "description": "High-level wrapper around IndexedDB with fallback to localStorage",
+  "main": "dist/indexed.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:ask11/indexed.git"
+  },
+  "keywords": [
+    "IndexedDB",
+    "LevelDB",
+    "browserify"
+  ],
+  "author": "Aleksey Kulikov <alekseys.kulikov@gmail.com> (http://twitter.com/ask_11)",
+  "license": "MIT",
   "scripts": {
     "postinstall": "component install",
     "test": "testem -f test/testem.json ci",
@@ -7,12 +22,13 @@
     "release": "component build --standalone Indexed && cp ./build/build.js ./dist/indexed.js",
     "stat": "cloc index.js lib/ --quiet && cloc test/*.js --quiet"
   },
+  "dependencies": {
+    "component": "*"
+  },
   "devDependencies": {
-    "component": "*",
     "testem": "*",
     "chai": "*",
-    "async": "*",
-    "underscore": "*"
+    "async": "*"
   },
   "testling": {
     "preprocess" : "npm run build",

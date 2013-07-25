@@ -32,6 +32,10 @@ So... you can simply enjoy modern powerful async storage, without having to worr
 
     $ bower install indexed --save
 
+  In node:
+
+    $ npm install indexed
+
   Originally, it builds with [component(1)](http://component.io/) and has obvious install command:
 
     $ component install ask11/indexed
