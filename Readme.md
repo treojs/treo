@@ -12,17 +12,17 @@
                                               IndexedDB with fun.
 ```
 
-  Indexed is a minimalistic high-level wrapper around IndexedDB with downgrade to localStorage.
+  Indexed is a minimalistic high-level wrapper around IndexedDB, with fallback to localStorage.
 
   [![browser support](https://ci.testling.com/ask11/indexed.png)](https://ci.testling.com/ask11/indexed)
 
 ## Key features
 
-  * It works in all browsers since IE6, thanks [store.js](https://github.com/marcuswestin/store.js);
-  * It smoothly manages db connections, errors, migrations, [versions](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_version), creating new stores with `onupgradeneeded`. It just works;
+  * It works in all browsers since IE6, thanks to [store.js](https://github.com/marcuswestin/store.js);
+  * It smoothly manages db connections, errors, migrations, [versions](https://developer.mozilla.org/en-US/docs/IndexedDB/Basic_Concepts_Behind_IndexedDB#gloss_version), creating new stores with `onupgradeneeded`. It just works.
   * It has simple and nice API inspired by [LevelDB](https://code.google.com/p/leveldb/): `all`, `get`, `put`, `del`, and `clear`.
 
-So... you just enjoy modern powerful async storage and don't worry about browser's environment and complicated IndexedDB API.
+So... you can simply enjoy modern powerful async storage, without having to worry about the browser's environment and the complicated IndexedDB API.
 
 ## Installation
 
@@ -65,7 +65,7 @@ notes.clear(function(err) {});
 
 ## API
 
-  All callbacks follow node.js style, where `err` is a first argument. In terms of IndexedDB, it helps to handle `onerror` event, which probably exists in all requests.
+  All callbacks follow node.js style, where `err` is the first argument. In terms of IndexedDB, it helps to handle `onerror` event, which probably exists in all requests.
 
 ### new Indexed(name, [options])
 
@@ -78,7 +78,7 @@ var tags = new Indexed('notepad:tags', { key: 'updatedAt' });
 
 ### Indexed#put(key, val, cb)
 
-  Put is the primary method for inserting data into the store, `key` will automatically mixed to the `val`. Put means insert or replace, so you can't update only one attribute.
+  Put is the primary method for inserting data into the store, `key` will automatically mixed to the `val`. Put is equivalent to insert or replace, so you can't update only a single attribute.
 
 ```js
 tags.put(Date.now(), { name: 'tag 1' }, function(err, tag) {
@@ -86,7 +86,7 @@ tags.put(Date.now(), { name: 'tag 1' }, function(err, tag) {
 });
 ```
 
-  In order to add more data, try to use [async](https://github.com/caolan/async) library.
+  In order to add more data, try using the [async](https://github.com/caolan/async) library.
 
 ```js
 async.series([
