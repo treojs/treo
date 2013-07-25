@@ -1,8 +1,12 @@
-### 0.5.1 / 2013-..-..
+### 0.5.2 / 2013-..-..
 
-  * improved package.json with component install
   * ~ fix all TODO's in localStorage fallback.
-  * ~ correct typos and misprints in Readme and docs
+
+### 0.5.1 / 2013-07-25
+
+  * improved package.json. Issue #3
+  * correct typos and misprints in Readme
+  * publish to npm
 
 ## 0.5.0 / 2013-07-24
 

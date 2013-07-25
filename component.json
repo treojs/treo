@@ -1,8 +1,8 @@
 {
   "name": "indexed",
   "repo": "ask11/indexed",
-  "description": "High-level wrapper around IndexedDB API with downgrade to localStorage",
-  "version": "0.5.0",
+  "description": "High-level wrapper around IndexedDB with fallback to localStorage",
+  "version": "0.5.1",
   "keywords": [
     "IndexedDB",
     "store",

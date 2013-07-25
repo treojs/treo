@@ -1,7 +1,7 @@
 {
   "name": "indexed",
-  "version": "0.5.0",
-  "description": "High-level wrapper around IndexedDB API with downgrade to localStorage",
+  "version": "0.5.1",
+  "description": "High-level wrapper around IndexedDB with fallback to localStorage",
   "main": "dist/indexed.js",
   "ignore": [
     "**/.*",
