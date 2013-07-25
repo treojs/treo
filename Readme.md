@@ -146,6 +146,7 @@ tags.del(3, function(err) {
   - [Levelidb](https://github.com/Raynos/levelidb) - levelup interface on top of IndexedDb
   - [IDBWrapper](https://github.com/jensarps/IDBWrapper) - a cross-browser wrapper for IndexedDB
   - [Bongo.js](https://github.com/aaronshaf/bongo.js) - rich query API + good list of links in [see also](https://github.com/aaronshaf/bongo.js#see-also) block.
+  - [Trialtool](http://nparashuram.com/trialtool/index.html#example=/IndexedDB/trialtool/webkitIndexedDB.html&selected=#prereq&) - good examples.
 
 ## Development
 
