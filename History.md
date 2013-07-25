@@ -1,7 +1,8 @@
 ### 0.5.1 / 2013-..-..
 
-  * fix all TODO's in localStorage fallback.
-  * correct typos and misprints in Readme and docs
+  * improved package.json with component install
+  * ~ fix all TODO's in localStorage fallback.
+  * ~ correct typos and misprints in Readme and docs
 
 ## 0.5.0 / 2013-07-24
 
