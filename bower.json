@@ -5,8 +5,6 @@
   "main": "dist/indexed.js",
   "ignore": [
     "**/.*",
-    "lib",
-    "test",
     "index.js",
     "component.json",
     "package.json"
