@@ -19,7 +19,7 @@
     "test": "testem -f test/testem.json ci",
     "start": "testem -f test/testem.json",
     "build": "component build",
-    "release": "component build --standalone Indexed && cp ./build/build.js ./dist/indexed.js",
+    "release": "component build --standalone Indexed && sed -i.bak 's/require/requireIndexed/' build/build.js && cp ./build/build.js ./dist/indexed.js",
     "stat": "cloc index.js lib/ --quiet && cloc test/*.js --quiet"
   },
   "dependencies": {

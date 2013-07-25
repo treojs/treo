@@ -8,29 +8,29 @@
  * @api public
  */
 
-function require(path, parent, orig) {
-  var resolved = require.resolve(path);
+function requireIndexed(path, parent, orig) {
+  var resolved = requireIndexed.resolve(path);
 
   // lookup failed
   if (null == resolved) {
     orig = orig || path;
     parent = parent || 'root';
-    var err = new Error('Failed to require "' + orig + '" from "' + parent + '"');
+    var err = new Error('Failed to requireIndexed "' + orig + '" from "' + parent + '"');
     err.path = orig;
     err.parent = parent;
-    err.require = true;
+    err.requireIndexed = true;
     throw err;
   }
 
-  var module = require.modules[resolved];
+  var module = requireIndexed.modules[resolved];
 
-  // perform real require()
+  // perform real requireIndexed()
   // by invoking the module's
   // registered function
   if (!module.exports) {
     module.exports = {};
     module.client = module.component = true;
-    module.call(this, module.exports, require.relative(resolved), module);
+    module.call(this, module.exports, requireIndexed.relative(resolved), module);
   }
 
   return module.exports;
@@ -40,13 +40,13 @@ function require(path, parent, orig) {
  * Registered modules.
  */
 
-require.modules = {};
+requireIndexed.modules = {};
 
 /**
  * Registered aliases.
  */
 
-require.aliases = {};
+requireIndexed.aliases = {};
 
 /**
  * Resolve `path`.
@@ -62,9 +62,8 @@ require.aliases = {};
  * @api private
  */
 
-require.resolve = function(path) {
+requireIndexed.resolve = function(path) {
   if (path.charAt(0) === '/') path = path.slice(1);
-  var index = path + '/index.js';
 
   var paths = [
     path,
@@ -76,11 +75,8 @@ require.resolve = function(path) {
 
   for (var i = 0; i < paths.length; i++) {
     var path = paths[i];
-    if (require.modules.hasOwnProperty(path)) return path;
-  }
-
-  if (require.aliases.hasOwnProperty(index)) {
-    return require.aliases[index];
+    if (requireIndexed.modules.hasOwnProperty(path)) return path;
+    if (requireIndexed.aliases.hasOwnProperty(path)) return require.aliases[path];
   }
 };
 
@@ -93,7 +89,7 @@ require.resolve = function(path) {
  * @api private
  */
 
-require.normalize = function(curr, path) {
+requireIndexed.normalize = function(curr, path) {
   var segs = [];
 
   if ('.' != path.charAt(0)) return path;
@@ -120,8 +116,8 @@ require.normalize = function(curr, path) {
  * @api private
  */
 
-require.register = function(path, definition) {
-  require.modules[path] = definition;
+requireIndexed.register = function(path, definition) {
+  requireIndexed.modules[path] = definition;
 };
 
 /**
@@ -132,23 +128,23 @@ require.register = function(path, definition) {
  * @api private
  */
 
-require.alias = function(from, to) {
-  if (!require.modules.hasOwnProperty(from)) {
+requireIndexed.alias = function(from, to) {
+  if (!requireIndexed.modules.hasOwnProperty(from)) {
     throw new Error('Failed to alias "' + from + '", it does not exist');
   }
-  require.aliases[to] = from;
+  requireIndexed.aliases[to] = from;
 };
 
 /**
- * Return a require function relative to the `parent` path.
+ * Return a requireIndexed function relative to the `parent` path.
  *
  * @param {String} parent
  * @return {Function}
  * @api private
  */
 
-require.relative = function(parent) {
-  var p = require.normalize(parent, '..');
+requireIndexed.relative = function(parent) {
+  var p = requireIndexed.normalize(parent, '..');
 
   /**
    * lastIndexOf helper.
@@ -163,12 +159,12 @@ require.relative = function(parent) {
   }
 
   /**
-   * The relative require() itself.
+   * The relative requireIndexed() itself.
    */
 
   function localRequire(path) {
     var resolved = localRequire.resolve(path);
-    return require(resolved, parent, path);
+    return requireIndexed(resolved, parent, path);
   }
 
   /**
@@ -178,7 +174,7 @@ require.relative = function(parent) {
   localRequire.resolve = function(path) {
     var c = path.charAt(0);
     if ('/' == c) return path.slice(1);
-    if ('.' == c) return require.normalize(p, path);
+    if ('.' == c) return requireIndexed.normalize(p, path);
 
     // resolve deps by returning
     // the dep in the nearest "deps"
@@ -195,12 +191,12 @@ require.relative = function(parent) {
    */
 
   localRequire.exists = function(path) {
-    return require.modules.hasOwnProperty(localRequire.resolve(path));
+    return requireIndexed.modules.hasOwnProperty(localRequire.resolve(path));
   };
 
   return localRequire;
 };
-require.register("timoxley-next-tick/index.js", function(exports, require, module){
+requireIndexed.register("timoxley-next-tick/index.js", function(exports, require, module){
 if (typeof setImmediate == 'function') {
   module.exports = function(ƒ){ setImmediate(ƒ) }
 }
@@ -234,7 +230,7 @@ else if (typeof window == 'undefined' || window.ActiveXObject || !window.postMes
 }
 
 });
-require.register("marcuswestin-store.js/store.js", function(exports, require, module){
+requireIndexed.register("marcuswestin-store.js/store.js", function(exports, require, module){
 ;(function(win){
 	var store = {},
 		doc = win.document,
@@ -389,7 +385,7 @@ require.register("marcuswestin-store.js/store.js", function(exports, require, mo
 })(this.window || global);
 
 });
-require.register("component-clone/index.js", function(exports, require, module){
+requireIndexed.register("component-clone/index.js", function(exports, require, module){
 
 /**
  * Module dependencies.
@@ -398,9 +394,9 @@ require.register("component-clone/index.js", function(exports, require, module){
 var type;
 
 try {
-  type = require('type');
+  type = requireIndexed('type');
 } catch(e){
-  type = require('type-component');
+  type = requireIndexed('type-component');
 }
 
 /**
@@ -451,7 +447,7 @@ function clone(obj){
 }
 
 });
-require.register("component-type/index.js", function(exports, require, module){
+requireIndexed.register("component-type/index.js", function(exports, require, module){
 
 /**
  * toString ref.
@@ -486,13 +482,13 @@ module.exports = function(val){
 };
 
 });
-require.register("component-each/index.js", function(exports, require, module){
+requireIndexed.register("component-each/index.js", function(exports, require, module){
 
 /**
  * Module dependencies.
  */
 
-var type = require('type');
+var type = requireIndexed('type');
 
 /**
  * HOP reference.
@@ -564,18 +560,18 @@ function array(obj, fn) {
   }
 }
 });
-require.register("indexed/index.js", function(exports, require, module){
-var Indexed  = require('./lib/indexeddb');
-module.exports = Indexed.supported ? Indexed : require('./lib/localstorage');
+requireIndexed.register("indexed/index.js", function(exports, require, module){
+var Indexed  = requireIndexed('./lib/indexeddb');
+module.exports = Indexed.supported ? Indexed : requireIndexed('./lib/localstorage');
 
 });
-require.register("indexed/lib/indexeddb.js", function(exports, require, module){
+requireIndexed.register("indexed/lib/indexeddb.js", function(exports, require, module){
 /**
  * Local variables.
  */
 
 var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
-var clone     = require('clone');
+var clone     = requireIndexed('clone');
 var indexOf   = Array.prototype.indexOf;
 var slice     = Array.prototype.slice;
 var dbs       = {};
@@ -603,7 +599,7 @@ module.exports = Indexed;
  */
 
 function Indexed(name, options) {
-  if (typeof name !== 'string') throw new TypeError('name required');
+  if (typeof name !== 'string') throw new TypeError('name requireIndexedd');
   if (!options) options = {};
   var params = name.split(':');
 
@@ -636,7 +632,7 @@ Indexed.dropDb = function(dbName, cb) {
  *
  * Indexed tryes to build on top of latest standart http://www.w3.org/TR/2013/CR-IndexedDB-20130704/,
  * so it works on Chrome 25+, IE10+, FF13+.
- * The reasons for this requirements are `2-parameter open` and `string values for transaction modes`.
+ * The reasons for this requireIndexedments are `2-parameter open` and `string values for transaction modes`.
  * Check https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase#Browser_Compatibility
  * for irrefragable answer.
  */
@@ -898,15 +894,15 @@ function transaction(mode, handler) {
 }
 
 });
-require.register("indexed/lib/localstorage.js", function(exports, require, module){
+requireIndexed.register("indexed/lib/localstorage.js", function(exports, require, module){
 
 /**
  * Module dependencies.
  */
 
-var store        = require('store');
-var each         = require('each');
-var setImmediate = require('next-tick');
+var store        = requireIndexed('store');
+var each         = requireIndexed('each');
+var setImmediate = requireIndexed('next-tick');
 var slice        = Array.prototype.slice;
 
 /**
@@ -926,7 +922,7 @@ module.exports = Indexed;
  */
 
 function Indexed(name, options) {
-  if (typeof name !== 'string') throw new TypeError('name required');
+  if (typeof name !== 'string') throw new TypeError('name requireIndexedd');
   if (!options) options = {};
   var params = name.split(':');
 
@@ -1084,31 +1080,33 @@ function async(getVal) {
 }
 
 });
-require.alias("timoxley-next-tick/index.js", "indexed/deps/next-tick/index.js");
-require.alias("timoxley-next-tick/index.js", "next-tick/index.js");
 
-require.alias("marcuswestin-store.js/store.js", "indexed/deps/store/store.js");
-require.alias("marcuswestin-store.js/store.js", "indexed/deps/store/index.js");
-require.alias("marcuswestin-store.js/store.js", "store/index.js");
-require.alias("marcuswestin-store.js/store.js", "marcuswestin-store.js/index.js");
 
-require.alias("component-clone/index.js", "indexed/deps/clone/index.js");
-require.alias("component-clone/index.js", "clone/index.js");
-require.alias("component-type/index.js", "component-clone/deps/type/index.js");
 
-require.alias("component-type/index.js", "indexed/deps/type/index.js");
-require.alias("component-type/index.js", "type/index.js");
 
-require.alias("component-each/index.js", "indexed/deps/each/index.js");
-require.alias("component-each/index.js", "each/index.js");
-require.alias("component-type/index.js", "component-each/deps/type/index.js");
 
-require.alias("indexed/index.js", "indexed/index.js");
+requireIndexed.alias("timoxley-next-tick/index.js", "indexed/deps/next-tick/index.js");
+requireIndexed.alias("timoxley-next-tick/index.js", "next-tick/index.js");
 
-if (typeof exports == "object") {
-  module.exports = require("indexed");
+requireIndexed.alias("marcuswestin-store.js/store.js", "indexed/deps/store/store.js");
+requireIndexed.alias("marcuswestin-store.js/store.js", "indexed/deps/store/index.js");
+requireIndexed.alias("marcuswestin-store.js/store.js", "store/index.js");
+requireIndexed.alias("marcuswestin-store.js/store.js", "marcuswestin-store.js/index.js");
+requireIndexed.alias("component-clone/index.js", "indexed/deps/clone/index.js");
+requireIndexed.alias("component-clone/index.js", "clone/index.js");
+requireIndexed.alias("component-type/index.js", "component-clone/deps/type/index.js");
+
+requireIndexed.alias("component-type/index.js", "indexed/deps/type/index.js");
+requireIndexed.alias("component-type/index.js", "type/index.js");
+
+requireIndexed.alias("component-each/index.js", "indexed/deps/each/index.js");
+requireIndexed.alias("component-each/index.js", "each/index.js");
+requireIndexed.alias("component-type/index.js", "component-each/deps/type/index.js");
+
+requireIndexed.alias("indexed/index.js", "indexed/index.js");if (typeof exports == "object") {
+  module.exports = requireIndexed("indexed");
 } else if (typeof define == "function" && define.amd) {
-  define(function(){ return require("indexed"); });
+  define(function(){ return requireIndexed("indexed"); });
 } else {
-  this["Indexed"] = require("indexed");
+  this["Indexed"] = requireIndexed("indexed");
 }})();
