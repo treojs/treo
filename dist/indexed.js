@@ -76,7 +76,7 @@ requireIndexed.resolve = function(path) {
   for (var i = 0; i < paths.length; i++) {
     var path = paths[i];
     if (requireIndexed.modules.hasOwnProperty(path)) return path;
-    if (requireIndexed.aliases.hasOwnProperty(path)) return require.aliases[path];
+    if (requireIndexed.aliases.hasOwnProperty(path)) return requireIndexed.aliases[path];
   }
 };
 
@@ -196,9 +196,11 @@ requireIndexed.relative = function(parent) {
 
   return localRequire;
 };
-requireIndexed.register("timoxley-next-tick/index.js", function(exports, require, module){
+requireIndexed.register("timoxley-next-tick/index.js", function(exports, requireIndexed, module){
+"use strict"
+
 if (typeof setImmediate == 'function') {
-  module.exports = function(ƒ){ setImmediate(ƒ) }
+  module.exports = function(f){ setImmediate(f) }
 }
 // legacy node.js
 else if (typeof process != 'undefined' && typeof process.nextTick == 'function') {
@@ -206,7 +208,7 @@ else if (typeof process != 'undefined' && typeof process.nextTick == 'function')
 }
 // fallback for other environments / postMessage behaves badly on IE8
 else if (typeof window == 'undefined' || window.ActiveXObject || !window.postMessage) {
-  module.exports = function(ƒ){ setTimeout(ƒ) };
+  module.exports = function(f){ setTimeout(f) };
 } else {
   var q = [];
 
@@ -230,7 +232,7 @@ else if (typeof window == 'undefined' || window.ActiveXObject || !window.postMes
 }
 
 });
-requireIndexed.register("marcuswestin-store.js/store.js", function(exports, require, module){
+requireIndexed.register("marcuswestin-store.js/store.js", function(exports, requireIndexed, module){
 ;(function(win){
 	var store = {},
 		doc = win.document,
@@ -385,7 +387,7 @@ requireIndexed.register("marcuswestin-store.js/store.js", function(exports, requ
 })(this.window || global);
 
 });
-requireIndexed.register("component-clone/index.js", function(exports, require, module){
+requireIndexed.register("component-clone/index.js", function(exports, requireIndexed, module){
 
 /**
  * Module dependencies.
@@ -447,7 +449,7 @@ function clone(obj){
 }
 
 });
-requireIndexed.register("component-type/index.js", function(exports, require, module){
+requireIndexed.register("component-type/index.js", function(exports, requireIndexed, module){
 
 /**
  * toString ref.
@@ -482,13 +484,121 @@ module.exports = function(val){
 };
 
 });
-requireIndexed.register("component-each/index.js", function(exports, require, module){
+requireIndexed.register("component-to-function/index.js", function(exports, requireIndexed, module){
+
+/**
+ * Expose `toFunction()`.
+ */
+
+module.exports = toFunction;
+
+/**
+ * Convert `obj` to a `Function`.
+ *
+ * @param {Mixed} obj
+ * @return {Function}
+ * @api private
+ */
+
+function toFunction(obj) {
+  switch ({}.toString.call(obj)) {
+    case '[object Object]':
+      return objectToFunction(obj);
+    case '[object Function]':
+      return obj;
+    case '[object String]':
+      return stringToFunction(obj);
+    case '[object RegExp]':
+      return regexpToFunction(obj);
+    default:
+      return defaultToFunction(obj);
+  }
+}
+
+/**
+ * Default to strict equality.
+ *
+ * @param {Mixed} val
+ * @return {Function}
+ * @api private
+ */
+
+function defaultToFunction(val) {
+  return function(obj){
+    return val === obj;
+  }
+}
+
+/**
+ * Convert `re` to a function.
+ *
+ * @param {RegExp} re
+ * @return {Function}
+ * @api private
+ */
+
+function regexpToFunction(re) {
+  return function(obj){
+    return re.test(obj);
+  }
+}
+
+/**
+ * Convert property `str` to a function.
+ *
+ * @param {String} str
+ * @return {Function}
+ * @api private
+ */
+
+function stringToFunction(str) {
+  // immediate such as "> 20"
+  if (/^ *\W+/.test(str)) return new Function('_', 'return _ ' + str);
+
+  // properties such as "name.first" or "age > 18"
+  return new Function('_', 'return _.' + str);
+}
+
+/**
+ * Convert `object` to a function.
+ *
+ * @param {Object} object
+ * @return {Function}
+ * @api private
+ */
+
+function objectToFunction(obj) {
+  var match = {}
+  for (var key in obj) {
+    match[key] = typeof obj[key] === 'string'
+      ? defaultToFunction(obj[key])
+      : toFunction(obj[key])
+  }
+  return function(val){
+    if (typeof val !== 'object') return false;
+    for (var key in match) {
+      if (!(key in val)) return false;
+      if (!match[key](val[key])) return false;
+    }
+    return true;
+  }
+}
+
+});
+requireIndexed.register("component-each/index.js", function(exports, requireIndexed, module){
 
 /**
  * Module dependencies.
  */
 
-var type = requireIndexed('type');
+var toFunction = requireIndexed('to-function');
+var type;
+
+try {
+  type = requireIndexed('type-component');
+} catch (e) {
+  type = requireIndexed('type');
+}
 
 /**
  * HOP reference.
@@ -505,6 +615,7 @@ var has = Object.prototype.hasOwnProperty;
  */
 
 module.exports = function(obj, fn){
+  fn = toFunction(fn);
   switch (type(obj)) {
     case 'array':
       return array(obj, fn);
@@ -559,13 +670,14 @@ function array(obj, fn) {
     fn(obj[i], i);
   }
 }
+
 });
-requireIndexed.register("indexed/index.js", function(exports, require, module){
+requireIndexed.register("indexed/index.js", function(exports, requireIndexed, module){
 var Indexed  = requireIndexed('./lib/indexeddb');
 module.exports = Indexed.supported ? Indexed : requireIndexed('./lib/localstorage');
 
 });
-requireIndexed.register("indexed/lib/indexeddb.js", function(exports, require, module){
+requireIndexed.register("indexed/lib/indexeddb.js", function(exports, requireIndexed, module){
 /**
  * Local variables.
  */
@@ -660,7 +772,7 @@ Indexed.prototype.all = transaction('readonly', function(store, tr, cb) {
     var cursor = this.result;
     if (cursor) {
       result.push(cursor.value);
-      cursor.continue();
+      cursor['continue']();
     } else {
       cb(null, result);
     }
@@ -701,7 +813,7 @@ Indexed.prototype.clear = transaction('readwrite', function(store, tr, cb) {
  */
 
 Indexed.prototype.del = transaction('readwrite', function(store, tr, key, cb) {
-  request(store.delete(key), tr, cb);
+  request(store['delete'](key), tr, cb);
 });
 
 /**
@@ -733,7 +845,7 @@ Indexed.prototype._getStore = function(mode, cb) {
   this._getDb(function(err, db) {
     if (err) return cb(err);
 
-    var transaction = db.transaction([this.name], mode);
+    var transaction = db.transaction(this.name, mode);
     var objectStore = transaction.objectStore(this.name);
     cb.call(this, null, objectStore, transaction);
   });
@@ -894,7 +1006,7 @@ function transaction(mode, handler) {
 }
 
 });
-requireIndexed.register("indexed/lib/localstorage.js", function(exports, require, module){
+requireIndexed.register("indexed/lib/localstorage.js", function(exports, requireIndexed, module){
 
 /**
  * Module dependencies.
@@ -943,7 +1055,7 @@ Indexed.dropDb = function(name, cb) {
 };
 
 // Always supported
-Indexed.supported = true;
+Indexed.supported = store.enabled;
 
 /**
  * Returns all values from the store.
@@ -1101,6 +1213,8 @@ requireIndexed.alias("component-type/index.js", "type/index.js");
 
 requireIndexed.alias("component-each/index.js", "indexed/deps/each/index.js");
 requireIndexed.alias("component-each/index.js", "each/index.js");
+requireIndexed.alias("component-to-function/index.js", "component-each/deps/to-function/index.js");
+
 requireIndexed.alias("component-type/index.js", "component-each/deps/type/index.js");
 
 requireIndexed.alias("indexed/index.js", "indexed/index.js");if (typeof exports == "object") {
