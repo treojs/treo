@@ -1,0 +1,20 @@
+{
+  "name": "treo",
+  "description": "High-level interface to IndexedDB",
+  "version": "0.0.1",
+  "keywords": [
+    "IndexedDB",
+    "treo",
+    "offline"
+  ],
+  "ignore": [
+    "**/.*",
+    "Makefile",
+    "test/",
+    "component.json",
+    "package.json"
+  ],
+  "main": [
+    "treo.js"
+  ]
+}
