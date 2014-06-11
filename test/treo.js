@@ -111,5 +111,23 @@ describe('treo', function() {
         });
       });
     });
+
+    it('#all', function(done) {
+      var magazines = db.store('magazines');
+      var records = {
+        'id1': { title: 'Quarry Memories', id: 'id1', publisher: 'Bob' },
+        'id2': { title: 'Water Buffaloes', id: 'id2', publisher: 'Bob' },
+        'id3': { title: 'Bedrocky Nights', id: 'id3', publisher: 'Tim' },
+        'id4': { title: 'Heavy weighting', id: 'id4', publisher: 'Ken' },
+      };
+      magazines.put(records, function(err) {
+        if (err) return done(err);
+        magazines.all(function(err, result) {
+          expect(result).length(4);
+          expect(result[0].id).equal('id1');
+          done(err);
+        });
+      });
+    });
   });
 });
