@@ -64,22 +64,27 @@ describe('treo', function() {
       var upgradedSchema = schema
         .version(4)
           .addStore('authors')
-          .put(1, { id: 1, name: 'Fred' })
-          .put(2, { id: 2, name: 'Barney' })
         .version(5)
           .getStore('authors')
           .addIndex('byName', 'name', { unique: true });
 
       db = treo('treo', upgradedSchema);
       expect(db.version).equal(5);
-      expect(db.stores).length(3);
+      expect(Object.keys(db.stores)).length(3);
+      var authors = db.store('authors');
 
-      db.store('authors').all(function(err, all) {
+      authors.put({
+        1: { id: 1, name: 'Fred' },
+        2: { id: 2, name: 'Barney' },
+      }, function(err) {
         if (err) return done(err);
-        expect(all).length(2);
-        db.store('authors').index('byName').get('Fred', function(err, fred) {
-          expect(fred.id).equal(1);
-          done(err);
+        db.store('authors').all(function(err, all) {
+          if (err) return done(err);
+          expect(all).length(2);
+          db.store('authors').index('byName').get('Fred', function(err, fred) {
+            expect(fred.id).equal(1);
+            done(err);
+          });
         });
       });
     });
