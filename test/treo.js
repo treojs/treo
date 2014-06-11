@@ -32,4 +32,13 @@ describe('treo', function() {
       expect(db.status).equal('close');
     });
   });
+
+  describe('store', function() {
+    it('has properties', function() {
+      var books = db.store('books');
+      expect(books.name).equal('books');
+      expect(books.indexes).length(3);
+      expect(books.db).equal(db);
+    });
+  });
 });

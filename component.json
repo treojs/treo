@@ -16,7 +16,8 @@
   },
   "scripts": [
     "lib/index.js",
-    "lib/schema.js"
+    "lib/schema.js",
+    "lib/store.js"
   ],
   "development": {
     "dependencies": {
