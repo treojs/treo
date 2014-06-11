@@ -33,11 +33,30 @@ describe('treo', function() {
       expect(db.status).equal('close');
     });
 
-    it('supports parallel read requests', function(done) {
+    it('parallel read', function(done) {
       var next = after(3, done);
       db.store('books').count(next);
       db.store('magazines').count(next);
       db.store('magazines').index('byPublisher').get(1, next);
+    });
+
+    it('parallel write', function(done) {
+      var books = db.store('books');
+      var magazines = db.store('magazines');
+      var next = after(4, function() {
+        books.all(function(err, records) {
+          expect(records).length(3);
+          magazines.count(function(err2, count) {
+            expect(count).equal(1);
+            done(err || err2);
+          });
+        });
+      });
+
+      books.put({ 1: { id: 1, name: 'book 1' }, 2: { id: 2, name: 'book 2' } }, next);
+      books.put(3, { id: 3, name: 'book 3' }, next);
+      magazines.del(5, next);
+      magazines.put(4, { message: 'hey' }, next);
     });
   });
 
