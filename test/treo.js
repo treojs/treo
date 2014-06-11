@@ -55,7 +55,7 @@ describe('treo', function() {
       });
     });
 
-    it.skip('#put many record in batch', function(done) {
+    it('#put many record in batch', function(done) {
       var books = db.store('books');
       books.put({
         123456: { title: 'Quarry Memories', author: 'Fred', isbn: 123456 },
