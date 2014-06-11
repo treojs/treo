@@ -41,7 +41,7 @@ describe('treo', function() {
       expect(books.db).equal(db);
     });
 
-    it.only('#put one record', function(done) {
+    it('#put one record', function(done) {
       var attrs = { title: 'Quarry Memories', author: 'Fred', isbn: 123456 };
       var books = db.store('books');
 
@@ -55,7 +55,7 @@ describe('treo', function() {
       });
     });
 
-    it('#put many record in batch', function(done) {
+    it.skip('#put many record in batch', function(done) {
       var books = db.store('books');
       books.put({
         123456: { title: 'Quarry Memories', author: 'Fred', isbn: 123456 },
