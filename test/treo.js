@@ -39,5 +39,35 @@ describe('treo', function() {
       expect(books.name).equal('books');
       expect(books.indexes).length(3);
     });
+
+    it('#put one record', function(done) {
+      var attrs = { title: 'Quarry Memories', author: 'Fred', isbn: 123456 };
+      var books = db.store('books');
+
+      books.put(attrs.isbn, attrs, function(err) {
+        if (err) return done(err);
+        books.get(attrs.isbn, function(err, book) {
+          if (err) return done(err);
+          expect(book).eql(attrs);
+          done();
+        });
+      });
+    });
+
+    it('#put many record in batch', function(done) {
+      var books = db.store('books');
+      books.put({
+        123456: { title: 'Quarry Memories', author: 'Fred', isbn: 123456 },
+        234567: { title: 'Water Buffaloes', author: 'Fred', isbn: 234567 },
+        345678: { title: 'Bedrock Nights', author: 'Barney', isbn: 345678 },
+      }, function(err) {
+        if (err) return done(err);
+        books.count(function(err, count) {
+          if (err) return done(err);
+          expect(count).equal(3);
+          done();
+        });
+      });
+    });
   });
 });
