@@ -9,8 +9,14 @@
     "treo",
     "offline"
   ],
+  "dependencies": {
+    "yields/idb-request": "0.0.1",
+    "component/type": "1.0.0",
+    "component/object": "0.0.3"
+  },
   "scripts": [
-    "lib/index.js"
+    "lib/index.js",
+    "lib/schema.js"
   ],
   "development": {
     "dependencies": {

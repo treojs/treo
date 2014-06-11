@@ -16,8 +16,8 @@ describe('treo', function() {
       .addIndex('byPublisher', 'publisher')
       .addIndex('byFrequency', 'frequency');
 
-  beforeEach(function(done) {
-    db = treo('treo', schema, done);
+  beforeEach(function() {
+    db = treo('treo', schema);
   });
 
   afterEach(function(done) {
@@ -27,8 +27,9 @@ describe('treo', function() {
   describe('db', function() {
     it('has properties', function() {
       expect(db.name).equal('treo');
-      expect(db.version).equal(2);
+      expect(db.version).equal(3);
       expect(db.stores).length(2);
+      expect(db.status).equal('close');
     });
   });
 });
