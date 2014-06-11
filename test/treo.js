@@ -173,5 +173,17 @@ describe('treo', function() {
         done();
       });
     });
+
+    it('#count', function(done) {
+      books.index('byYear').count(2012, function(err, count) {
+        if (err) return done(err);
+        expect(count).equal(2);
+
+        books.index('byTitle').count('Water Buffaloes', function(err, count) {
+          expect(count).equal(1);
+          done(err);
+        });
+      });
+    });
   });
 });

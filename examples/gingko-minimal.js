@@ -80,7 +80,7 @@ cards.index('byTree').get('treeId', fn);
 // - simple API to start write/read without waiting for connect,
 //   detection of existing stores, creating transations
 // - hide complexety of IndexedDB
-// - powerful API to do schema/version management
+// - powerful API for schema/version management
 // - enjoyable way to do powerful tasks, like batch or filter by index.
 // - stop support of indexed, and rename it to treo
 //
