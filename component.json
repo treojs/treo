@@ -21,7 +21,8 @@
   ],
   "development": {
     "dependencies": {
-      "chaijs/chai": "*"
+      "chaijs/chai": "1.9.1",
+      "segmentio/after": "0.1.0"
     },
     "scripts": [
       "test/treo.js"

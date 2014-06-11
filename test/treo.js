@@ -1,4 +1,5 @@
 var expect = require('chai').expect;
+var after = require('after');
 var treo = require('../lib/treo');
 
 describe('treo', function() {
@@ -30,6 +31,13 @@ describe('treo', function() {
       expect(db.version).equal(3);
       expect(db.stores).length(2);
       expect(db.status).equal('close');
+    });
+
+    it('supports parallel read requests', function(done) {
+      var next = after(3, done);
+      db.store('books').count(next);
+      db.store('magazines').count(next);
+      db.store('magazines').index('byPublisher').get(1, next);
     });
   });
 
