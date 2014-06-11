@@ -130,4 +130,40 @@ describe('treo', function() {
       });
     });
   });
+
+  describe('index', function() {
+    var books;
+    beforeEach(function(done) {
+      books = db.store('books');
+      books.put({
+        1: { title: 'Quarry Memories', author: 'Fred', isbn: 1, year: 2012 },
+        2: { title: 'Water Buffaloes', author: 'Fred', isbn: 2, year: 2013 },
+        3: { title: 'Bedrock Nights', author: 'Barney', isbn: 3, year: 2012 },
+      }, done);
+    });
+
+    it('#get by array index', function(done) {
+      books.index('byAuthor').get('Fred', function(err, records) {
+        if (err) return done(err);
+        expect(records).length(2);
+        expect(records[0].isbn).equal(1);
+
+        books.index('byYear').get(2013, function(err, records) {
+          expect(records).length(1);
+          expect(records[0].isbn).equal(2);
+          done(err);
+        });
+      });
+    });
+
+    it('#get by unique index', function(done) {
+      books.index('byTitle').get('Bedrock Nights', function(err, val) {
+        if (err) return done(err);
+        expect(val.isbn).equal(3);
+        expect(val.title).equal('Bedrock Nights');
+        expect(Object.keys(val)).length(4);
+        done();
+      });
+    });
+  });
 });
