@@ -25,7 +25,8 @@
       "segmentio/after": "0.1.0"
     },
     "scripts": [
-      "test/treo.js"
+      "test/treo.js",
+      "test/vendor/indexeddb-shim.js"
     ]
   }
 }
