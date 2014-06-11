@@ -1,5 +1,6 @@
 component = ./node_modules/.bin/component
 component-testem = ./node_modules/.bin/component-testem
+minify = ./node_modules/.bin/minify
 
 install: node_modules components
 
@@ -21,8 +22,16 @@ test: install $(wildcard test/*.js)
 test-server: install
 	@$(component-testem) --server
 
-build: clean $(wildcard lib/*.js)
+build: install clean $(wildcard lib/*.js)
 	@$(component) build --standalone treo --out . --name treo
+
+size: build
+	@ls -l treo.js
+	@$(minify) -l js treo.js > treo.min.js
+	@ls -l treo.min.js
+	@gzip treo.min.js
+	@ls -l treo.min.js.gz
+	@rm treo.min.js.gz
 
 release: test build
 	@echo - "upgrade {package|component|bower}.json (bump 0.0.0|patch|minor|major)"
