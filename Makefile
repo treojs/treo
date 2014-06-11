@@ -18,7 +18,7 @@ clean-dist:
 test: install $(wildcard test/*.js)
 	@$(component-testem)
 
-test-server:
+test-server: install
 	@$(component-testem) --server
 
 build: clean $(wildcard lib/*.js)

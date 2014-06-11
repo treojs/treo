@@ -11,5 +11,13 @@
   ],
   "scripts": [
     "lib/index.js"
-  ]
+  ],
+  "development": {
+    "dependencies": {
+      "chaijs/chai": "*"
+    },
+    "scripts": [
+      "test/treo.js"
+    ]
+  }
 }
