@@ -38,9 +38,10 @@ describe('treo', function() {
       var books = db.store('books');
       expect(books.name).equal('books');
       expect(books.indexes).length(3);
+      expect(books.db).equal(db);
     });
 
-    it('#put one record', function(done) {
+    it.only('#put one record', function(done) {
       var attrs = { title: 'Quarry Memories', author: 'Fred', isbn: 123456 };
       var books = db.store('books');
 

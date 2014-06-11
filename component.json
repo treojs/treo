@@ -11,7 +11,6 @@
     "offline"
   ],
   "dependencies": {
-    "yields/idb-request": "0.0.1",
     "component/type": "1.0.0"
   },
   "scripts": [
