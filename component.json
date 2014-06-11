@@ -11,7 +11,8 @@
     "offline"
   ],
   "dependencies": {
-    "component/type": "1.0.0"
+    "component/type": "1.0.0",
+    "paulmillr/async-each": "0.1.4"
   },
   "scripts": [
     "lib/treo.js",

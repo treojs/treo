@@ -58,14 +58,15 @@ describe('treo', function() {
     it('#put many record in batch', function(done) {
       var books = db.store('books');
       books.put({
-        123456: { title: 'Quarry Memories', author: 'Fred', isbn: 123456 },
-        234567: { title: 'Water Buffaloes', author: 'Fred', isbn: 234567 },
-        345678: { title: 'Bedrock Nights', author: 'Barney', isbn: 345678 },
+        '123456': { title: 'Quarry Memories', author: 'Fred', isbn: '123456' },
+        '234567': { title: 'Water Buffaloes', author: 'Fred', isbn: '234567' },
+        '345678': { title: 'Bedrock Nights', author: 'Barney', isbn: '345678' },
       }, function(err) {
         if (err) return done(err);
-        books.count(function(err, count) {
+        books.get(['123456', '234567'], function(err, records) {
           if (err) return done(err);
-          expect(count).equal(3);
+          expect(records).length(2);
+          expect(records[0].isbn).equal('123456');
           done();
         });
       });
