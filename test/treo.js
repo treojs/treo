@@ -1,5 +1,5 @@
 var expect = require('chai').expect;
-var treo = require('../lib');
+var treo = require('../lib/treo');
 
 describe('treo', function() {
   var db;
@@ -38,7 +38,6 @@ describe('treo', function() {
       var books = db.store('books');
       expect(books.name).equal('books');
       expect(books.indexes).length(3);
-      expect(books.db).equal(db);
     });
   });
 });
