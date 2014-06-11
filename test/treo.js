@@ -71,5 +71,45 @@ describe('treo', function() {
         });
       });
     });
+
+    it('#clear', function(done) {
+      var books = db.store('books');
+      books.put({
+        '123456': { title: 'Quarry Memories', author: 'Fred', isbn: '123456' },
+        '234567': { title: 'Water Buffaloes', author: 'Fred', isbn: '234567' },
+      }, function(err) {
+        books.count(function(err2, count) {
+          expect(count).equal(2);
+          books.clear(function(err3) {
+            books.count(function(err4, count) {
+              expect(count).equal(0);
+              done(err || err2 || err3 || err4);
+            });
+          });
+        });
+      });
+    });
+
+    it('#del many records', function(done) {
+      var magazines = db.store('magazines');
+      magazines.put({
+        'id1': { title: 'Quarry Memories', id: 'id1', publisher: 'Bob' },
+        'id2': { title: 'Water Buffaloes', id: 'id2', publisher: 'Bob' },
+        'id3': { title: 'Bedrocky Nights', id: 'id3', publisher: 'Tim' },
+        'id4': { title: 'Heavy weighting', id: 'id4', publisher: 'Ken' },
+      }, function(err) {
+        if (err) return done(err);
+        magazines.del('id1', function(err) {
+          if (err) return done(err);
+          magazines.del(['id1', 'id2', 'id3'], function(err) {
+            if (err) return done(err);
+            magazines.count(function(err, count) {
+              expect(count).equal(1);
+              done(err);
+            });
+          });
+        });
+      });
+    });
   });
 });
