@@ -197,7 +197,7 @@ describe('treo', function() {
         magazines.batch({
           'id1': null,
           'id3': { title: 'Bedrocky Nights', id: 'id3', publisher: 'Tim' },
-          'id4': { title: 'Heavy weighting', id: 'id4', publisher: 'Ken' },
+          'id4': { title: 'Heavy Weighting', id: 'id4', publisher: 'Ken' },
           'id2': null,
         }, function(err) {
           if (err) return done(err);
@@ -255,6 +255,55 @@ describe('treo', function() {
           done(err);
         });
       });
+    });
+  });
+
+  describe('ranges', function() {
+    var books;
+
+    beforeEach(function(done) {
+      books = db.store('books');
+      books.put({
+        '123456': { title: 'Quarry Memories', year: 2011 },
+        '234567': { title: 'Water Buffaloes', year: 2012 },
+        '345678': { title: 'Bedrocky Nights', year: 2012 },
+        '456789': { title: 'Puffy Creations', year: 2013 },
+        '567890': { title: 'Heavy Weighting', year: 2014 },
+      }, done);
+    });
+
+    it('gte', function(done) {
+      books.index('byYear').get({ gte: 2012 }, function(err, all) {
+        expect(all).length(4);
+        done(err);
+      });
+    });
+
+    it('gt-lt', function(done) {
+      books.index('byYear').get({ gt: 2012, lt: 2013 }, function(err, all) {
+        expect(all).length(0);
+        done(err);
+      });
+    });
+
+    it('gt-lte', function(done) {
+      books.index('byYear').get({ gt: 2012, lte: 2013 }, function(err, all) {
+        expect(all).length(1);
+        done(err);
+      });
+    });
+
+    it('lt', function(done) {
+      books.index('byYear').get({ lte: 2012 }, function(err, all) {
+        expect(all).length(1);
+        done(err);
+      });
+    });
+
+    it('validates arguments', function() {
+      expect(function() {
+        books.index('byTitle').get({ gt: 'a' }, function() {});
+      }).throw(/unique index/);
     });
   });
 });
