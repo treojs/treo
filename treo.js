@@ -91,7 +91,7 @@ module.exports = function(val){
 
 });
 
-require.register("treo/lib/treo.js", function (exports, module) {
+require.register("treo", function (exports, module) {
 var type = require("component~type@1.0.0");
 var Schema = require("treo/lib/schema.js");
 var Store = require("treo/lib/store.js");
