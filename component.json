@@ -1,0 +1,32 @@
+{
+  "name": "treo",
+  "description": "High-level interface to IndexedDB",
+  "repository": "ask11/treo",
+  "main": "lib/treo.js",
+  "version": "0.0.1",
+  "license": "MIT",
+  "keywords": [
+    "IndexedDB",
+    "treo",
+    "offline"
+  ],
+  "dependencies": {
+    "component/type": "1.0.0"
+  },
+  "scripts": [
+    "lib/treo.js",
+    "lib/schema.js",
+    "lib/store.js",
+    "lib/index.js"
+  ],
+  "development": {
+    "dependencies": {
+      "chaijs/chai": "1.9.1",
+      "segmentio/after": "0.1.0"
+    },
+    "scripts": [
+      "test/treo.js",
+      "test/vendor/indexeddb-shim.js"
+    ]
+  }
+}

@@ -1,6 +1,3 @@
+components/
+node_modules/
 .DS_Store
-libpeerconnection.log
-
-/components
-/build
-/node_modules
