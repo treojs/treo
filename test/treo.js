@@ -30,8 +30,8 @@ describe('treo', function() {
     it('has properties', function() {
       expect(db.name).equal('treo');
       expect(db.version).equal(3);
-      expect(db.stores).length(2);
       expect(db.status).equal('close');
+      expect(Object.keys(db.stores)).length(2);
     });
 
     it('parallel read', function(done) {
@@ -94,8 +94,8 @@ describe('treo', function() {
     it('has properties', function() {
       var books = db.store('books');
       expect(books.name).equal('books');
-      expect(books.indexes).length(3);
       expect(books.db).equal(db);
+      expect(Object.keys(books.indexes)).length(3);
     });
 
     it('#put one record', function(done) {
