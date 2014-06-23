@@ -78,13 +78,24 @@ describe('treo', function() {
     it('#put', function(done) {
       var attrs = { title: 'Quarry Memories', author: 'Fred', isbn: 123456 };
       var books = db.store('books');
+      var magazines = db.store('magazines');
+      var next = after(2, done);
 
       books.put(attrs.isbn, attrs, function(err) {
         if (err) return done(err);
         books.get(attrs.isbn, function(err, book) {
           if (err) return done(err);
           expect(book).eql(attrs);
-          done();
+          next();
+        });
+      });
+
+      magazines.put('id1', { name: 'new magazine' }, function(err) {
+        if (err) return done(err);
+        magazines.get('id1', function(err, magazine) {
+          if (err) return done(err);
+          expect(magazine.id).eql('id1');
+          next();
         });
       });
     });
