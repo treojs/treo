@@ -1,7 +1,7 @@
 if (!window.indexedDB) require('./vendor/indexeddb-shim');
 var expect = require('chai').expect;
 var after = require('after');
-var treo = require('../lib/treo');
+var treo = require('../lib');
 
 describe('treo', function() {
   var db;

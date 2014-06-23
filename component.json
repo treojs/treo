@@ -14,10 +14,10 @@
     "component/type": "1.0.0"
   },
   "scripts": [
-    "lib/treo.js",
+    "lib/index.js",
     "lib/schema.js",
-    "lib/store.js",
-    "lib/index.js"
+    "lib/idb-store.js",
+    "lib/idb-index.js"
   ],
   "development": {
     "dependencies": {
