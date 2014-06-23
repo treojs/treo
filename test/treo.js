@@ -2,25 +2,27 @@ if (!window.indexedDB) require('./vendor/indexeddb-shim');
 var expect = require('chai').expect;
 var after = require('after');
 var treo = require('../lib');
+var IDBKeyRange = window.IDBKeyRange
+  || window.webkitIDBKeyRange
+  || window.msIDBKeyRange;
 
 describe('treo', function() {
-  var db;
-  var schema = treo.schema()
+  var db, schema;
+
+  schema = treo.schema()
     .version(1)
       .addStore('books')
       .addIndex('byTitle', 'title', { unique: true })
       .addIndex('byAuthor', 'author')
+      .addStore('locals')
     .version(2)
       .getStore('books')
       .addIndex('byYear', 'year')
     .version(3)
       .addStore('magazines')
       .addIndex('byPublisher', 'publisher')
-      .addIndex('byFrequency', 'frequency');
-
-  var IDBKeyRange = window.IDBKeyRange
-    || window.webkitIDBKeyRange
-    || window.msIDBKeyRange;
+      .addIndex('byFrequency', 'frequency')
+      .addIndex('byWords', 'words', { multi: true });
 
   beforeEach(function() {
     db = treo('treo', schema);
@@ -35,7 +37,7 @@ describe('treo', function() {
       expect(db.name).equal('treo');
       expect(db.version).equal(3);
       expect(db.status).equal('close');
-      expect(Object.keys(db.stores)).length(2);
+      expect(Object.keys(db.stores)).length(3);
     });
 
     it('parallel read', function(done) {
@@ -62,35 +64,6 @@ describe('treo', function() {
       books.put(3, { id: 3, name: 'book 3' }, next);
       magazines.del(5, next);
       magazines.put(4, { message: 'hey' }, next);
-    });
-
-    it('advanced schema', function(done) {
-      var upgradedSchema = schema
-        .version(4)
-          .addStore('authors')
-        .version(5)
-          .getStore('authors')
-          .addIndex('byName', 'name', { unique: true });
-
-      db = treo('treo', upgradedSchema);
-      expect(db.version).equal(5);
-      expect(Object.keys(db.stores)).length(3);
-      var authors = db.store('authors');
-
-      authors.batch({
-        1: { id: 1, name: 'Fred' },
-        2: { id: 2, name: 'Barney' },
-      }, function(err) {
-        if (err) return done(err);
-        db.store('authors').all(function(err, all) {
-          if (err) return done(err);
-          expect(all).length(2);
-          db.store('authors').index('byName').get('Fred', function(err, fred) {
-            expect(fred.id).equal(1);
-            done(err);
-          });
-        });
-      });
     });
   });
 
@@ -159,7 +132,7 @@ describe('treo', function() {
         'id1': { title: 'Quarry Memories', id: 'id1', publisher: 'Bob' },
         'id2': { title: 'Water Buffaloes', id: 'id2', publisher: 'Bob' },
         'id3': { title: 'Bedrocky Nights', id: 'id3', publisher: 'Tim' },
-        'id4': { title: 'Waving wings', id: 'id4', publisher: 'Ken' },
+        'id4': { title: 'Waving Wings', id: 'id4', publisher: 'Ken' },
       }, function(err) {
         if (err) return done(err);
 
@@ -229,7 +202,7 @@ describe('treo', function() {
       });
     });
 
-    it('accepts IDBKeyRange object', function(done) {
+    it('#get with IDBKeyRange param', function(done) {
       var next = after(2, done);
       var range1 = IDBKeyRange.lowerBound(2012); // >= 2012
       var range2 = IDBKeyRange.bound(2012, 2013, true, false); // > 2012 <= 2013
@@ -272,6 +245,74 @@ describe('treo', function() {
       books.index('byAuthor').count(range, function(err, count) {
         expect(count).equal(2);
         next(err);
+      });
+    });
+
+    it('multi index', function(done) {
+      var magazines = db.store('magazines');
+      magazines.batch({
+        'id1': { title: 'Quarry Memories', id: 'id1', words: ['quarry', 'memories'] },
+        'id2': { title: 'Water Bad Fellows', id: 'id2', words: ['water', 'bad', 'fellows'] },
+        'id3': { title: 'Badrocky Nights', id: 'id3', words: ['badrocky', 'nights'] },
+        'id4': { title: 'Waving Wings', id: 'id4', words: ['waving', 'wings'] },
+      }, function(err) {
+        if (err) return done(err);
+        var range1 = IDBKeyRange.bound('bad', 'bad\uffff', false, false); // bad*
+        var range2 = IDBKeyRange.bound('w', 'w\uffff', false, false); // w*
+        var next = after(2, done);
+
+        magazines.index('byWords').get(range1, function(err, result) {
+          expect(result).length(2);
+          expect(result[0].id).equal('id2');
+          next(err);
+        });
+
+        magazines.index('byWords').get(range2, function(err, result) {
+          expect(result).length(3);
+          expect(result[1].id).equal('id4');
+          expect(result[2].id).equal('id4');
+          next(err);
+        });
+      });
+    });
+  });
+
+  describe('non objects', function() {
+    it('#put val to key', function(done) {
+      var locals = db.store('locals');
+      locals.put('foo', 'bar', function(err) {
+        if (err) return done(err);
+        locals.get('foo', function(err, val) {
+          expect(val).equal('bar');
+          done(err);
+        });
+      });
+    });
+
+    it('#batch many records', function(done) {
+      var locals = db.store('locals');
+      locals.batch({
+        foo: 'val 1',
+        bar: 'val 2',
+        baz: 'val 3',
+      }, function(err) {
+        if (err) return done(err);
+        var next = after(3, done);
+
+        locals.get('bar', function(err, val) {
+          expect(val).equal('val 2');
+          next(err);
+        });
+
+        locals.count(function(err, count) {
+          expect(count).equal(3);
+          next(err);
+        });
+
+        locals.get('fake', function(err, val) {
+          expect(val).not.exist;
+          next(err);
+        });
       });
     });
   });
