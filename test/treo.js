@@ -55,7 +55,7 @@ describe('treo', function() {
         });
       });
 
-      books.put({ 1: { id: 1, name: 'book 1' }, 2: { id: 2, name: 'book 2' } }, next);
+      books.batch({ 1: { id: 1, name: 'book 1' }, 2: { id: 2, name: 'book 2' } }, next);
       books.put(3, { id: 3, name: 'book 3' }, next);
       magazines.del(5, next);
       magazines.put(4, { message: 'hey' }, next);
@@ -74,7 +74,7 @@ describe('treo', function() {
       expect(Object.keys(db.stores)).length(3);
       var authors = db.store('authors');
 
-      authors.put({
+      authors.batch({
         1: { id: 1, name: 'Fred' },
         2: { id: 2, name: 'Barney' },
       }, function(err) {
@@ -99,7 +99,7 @@ describe('treo', function() {
       expect(Object.keys(books.indexes)).length(3);
     });
 
-    it('#put one record', function(done) {
+    it('#put', function(done) {
       var attrs = { title: 'Quarry Memories', author: 'Fred', isbn: 123456 };
       var books = db.store('books');
 
@@ -113,26 +113,9 @@ describe('treo', function() {
       });
     });
 
-    it('#put many record in batch', function(done) {
-      var books = db.store('books');
-      books.put({
-        '123456': { title: 'Quarry Memories', author: 'Fred', isbn: '123456' },
-        '234567': { title: 'Water Buffaloes', author: 'Fred', isbn: '234567' },
-        '345678': { title: 'Bedrock Nights', author: 'Barney', isbn: '345678' },
-      }, function(err) {
-        if (err) return done(err);
-        books.get(['123456', '234567'], function(err, records) {
-          if (err) return done(err);
-          expect(records).length(2);
-          expect(records[0].isbn).equal('123456');
-          done();
-        });
-      });
-    });
-
     it('#clear', function(done) {
       var books = db.store('books');
-      books.put({
+      books.batch({
         '123456': { title: 'Quarry Memories', author: 'Fred', isbn: '123456' },
         '234567': { title: 'Water Buffaloes', author: 'Fred', isbn: '234567' },
       }, function(err) {
@@ -148,9 +131,9 @@ describe('treo', function() {
       });
     });
 
-    it('#del many records', function(done) {
+    it('#del', function(done) {
       var magazines = db.store('magazines');
-      magazines.put({
+      magazines.batch({
         'id1': { title: 'Quarry Memories', id: 'id1', publisher: 'Bob' },
         'id2': { title: 'Water Buffaloes', id: 'id2', publisher: 'Bob' },
         'id3': { title: 'Bedrocky Nights', id: 'id3', publisher: 'Tim' },
@@ -159,12 +142,9 @@ describe('treo', function() {
         if (err) return done(err);
         magazines.del('id1', function(err) {
           if (err) return done(err);
-          magazines.del(['id1', 'id2', 'id3'], function(err) {
-            if (err) return done(err);
-            magazines.count(function(err, count) {
-              expect(count).equal(1);
-              done(err);
-            });
+          magazines.count(function(err, count) {
+            expect(count).equal(3);
+            done(err);
           });
         });
       });
@@ -172,28 +152,18 @@ describe('treo', function() {
 
     it('#all', function(done) {
       var magazines = db.store('magazines');
-      var records = {
-        'quarry': { title: 'Quarry Memories', id: 'quarry', publisher: 'Bob' },
-        'water': { title: 'Water Buffaloes', id: 'water', publisher: 'Bob' },
-        'bedrocks': { title: 'Bedrocky Nights', id: 'bedrocks', publisher: 'Tim' },
-        'wawing': { title: 'Waving wings', id: 'wawing', publisher: 'Ken' },
-      };
-      magazines.put(records, function(err) {
+      magazines.batch({
+        'id1': { title: 'Quarry Memories', id: 'id1', publisher: 'Bob' },
+        'id2': { title: 'Water Buffaloes', id: 'id2', publisher: 'Bob' },
+        'id3': { title: 'Bedrocky Nights', id: 'id3', publisher: 'Tim' },
+        'id4': { title: 'Waving wings', id: 'id4', publisher: 'Ken' },
+      }, function(err) {
         if (err) return done(err);
-        var next = after(2, done);
 
         magazines.all(function(err, result) {
           expect(result).length(4);
-          expect(result[0].id).equal('bedrocks');
-          next(err);
-        });
-
-        // accept range by primary key
-        var range = IDBKeyRange.bound('wa', 'wa\uffff', false, false);
-        magazines.all(range, function(err, result) {
-          expect(result).length(2);
-          expect(result[0].id).equal('water');
-          next(err);
+          expect(result[0].id).equal('id1');
+          done(err);
         });
       });
     });
@@ -226,11 +196,20 @@ describe('treo', function() {
 
     beforeEach(function(done) {
       books = db.store('books');
-      books.put({
+      books.batch({
         1: { title: 'Quarry Memories', author: 'Fred', isbn: 1, year: 2012 },
         2: { title: 'Water Buffaloes', author: 'Fred', isbn: 2, year: 2013 },
         3: { title: 'Bedrock Nights', author: 'Barney', isbn: 3, year: 2012 },
       }, done);
+    });
+
+    it('has properties', function() {
+      var byAuthor = books.index('byAuthor');
+      expect(byAuthor.name).equal('byAuthor');
+      expect(byAuthor.unique).false;
+      expect(byAuthor.multi).false;
+      expect(byAuthor.field).equal('author');
+      expect(byAuthor.store).equal(books);
     });
 
     it('#get by array index', function(done) {
@@ -274,14 +253,22 @@ describe('treo', function() {
     });
 
     it('#count', function(done) {
-      books.index('byYear').count(2012, function(err, count) {
-        if (err) return done(err);
-        expect(count).equal(2);
+      var next = after(3, done);
 
-        books.index('byTitle').count('Water Buffaloes', function(err, count) {
-          expect(count).equal(1);
-          done(err);
-        });
+      books.index('byYear').count(2012, function(err, count) {
+        expect(count).equal(2);
+        next(err);
+      });
+
+      books.index('byTitle').count('Water Buffaloes', function(err, count) {
+        expect(count).equal(1);
+        next(err);
+      });
+
+      var range = IDBKeyRange.bound('Fr', 'Fr\uffff', false, false);
+      books.index('byAuthor').count(range, function(err, count) {
+        expect(count).equal(2);
+        next(err);
       });
     });
   });
