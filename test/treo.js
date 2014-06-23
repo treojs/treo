@@ -1,5 +1,4 @@
 if (!window.indexedDB) require('./vendor/indexeddb-shim');
-var IDBKeyRange = window.IDBKeyRange;
 var expect = require('chai').expect;
 var after = require('after');
 var treo = require('../lib/treo');
@@ -18,6 +17,10 @@ describe('treo', function() {
       .addStore('magazines')
       .addIndex('byPublisher', 'publisher')
       .addIndex('byFrequency', 'frequency');
+
+  var IDBKeyRange = window.IDBKeyRange
+    || window.webkitIDBKeyRange
+    || window.msIDBKeyRange;
 
   beforeEach(function() {
     db = treo('treo', schema);
