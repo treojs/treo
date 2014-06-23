@@ -1,4 +1,5 @@
 if (!window.indexedDB) require('./vendor/indexeddb-shim');
+var IDBKeyRange = window.IDBKeyRange;
 var expect = require('chai').expect;
 var after = require('after');
 var treo = require('../lib/treo');
@@ -172,17 +173,27 @@ describe('treo', function() {
     it('#all', function(done) {
       var magazines = db.store('magazines');
       var records = {
-        'id1': { title: 'Quarry Memories', id: 'id1', publisher: 'Bob' },
-        'id2': { title: 'Water Buffaloes', id: 'id2', publisher: 'Bob' },
-        'id3': { title: 'Bedrocky Nights', id: 'id3', publisher: 'Tim' },
-        'id4': { title: 'Heavy weighting', id: 'id4', publisher: 'Ken' },
+        'quarry': { title: 'Quarry Memories', id: 'quarry', publisher: 'Bob' },
+        'water': { title: 'Water Buffaloes', id: 'water', publisher: 'Bob' },
+        'bedrocks': { title: 'Bedrocky Nights', id: 'bedrocks', publisher: 'Tim' },
+        'wawing': { title: 'Waving wings', id: 'wawing', publisher: 'Ken' },
       };
       magazines.put(records, function(err) {
         if (err) return done(err);
+        var next = after(2, done);
+
         magazines.all(function(err, result) {
           expect(result).length(4);
-          expect(result[0].id).equal('id1');
-          done(err);
+          expect(result[0].id).equal('bedrocks');
+          next(err);
+        });
+
+        // accept range by primary key
+        var range = IDBKeyRange.bound('wa', 'wa\uffff', false, false);
+        magazines.all(range, function(err, result) {
+          expect(result).length(2);
+          expect(result[0].id).equal('water');
+          next(err);
         });
       });
     });
@@ -238,7 +249,6 @@ describe('treo', function() {
 
     it('accepts IDBKeyRange object', function(done) {
       var next = after(2, done);
-      var IDBKeyRange = window.IDBKeyRange;
       var range1 = IDBKeyRange.lowerBound(2012); // >= 2012
       var range2 = IDBKeyRange.bound(2012, 2013, true, false); // > 2012 <= 2013
 
