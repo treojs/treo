@@ -19,7 +19,7 @@ describe('treo', function() {
       .getStore('books')
       .addIndex('byYear', 'year')
     .version(3)
-      .addStore('magazines')
+      .addStore('magazines', { key: 'id' })
       .addIndex('byPublisher', 'publisher')
       .addIndex('byFrequency', 'frequency')
       .addIndex('byWords', 'words', { multi: true });
@@ -60,10 +60,10 @@ describe('treo', function() {
         });
       });
 
-      books.batch({ 1: { id: 1, name: 'book 1' }, 2: { id: 2, name: 'book 2' } }, next);
+      books.batch({ 1: { name: 'book 1' }, 2: { id: 2, name: 'book 2' } }, next);
       books.put(3, { id: 3, name: 'book 3' }, next);
       magazines.del(5, next);
-      magazines.put(4, { message: 'hey' }, next);
+      magazines.put({ id: 4, message: 'hey' }, next);
     });
   });
 
@@ -110,10 +110,10 @@ describe('treo', function() {
     it('#del', function(done) {
       var magazines = db.store('magazines');
       magazines.batch({
-        'id1': { title: 'Quarry Memories', id: 'id1', publisher: 'Bob' },
-        'id2': { title: 'Water Buffaloes', id: 'id2', publisher: 'Bob' },
-        'id3': { title: 'Bedrocky Nights', id: 'id3', publisher: 'Tim' },
-        'id4': { title: 'Heavy weighting', id: 'id4', publisher: 'Ken' },
+        'id1': { title: 'Quarry Memories', publisher: 'Bob' },
+        'id2': { title: 'Water Buffaloes', publisher: 'Bob' },
+        'id3': { title: 'Bedrocky Nights', publisher: 'Tim' },
+        'id4': { title: 'Heavy weighting', publisher: 'Ken' },
       }, function(err) {
         if (err) return done(err);
         magazines.del('id1', function(err) {
@@ -129,10 +129,10 @@ describe('treo', function() {
     it('#all', function(done) {
       var magazines = db.store('magazines');
       magazines.batch({
-        'id1': { title: 'Quarry Memories', id: 'id1', publisher: 'Bob' },
-        'id2': { title: 'Water Buffaloes', id: 'id2', publisher: 'Bob' },
-        'id3': { title: 'Bedrocky Nights', id: 'id3', publisher: 'Tim' },
-        'id4': { title: 'Waving Wings', id: 'id4', publisher: 'Ken' },
+        'id1': { title: 'Quarry Memories', publisher: 'Bob' },
+        'id2': { title: 'Water Buffaloes', publisher: 'Bob' },
+        'id3': { title: 'Bedrocky Nights', publisher: 'Tim' },
+        'id4': { title: 'Waving Wings', publisher: 'Ken' },
       }, function(err) {
         if (err) return done(err);
 
@@ -147,14 +147,14 @@ describe('treo', function() {
     it('#batch', function(done) {
       var magazines = db.store('magazines');
       magazines.batch({
-        'id1': { title: 'Quarry Memories', id: 'id1', publisher: 'Bob' },
-        'id2': { title: 'Water Buffaloes', id: 'id2', publisher: 'Bob' },
+        'id1': { title: 'Quarry Memories', publisher: 'Bob' },
+        'id2': { title: 'Water Buffaloes', publisher: 'Bob' },
       }, function(err) {
         if (err) return done(err);
         magazines.batch({
           'id1': null,
-          'id3': { title: 'Bedrocky Nights', id: 'id3', publisher: 'Tim' },
-          'id4': { title: 'Heavy Weighting', id: 'id4', publisher: 'Ken' },
+          'id3': { title: 'Bedrocky Nights', publisher: 'Tim' },
+          'id4': { title: 'Heavy Weighting', publisher: 'Ken' },
           'id2': null,
         }, function(err) {
           if (err) return done(err);
@@ -251,10 +251,10 @@ describe('treo', function() {
     it('multi index', function(done) {
       var magazines = db.store('magazines');
       magazines.batch({
-        'id1': { title: 'Quarry Memories', id: 'id1', words: ['quarry', 'memories'] },
-        'id2': { title: 'Water Bad Fellows', id: 'id2', words: ['water', 'bad', 'fellows'] },
-        'id3': { title: 'Badrocky Nights', id: 'id3', words: ['badrocky', 'nights'] },
-        'id4': { title: 'Waving Wings', id: 'id4', words: ['waving', 'wings'] },
+        'id1': { title: 'Quarry Memories', words: ['quarry', 'memories'] },
+        'id2': { title: 'Water Bad Fellows', words: ['water', 'bad', 'fellows'] },
+        'id3': { title: 'Badrocky Nights', words: ['badrocky', 'nights'] },
+        'id4': { title: 'Waving Wings', words: ['waving', 'wings'] },
       }, function(err) {
         if (err) return done(err);
         var range1 = IDBKeyRange.bound('bad', 'bad\uffff', false, false); // bad*
