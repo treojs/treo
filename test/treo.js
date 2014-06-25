@@ -199,13 +199,13 @@ describe('treo', function() {
       expect(byAuthor.store).equal(books);
     });
 
-    it('#get by array index', function(done) {
-      books.index('byAuthor').get('Fred', function(err, records) {
+    it('#get by not unique index', function(done) {
+      books.index('byAuthor').get(IDBKeyRange.only('Fred'), function(err, records) {
         if (err) return done(err);
         expect(records).length(2);
         expect(records[0].isbn).equal(1);
 
-        books.index('byYear').get(2013, function(err, records) {
+        books.index('byYear').get(IDBKeyRange.only(2013), function(err, records) {
           expect(records).length(1);
           expect(records[0].isbn).equal(2);
           done(err);
@@ -240,7 +240,7 @@ describe('treo', function() {
     });
 
     it('#count', function(done) {
-      var next = after(3, done);
+      var next = after(2, done);
 
       books.index('byYear').count(2012, function(err, count) {
         expect(count).equal(2);
@@ -251,15 +251,12 @@ describe('treo', function() {
         expect(count).equal(1);
         next(err);
       });
-
-      var range = IDBKeyRange.bound('Fr', 'Fr\uffff', false, false);
-      books.index('byAuthor').count(range, function(err, count) {
-        expect(count).equal(2);
-        next(err);
-      });
     });
 
     it('multi index', function(done) {
+      // https://github.com/axemclion/IndexedDBShim/issues/16
+      if (window.shimIndexedDB) return done();
+
       var magazines = db.store('magazines');
       magazines.batch({
         'id1': { title: 'Quarry Memories', words: ['quarry', 'memories'] },
