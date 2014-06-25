@@ -2,7 +2,7 @@
   "name": "treo",
   "description": "High-level interface to IndexedDB",
   "repository": "ask11/treo",
-  "main": "lib/treo.js",
+  "main": "lib/index.js",
   "version": "0.0.1",
   "license": "MIT",
   "keywords": [
