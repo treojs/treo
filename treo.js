@@ -94,8 +94,8 @@ module.exports = function(val){
 require.register("treo", function (exports, module) {
 var type = require("component~type@1.0.0");
 var Schema = require("treo/lib/schema.js");
-var Store = require("treo/lib/store.js");
-var Index = require("treo/lib/index.js");
+var Store = require("treo/lib/idb-store.js");
+var Index = require("treo/lib/idb-index.js");
 
 /**
  * `indexedDB` reference.
@@ -123,13 +123,23 @@ function Treo(name, schema) {
   if (!(this instanceof Treo)) return new Treo(name, schema);
   if (type(name) != 'string') throw new TypeError('`name` required');
   if (!(schema instanceof Schema)) throw new TypeError('not valid schema');
+
   this.name = name;
-  this.version = schema.getVersion();
   this.status = 'close';
   this.origin = null;
-  this.schema = schema;
-  this.stores = schema._stores;
-  for (var key in this.stores) this.stores[key].db = this;
+  this.stores = {};
+  this.version = schema.getVersion();
+  this.upgradeCallback = createUpgradeCallback(schema._versions);
+
+  // setup stores and indexes
+  Object.keys(schema._stores).forEach(function(storeName) {
+    var s = schema._stores[storeName];
+    var store = this.stores[storeName] = new Store(this, s.name, s.opts);
+    Object.keys(s.indexes).forEach(function(indexName) {
+      var i = s.indexes[indexName];
+      store.indexes[indexName] = new Index(store, i.name, i.field, i.opts);
+    });
+  }, this);
 }
 
 /**
@@ -141,6 +151,18 @@ exports.Treo = Treo;
 exports.Schema = Schema;
 exports.Store = Store;
 exports.Index = Index;
+
+/**
+ * Use the given plugin `fn(db, treo)`.
+ *
+ * @param {Function} fn
+ * @return {Treo}
+ */
+
+Treo.prototype.use = function(fn){
+  fn(this, exports);
+  return this;
+};
 
 /**
  * Drop.
@@ -186,7 +208,8 @@ Treo.prototype.store = function(name) {
 };
 
 /**
- * Get original db instance.
+ * Get db instance. It starts opening transaction only once,
+ * another requests will be scheduled to queue.
  *
  * @param {Function} cb
  */
@@ -201,23 +224,70 @@ Treo.prototype.getInstance = function(cb) {
   var that = this;
   var req = indexedDB.open(this.name, this.version);
 
-  req.onupgradeneeded = this.schema.callback();
+  req.onupgradeneeded = this.upgradeCallback;
   req.onerror = req.onblocked = function onerror(e) {
+    that.status = 'error';
     that.queue.forEach(function(cb) { cb(e) });
+    delete that.queue;
   };
   req.onsuccess = function onsuccess(e) {
     that.origin = e.target.result;
     that.status = 'open';
     that.queue.forEach(function(cb) { cb(null, that.origin) });
+    delete that.queue;
   };
 };
+
+/**
+ * Create new transaction for selected `stores`.
+ *
+ * @param {String} type (readwrite|readonly)
+ * @param {Array} stores - follow indexeddb semantic
+ * @param {Function} cb
+ */
+
+Treo.prototype.transaction = function(type, stores, cb) {
+  this.getInstance(function(err, db) {
+    err ? cb(err) : cb(null, db.transaction(stores, type));
+  });
+};
+
+/**
+ * Create callback for `upgradeneeded` event based on `versions`.
+ *
+ * @param {Object} versions
+ * @return {Function}
+ */
+
+function createUpgradeCallback(versions) {
+  var allVersions = Object.keys(versions)
+    .map(function(v) { return parseInt(v, 10) }).sort();
+
+  return function onupgradeneeded(e) {
+    var db = e.target.result;
+    var tr = e.target.transaction;
+
+    allVersions.forEach(function(version) {
+      if (e.oldVersion >= version) return;
+      var versionSchema = versions[version];
+
+      versionSchema.stores.forEach(function(store) {
+        db.createObjectStore(store.name, { keyPath: store.opts.key });
+      });
+
+      versionSchema.indexes.forEach(function(index) {
+        var store = tr.objectStore(index.store.name);
+        var opts = { unique: index.opts.unique, multiEntry: index.opts.multi };
+        store.createIndex(index.name, index.field, opts);
+      });
+    });
+  };
+}
 
 });
 
 require.register("treo/lib/schema.js", function (exports, module) {
 var type = require("component~type@1.0.0");
-var Index = require("treo/lib/index.js");
-var Store = require("treo/lib/store.js");
 
 /**
  * Expose `Schema`.
@@ -232,13 +302,12 @@ module.exports = Schema;
 function Schema() {
   if (!(this instanceof Schema)) return new Schema();
   this._current = {};
-  this._indexes = {};
   this._stores = {};
   this._versions = {};
 }
 
 /**
- * Define new version.
+ * Set new version.
  *
  * @param {Number} version
  * @return {Schema}
@@ -257,14 +326,14 @@ Schema.prototype.version = function(version) {
  * Add store.
  *
  * @param {String} name
+ * @param {Object} [opts] { key: false }
  * @return {Schema}
  */
 
-Schema.prototype.addStore = function(name) {
+Schema.prototype.addStore = function(name, opts) {
   if (type(name) != 'string') throw new TypeError('`name` is required');
   if (this._stores[name]) throw new TypeError('store is already defined');
-  var store = new Store(name);
-
+  var store = { name: name, indexes: {}, opts: opts || {} };
   this._versions[this.getVersion()].stores.push(store);
   this._stores[name] = store;
   this._current.store = store;
@@ -276,7 +345,7 @@ Schema.prototype.addStore = function(name) {
  *
  * @param {String} name
  * @param {String} field
- * @param {Object} [opts] { unique: false }
+ * @param {Object} [opts] { unique: false, multi: false }
  * @return {Schema}
  */
 
@@ -284,17 +353,15 @@ Schema.prototype.addIndex = function(name, field, opts) {
   if (type(name) != 'string') throw new TypeError('`name` is required');
   if (type(field) != 'string') throw new TypeError('`field` is required');
   var store = this._current.store;
-  var index = new Index(store, name, field, opts || {});
-  if (this._indexes[store.name + '-' + name])
-    throw new TypeError('index is already defined');
-
+  var index = { store: store, name: name, field: field, opts: opts || {} };
+  if (store.indexes[name]) throw new TypeError('index is already defined');
+  store.indexes[name] = index;
   this._versions[this.getVersion()].indexes.push(index);
-  this._indexes[store.name + '-' + name] = index;
   return this;
 };
 
 /**
- * Get store.
+ * Change current store.
  *
  * @param {String} name
  * @return {Schema}
@@ -317,40 +384,9 @@ Schema.prototype.getVersion = function() {
   return this._current.version;
 };
 
-/**
- * Generate callback for `upgradeneeded` event.
- *
- * @return {Function}
- */
-
-Schema.prototype.callback = function() {
-  var that = this;
-  var versions = Object.keys(this._versions)
-    .map(function(v) { return parseInt(v, 10) }).sort();
-
-  return function onupgradeneeded(e) {
-    var db = e.target.result;
-    var tr = e.target.transaction;
-
-    versions.forEach(function(version) {
-      if (e.oldVersion >= version) return;
-      var schema = that._versions[version];
-
-      schema.stores.forEach(function(store) {
-        db.createObjectStore(store.name);
-      });
-
-      schema.indexes.forEach(function(index) {
-        var store = tr.objectStore(index.store.name);
-        store.createIndex(index.name, index.field, index.opts);
-      });
-    });
-  };
-};
-
 });
 
-require.register("treo/lib/store.js", function (exports, module) {
+require.register("treo/lib/idb-store.js", function (exports, module) {
 var type = require("component~type@1.0.0");
 
 /**
@@ -362,13 +398,16 @@ module.exports = Store;
 /**
  * Initialize new `Store`.
  *
- * @param {name} String
+ * @param {Treo} db
+ * @param {String} name
+ * @param {Object} opts
  */
 
-function Store(name) {
+function Store(db, name, opts) {
+  this.db = db;
   this.name = name;
   this.indexes = {};
-  this.db = null;
+  this.key = opts.key || undefined;
 }
 
 /**
@@ -385,101 +424,66 @@ Store.prototype.index = function(name) {
 /**
  * Put (create or replace) `key` to `val`.
  *
- * @param {Any|Object} key
+ * @param {String|Object} [key] is optional when store.key exists.
  * @param {Any} val
  * @param {Function} cb
  */
 
-Store.prototype.put =
-Store.prototype.batch = function(key, val, cb) {
-  var keys, vals;
-  if (type(key) != 'object') {
-    keys = [key];
-    vals = {};
-    vals[key] = val;
-  } else {
-    keys = Object.keys(key);
-    vals = key;
-    cb = val;
+Store.prototype.put = function(key, val, cb) {
+  var name = this.name;
+  var that = this;
+  if (that.key) {
+    if (type(key) == 'object') {
+      cb = val;
+      val = key;
+      key = null;
+    } else {
+      val[that.key] = key;
+    }
   }
 
-  this.transaction('readwrite', function(err, tr, objectStore) {
+  this.db.transaction('readwrite', [name], function(err, tr) {
     if (err) return cb(err);
-    var current = 0;
-    tr.onerror = tr.onabort = cb;
+    var objectStore = tr.objectStore(name);
+    var req = that.key? objectStore.put(val) : objectStore.put(val, key);
+    tr.onerror = tr.onabort = req.onerror = cb;
     tr.oncomplete = function oncomplete() { cb() };
-    next();
-
-    function next() {
-      if (current >= keys.length) return;
-      var currentKey = keys[current];
-      var currentVal = vals[currentKey];
-
-      var req = currentVal === null
-        ? objectStore.delete(currentKey)
-        : objectStore.put(currentVal, currentKey);
-
-      req.onerror = cb;
-      req.onsuccess = next;
-      current += 1;
-    }
   });
 };
 
 /**
  * Get `key`.
  *
- * @param {Any|Array} key
+ * @param {String} key
  * @param {Function} cb
  */
 
 Store.prototype.get = function(key, cb) {
-  var keys = type(key) == 'array' ? key : [key];
-
-  this.transaction('readonly', function(err, tr, objectStore) {
+  var name = this.name;
+  this.db.transaction('readonly', [name], function(err, tr) {
     if (err) return cb(err);
-    var result = [];
-    var current = 0;
-    next();
-
-    function next() {
-      if (current >= keys.length) return;
-      var req = objectStore.get(keys[current]);
-      current += 1;
-      req.onerror = cb;
-      req.onsuccess = function onsuccess(e) {
-        if (type(key) != 'array') return cb(null, e.target.result);
-        result.push(e.target.result);
-        current == keys.length ? cb(null, result) : next();
-      };
-    }
+    var objectStore = tr.objectStore(name);
+    var req = objectStore.get(key);
+    req.onerror = cb;
+    req.onsuccess = function onsuccess(e) { cb(null, e.target.result) };
   });
 };
 
 /**
  * Del `key`.
  *
- * @param {Any|Array} key
+ * @param {String} key
  * @param {Function} cb
  */
 
 Store.prototype.del = function(key, cb) {
-  var keys = type(key) == 'array' ? key : [key];
-
-  this.transaction('readwrite', function(err, tr, objectStore) {
+  var name = this.name;
+  this.db.transaction('readwrite', [name], function(err, tr) {
     if (err) return cb(err);
-    var current = 0;
-    tr.onerror = tr.onabort = cb;
+    var objectStore = tr.objectStore(name);
+    var req = objectStore.delete(key);
+    tr.onerror = tr.onabort = req.onerror = cb;
     tr.oncomplete = function oncomplete() { cb() };
-    next();
-
-    function next() {
-      if (current >= keys.length) return;
-      var req = objectStore.delete(keys[current]);
-      req.onerror = cb;
-      req.onsuccess = next;
-      current += 1;
-    }
   });
 };
 
@@ -490,8 +494,10 @@ Store.prototype.del = function(key, cb) {
  */
 
 Store.prototype.count = function(cb) {
-  this.transaction('readonly', function(err, tr, objectStore) {
+  var name = this.name;
+  this.db.transaction('readonly', [name], function(err, tr) {
     if (err) return cb(err);
+    var objectStore = tr.objectStore(name);
     var req = objectStore.count();
     req.onerror = cb;
     req.onsuccess = function onsuccess(e) { cb(null, e.target.result) };
@@ -505,11 +511,55 @@ Store.prototype.count = function(cb) {
  */
 
 Store.prototype.clear = function(cb) {
-  this.transaction('readwrite', function(err, tr, objectStore) {
+  var name = this.name;
+  this.db.transaction('readwrite', [name], function(err, tr) {
     if (err) return cb(err);
+    var objectStore = tr.objectStore(name);
     var req = objectStore.clear();
     tr.onerror = tr.onabort = req.onerror = cb;
     tr.oncomplete = function oncomplete() { cb() };
+  });
+};
+
+/**
+ * Perform batch operation.
+ *
+ * @param {Object} vals
+ * @param {Function} cb
+ */
+
+Store.prototype.batch = function(vals, cb) {
+  var name = this.name;
+  var that = this;
+  var keys = Object.keys(vals);
+
+  this.db.transaction('readwrite', [name], function(err, tr) {
+    if (err) return cb(err);
+    var store = tr.objectStore(name);
+    var current = 0;
+    tr.onerror = tr.onabort = cb;
+    tr.oncomplete = function oncomplete() { cb() };
+    next();
+
+    function next() {
+      if (current >= keys.length) return;
+      var currentKey = keys[current];
+      var currentVal = vals[currentKey];
+      var req;
+
+      if (currentVal === null) {
+        req = store.delete(currentKey);
+      } else if (that.key) {
+        currentVal[that.key] = currentKey;
+        req = store.put(currentVal);
+      } else {
+        req = store.put(currentVal, currentKey);
+      }
+
+      req.onerror = cb;
+      req.onsuccess = next;
+      current += 1;
+    }
   });
 };
 
@@ -520,42 +570,51 @@ Store.prototype.clear = function(cb) {
  */
 
 Store.prototype.all = function(cb) {
-  this.transaction('readonly', function(err, tr, objectStore) {
-    if (err) return cb(err);
-    var result = [];
-    var req = objectStore.openCursor();
-    req.onerror = cb;
-    req.onsuccess = function onsuccess(e) {
-      var cursor = e.target.result;
-      if (cursor) {
-        result.push(cursor.value);
-        cursor.continue();
-      } else {
-        cb(null, result);
-      }
-    };
+  var result = [];
+
+  this.cursor({ iterator: iterator }, function(err) {
+    err ? cb(err) : cb(null, result);
   });
+
+  function iterator(cursor) {
+    result.push(cursor.value);
+    cursor.continue();
+  }
 };
 
 /**
- * Create new transaction.
+ * Create read cursor for specific `range`,
+ * and pass IDBCursor to `iterator` function.
+ * https://developer.mozilla.org/en-US/docs/Web/API/IDBCursor
  *
- * @param {Function} cb
+ * @param
+ *   {IDBRange|Null} range - passes to .openCursor()
+ *   iterator - function to call with IDBCursor
+ *   index -
+ * @param {Function} cb - calls on end or error
  */
 
-Store.prototype.transaction = function(type, cb) {
+Store.prototype.cursor = function(opts, cb) {
   var name = this.name;
-  this.db.getInstance(function(err, db) {
+  this.db.transaction('readonly', [name], function(err, tr) {
     if (err) return cb(err);
-    var tr = db.transaction([name], type);
-    var store = tr.objectStore(name);
-    cb(null, tr, store);
+    var store = opts.index
+      ? tr.objectStore(name).index(opts.index)
+      : tr.objectStore(name);
+    var req = store.openCursor(opts.range);
+
+    req.onerror = cb;
+    req.onsuccess = function onsuccess(e) {
+      var cursor = e.target.result;
+      cursor ? opts.iterator(cursor) : cb();
+    };
   });
 };
 
 });
 
-require.register("treo/lib/index.js", function (exports, module) {
+require.register("treo/lib/idb-index.js", function (exports, module) {
+var type = require("component~type@1.0.0");
 
 /**
  * Expose `Index`.
@@ -564,73 +623,59 @@ require.register("treo/lib/index.js", function (exports, module) {
 module.exports = Index;
 
 /**
- * `IDBKeyRange` reference.
- */
-
-var IDBKeyRange = window.IDBKeyRange
-  || window.webkitIDBKeyRange
-  || window.msIDBKeyRange;
-
-/**
  * Initialize new `Index`.
  *
- * @param {name} String
+ * @param {Store} store
+ * @param {String} name
+ * @param {String} field
+ * @param {Object} opts { unique: false, multi: false }
  */
 
 function Index(store, name, field, opts) {
   this.store = store;
-  this.store.indexes[name] = this;
   this.name = name;
   this.field = field;
-  this.unique = opts.unique;
+  this.multi = opts.multi || false;
+  this.unique = opts.unique || false;
 }
 
 /**
  * Get `key`.
+ *
+ * @param {String|IDBKeyRange} key
+ * @param {Function} cb
  */
 
 Index.prototype.get = function(key, cb) {
-  var that = this;
+  var result = [];
+  var isUnique = this.unique && type(key) == 'string';
+  var opts = { range: key, index: this.name, iterator: iterator };
 
-  this.store.transaction('readonly', function(err, tr, store) {
+  this.store.cursor(opts, function(err) {
     if (err) return cb(err);
-    var index = store.index(that.name);
-    var result = [];
-    var req;
-
-    if (that.unique) {
-      req = index.get(key);
-      req.onerror = cb;
-      req.onsuccess = function onsuccess(e) { cb(null, e.target.result) };
-    } else {
-      req = index.openCursor(IDBKeyRange.only(key));
-      req.onerror = cb;
-      req.onsuccess = function onsuccess(e) {
-        var cursor = e.target.result;
-        if (cursor) {
-          result.push(cursor.value);
-          cursor.continue();
-        } else {
-          cb(null, result);
-        }
-      };
-    }
+    isUnique ? cb(null, result[0]) : cb(null, result);
   });
+
+  function iterator(cursor) {
+    result.push(cursor.value);
+    cursor.continue();
+  }
 };
 
 /**
  * Count records by `key`.
  *
- * @param {Any} key
+ * @param {String|IDBKeyRange} key
  * @param {Function} cb
  */
 
 Index.prototype.count = function(key, cb) {
-  var that = this;
+  var name = this.store.name;
+  var indexName = this.name;
 
-  this.store.transaction('readonly', function(err, tr, store) {
+  this.store.db.transaction('readonly', [name], function(err, tr) {
     if (err) return cb(err);
-    var index = store.index(that.name);
+    var index = tr.objectStore(name).index(indexName);
     var req = index.count(key);
     req.onerror = cb;
     req.onsuccess = function onsuccess(e) { cb(null, e.target.result) };
