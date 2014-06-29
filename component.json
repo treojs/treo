@@ -17,7 +17,8 @@
     "lib/index.js",
     "lib/schema.js",
     "lib/idb-store.js",
-    "lib/idb-index.js"
+    "lib/idb-index.js",
+    "lib/range.js"
   ],
   "development": {
     "dependencies": {

@@ -2,9 +2,6 @@ if (!window.indexedDB) require('./vendor/indexeddb-shim');
 var expect = require('chai').expect;
 var after = require('after');
 var treo = require('../lib');
-var IDBKeyRange = window.IDBKeyRange
-  || window.webkitIDBKeyRange
-  || window.msIDBKeyRange;
 
 describe('treo', function() {
   var db, schema;
@@ -200,12 +197,12 @@ describe('treo', function() {
     });
 
     it('#get by not unique index', function(done) {
-      books.index('byAuthor').get(IDBKeyRange.only('Fred'), function(err, records) {
+      books.index('byAuthor').get('Fred', function(err, records) {
         if (err) return done(err);
         expect(records).length(2);
         expect(records[0].isbn).equal(1);
 
-        books.index('byYear').get(IDBKeyRange.only(2013), function(err, records) {
+        books.index('byYear').get(2013, function(err, records) {
           expect(records).length(1);
           expect(records[0].isbn).equal(2);
           done(err);
@@ -215,15 +212,13 @@ describe('treo', function() {
 
     it('#get with IDBKeyRange param', function(done) {
       var next = after(2, done);
-      var range1 = IDBKeyRange.lowerBound(2012); // >= 2012
-      var range2 = IDBKeyRange.bound(2012, 2013, true, false); // > 2012 <= 2013
 
-      books.index('byYear').get(range1, function(err, all) {
+      books.index('byYear').get({ gte: 2012 }, function(err, all) {
         expect(all).length(3);
         next(err);
       });
 
-      books.index('byYear').get(range2, function(err, all) {
+      books.index('byYear').get({ gt: 2012, lte: 2013 }, function(err, all) {
         expect(all).length(1);
         next(err);
       });
@@ -265,17 +260,16 @@ describe('treo', function() {
         'id4': { title: 'Waving Wings', words: ['waving', 'wings'] },
       }, function(err) {
         if (err) return done(err);
-        var range1 = IDBKeyRange.bound('bad', 'bad\uffff', false, false); // bad*
-        var range2 = IDBKeyRange.bound('w', 'w\uffff', false, false); // w*
+        var range = window.IDBKeyRange.bound('bad', 'bad\uffff', false, false); // bad*
         var next = after(2, done);
 
-        magazines.index('byWords').get(range1, function(err, result) {
+        magazines.index('byWords').get(range, function(err, result) {
           expect(result).length(2);
           expect(result[0].id).equal('id2');
           next(err);
         });
 
-        magazines.index('byWords').get(range2, function(err, result) {
+        magazines.index('byWords').get({ gte: 'w', lte: 'w\uffff' }, function(err, result) {
           expect(result).length(3);
           expect(result[1].id).equal('id4');
           expect(result[2].id).equal('id4');
