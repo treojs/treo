@@ -23,13 +23,17 @@
   "development": {
     "dependencies": {
       "chaijs/chai": "1.9.1",
-      "segmentio/after": "0.1.0"
+      "segmentio/after": "0.1.0",
+      "then/promise": "5.0.0"
     },
     "scripts": [
       "test/treo.js",
       "test/integration.js",
-      "test/support/npm-data.json",
+      "examples/find-in.js",
       "test/vendor/indexeddb-shim.js"
+    ],
+    "json": [
+      "test/support/npm-data.json"
     ]
   }
 }
