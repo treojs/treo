@@ -25,6 +25,9 @@ test-server: install
 build: install clean $(wildcard lib/*.js)
 	@$(component) build --standalone treo --out . --name treo
 
+npm-dump:
+	@node test/support/npm-dump.js
+
 size: build
 	@ls -l treo.js
 	@$(minify) -l js treo.js > treo.min.js
