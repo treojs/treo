@@ -27,6 +27,8 @@
     },
     "scripts": [
       "test/treo.js",
+      "test/integration.js",
+      "test/support/npm-data.json",
       "test/vendor/indexeddb-shim.js"
     ]
   }
