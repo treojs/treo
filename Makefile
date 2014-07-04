@@ -46,5 +46,4 @@ release: test build
 
 stat:
 	@cloc lib/ --quiet --by-file
-	@cloc test/ --quiet --by-file --exclude-dir=test/vendor
-	@cloc components/ --quiet --by-file --exclude-dir=components/chaijs,components/segmentio
+	@cloc test/ --quiet --by-file --exclude-dir=test/vendor,test/support
