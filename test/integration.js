@@ -3,9 +3,11 @@ if (!window.indexedDB) require('./vendor/indexeddb-shim');
 var expect = require('chai').expect;
 var runAfter = require('after');
 var treo = require('treo');
+var Promise = require('promise');
+var findIn = require('../examples/find-in');
 
-describe('integration', function() {
-  this.timeout(10000); // 10s
+describe.only('integration', function() {
+  this.timeout(20000); // 10s
   var db, modules;
 
   before(function(done) {
@@ -35,7 +37,16 @@ describe('integration', function() {
     db.drop(done);
   });
 
-  it('count all records', function(done) {
+  it('get module', function(done) {
+    modules.get('browserify', function(err, mod) {
+      if (err) return done(err);
+      expect(mod).exist;
+      expect(mod.author).equal('James Halliday');
+      done();
+    });
+  });
+
+  it('count all modules', function(done) {
     modules.count(function(err, count) {
       if (err) return done(err);
       expect(count).equal(7892);
@@ -66,6 +77,34 @@ describe('integration', function() {
   });
 
   // compare with async find with timers
-  it('find in set of ids');
-  it('support promises');
+  it('find in set of ids', function(done) {
+    var result = [];
+    var next = runAfter(2, function() {
+      expect(result[0].sort()).eql(result[1].sort());
+      done();
+    });
+
+    console.time('find in');
+    findIn(modules, ['async', 'request', 'component', 'bla-bla'], function(err, records) {
+      if (err) return done(err);
+      console.timeEnd('find in');
+      expect(records).length(4);
+      result.push(records);
+      next();
+    });
+
+    modules.get = Promise.denodeify(modules.get);
+    console.time('regular get');
+    Promise.all([
+      modules.get('async'),
+      modules.get('request'),
+      modules.get('component'),
+      modules.get('bla-bla'),
+    ]).then(function(records) {
+      console.timeEnd('regular get');
+      expect(records).length(4);
+      result.push(records);
+      next();
+    }, done);
+  });
 });
