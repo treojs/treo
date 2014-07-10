@@ -5,16 +5,6 @@
   The main goal is to make enjoyable to write modern web applications with offline experience.
   It hides complexity of IndexedDB and leave the power: batch, indexes and async non-blocking behavior.
 
-  Main features:
-
-  * simple API to start write/read without waiting for connect,
-    detection of existing stores, creating transations
-  * powerful API for schema/version management
-  * enjoyable way to do powerful tasks, like batch or filter by index.
-  * handles errors, blocks and aborts
-  * just do what you need
-  * minimal
-
 ## Example
 
   Let's take a look at official [w3c example](http://www.w3.org/TR/IndexedDB/#introduction)
@@ -26,7 +16,7 @@ var treo = require('treo');
 // define db schema
 var schema = treo.schema()
   .version(1)
-    .addStore('books')
+    .addStore('books', { key: 'isbn' })
     .addIndex('byTitle', 'title', { unique: true })
     .addIndex('byAuthor', 'author')
   .version(2)
@@ -41,13 +31,13 @@ var schema = treo.schema()
 var db = treo('library', schema);
 db.version; // 3
 
-// put some data
+// put some data in one transation
 var books = db.store('books');
-books.put({
-  123456: { title: 'Quarry Memories', author: 'Fred' },
-  234567: { title: 'Water Buffaloes', author: 'Fred' },
-  345678: { title: 'Bedrock Nights', author: 'Barney' },
-}, function(err) {
+books.batch([
+  { isbn: 123456, title: 'Quarry Memories', author: 'Fred' },
+  { isbn: 234567, title: 'Water Buffaloes', author: 'Fred' },
+  { isbn: 345678, title: 'Bedrock Nights', author: 'Barney' },
+], function(err) {
   // Before this point, all actions were synchronous, and you don't need to wait
   // for db.open, initialize onupgradeneeded event, create readwrite transaction,
   // and handle all possible errors, blocks, aborts.
@@ -60,7 +50,3 @@ books.index('byTitle').get('Bedrock Nights', function(err, book) {});
 // get all books filtered by author
 books.index('byAuthor').get('Fred', function(err, all) {}); // all.length == 2
 ```
-
-http://stackoverflow.com/questions/10471759/inserting-large-quantities-in-indexeddbs-objectstore-blocks-ui
-http://www.html5rocks.com/en/tutorials/indexeddb/todo/#disqus_thread
-promises and denodeify
