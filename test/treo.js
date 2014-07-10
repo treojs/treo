@@ -136,12 +136,12 @@ describe('treo', function() {
 
     it('#all', function(done) {
       var magazines = db.store('magazines');
-      magazines.batch({
-        'id1': { title: 'Quarry Memories', publisher: 'Bob' },
-        'id2': { title: 'Water Buffaloes', publisher: 'Bob' },
-        'id3': { title: 'Bedrocky Nights', publisher: 'Tim' },
-        'id4': { title: 'Waving Wings', publisher: 'Ken' },
-      }, function(err) {
+      magazines.batch([
+        { id: 'id1', title: 'Quarry Memories', publisher: 'Bob' },
+        { id: 'id2', title: 'Water Buffaloes', publisher: 'Bob' },
+        { id: 'id3', title: 'Bedrocky Nights', publisher: 'Tim' },
+        { id: 'id4', title: 'Waving Wings', publisher: 'Ken' },
+      ], function(err) {
         if (err) return done(err);
 
         magazines.all(function(err, result) {
