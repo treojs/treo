@@ -2,6 +2,7 @@ var treo = require('treo');
 
 /**
  * Efficient way to get bunch of records by `keys`.
+ * Inspired by: https://hacks.mozilla.org/2014/06/breaking-the-borders-of-indexeddb/
  *
  * Examples:
  *
