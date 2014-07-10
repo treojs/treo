@@ -1,5 +1,5 @@
 /* globals after */
-if (!window.indexedDB) require('./vendor/indexeddb-shim');
+if (!window.indexedDB || window.indexedDB.__useShim) return;
 var expect = require('chai').expect;
 var treo = require('treo');
 var Promise = require('promise');
