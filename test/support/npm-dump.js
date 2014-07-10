@@ -8,7 +8,7 @@ var isFirst = true;
 var currentLetter = '';
 var file = fs.createWriteStream('test/support/npm-data.json');
 file.write('[\n  ');
-console.log('Load npm modules with more than one star...');
+console.log('Load npm modules with more than 5 stars...');
 
 // request data
 request('http://isaacs.iriscouch.com/registry/_all_docs?include_docs=true')
@@ -21,7 +21,7 @@ request('http://isaacs.iriscouch.com/registry/_all_docs?include_docs=true')
 function prepareData(data) {
   if (!data || !data.maintainers) return '';
   var stars = Object.keys(data.users || {}).length;
-  if (stars < 1) return '';
+  if (stars < 5) return '';
   var suffix = isFirst ? '' : ',\n  ';
   isFirst = false;
 
