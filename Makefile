@@ -39,7 +39,7 @@ size: build
 release: test build
 	@echo - "upgrade {package|component|bower}.json (bump 0.0.0|patch|minor|major)"
 	@echo - "add release notes to History.md"
-	@echo - "git add -A -m '0.0.0'"
+	@echo - "git add -A -m '0.0.0 release'"
 	@echo - "git tag 0.0.0"
 	@echo - "git push origin master"
 	@echo - "npm publish"

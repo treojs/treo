@@ -11,6 +11,7 @@
     "**/.*",
     "Makefile",
     "test/",
+    "examples/",
     "component.json",
     "package.json"
   ],
