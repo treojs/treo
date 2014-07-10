@@ -96,6 +96,7 @@ var type = require("component~type@1.0.0");
 var Schema = require("treo/lib/schema.js");
 var Store = require("treo/lib/idb-store.js");
 var Index = require("treo/lib/idb-index.js");
+var range = require("treo/lib/range.js");
 
 /**
  * `indexedDB` reference.
@@ -113,7 +114,7 @@ var indexedDB = window.indexedDB
 exports = module.exports = Treo;
 
 /**
- * Initialize new `Treo`.
+ * Initialize new `Treo` instance.
  *
  * @param {String} name
  * @param {Schema} schema
@@ -147,22 +148,12 @@ function Treo(name, schema) {
  */
 
 exports.schema = Schema;
+exports.range = range;
+exports.cmp = cmp;
 exports.Treo = Treo;
 exports.Schema = Schema;
 exports.Store = Store;
 exports.Index = Index;
-
-/**
- * Use the given plugin `fn(db, treo)`.
- *
- * @param {Function} fn
- * @return {Treo}
- */
-
-Treo.prototype.use = function(fn){
-  fn(this, exports);
-  return this;
-};
 
 /**
  * Drop.
@@ -284,6 +275,18 @@ function createUpgradeCallback(versions) {
   };
 }
 
+/**
+ * Compare 2 values using IndexedDB comparision algotihm.
+ *
+ * @param {Mixed} value1
+ * @param {Mixed} value2
+ * @return {Number} -1|0|1
+ */
+
+function cmp() {
+  return indexedDB.cmp.apply(indexedDB, arguments);
+}
+
 });
 
 require.register("treo/lib/schema.js", function (exports, module) {
@@ -388,6 +391,7 @@ Schema.prototype.getVersion = function() {
 
 require.register("treo/lib/idb-store.js", function (exports, module) {
 var type = require("component~type@1.0.0");
+var parseRange = require("treo/lib/range.js");
 
 /**
  * Expose `Store`.
@@ -431,21 +435,21 @@ Store.prototype.index = function(name) {
 
 Store.prototype.put = function(key, val, cb) {
   var name = this.name;
-  var that = this;
-  if (that.key) {
+  var keyPath = this.key;
+  if (keyPath) {
     if (type(key) == 'object') {
       cb = val;
       val = key;
       key = null;
     } else {
-      val[that.key] = key;
+      val[keyPath] = key;
     }
   }
 
   this.db.transaction('readwrite', [name], function(err, tr) {
     if (err) return cb(err);
     var objectStore = tr.objectStore(name);
-    var req = that.key? objectStore.put(val) : objectStore.put(val, key);
+    var req = keyPath ? objectStore.put(val) : objectStore.put(val, key);
     tr.onerror = tr.onabort = req.onerror = cb;
     tr.oncomplete = function oncomplete() { cb() };
   });
@@ -530,7 +534,7 @@ Store.prototype.clear = function(cb) {
 
 Store.prototype.batch = function(vals, cb) {
   var name = this.name;
-  var that = this;
+  var keyPath = this.key;
   var keys = Object.keys(vals);
 
   this.db.transaction('readwrite', [name], function(err, tr) {
@@ -549,8 +553,7 @@ Store.prototype.batch = function(vals, cb) {
 
       if (currentVal === null) {
         req = store.delete(currentKey);
-      } else if (that.key) {
-        currentVal[that.key] = currentKey;
+      } else if (keyPath) {
         req = store.put(currentVal);
       } else {
         req = store.put(currentVal, currentKey);
@@ -587,10 +590,10 @@ Store.prototype.all = function(cb) {
  * and pass IDBCursor to `iterator` function.
  * https://developer.mozilla.org/en-US/docs/Web/API/IDBCursor
  *
- * @param
+ * @param {Object} opts:
  *   {IDBRange|Null} range - passes to .openCursor()
- *   iterator - function to call with IDBCursor
- *   index -
+ *   {Function} iterator - function to call with IDBCursor
+ *   {String} [index] - name of index to start cursor by index
  * @param {Function} cb - calls on end or error
  */
 
@@ -601,7 +604,7 @@ Store.prototype.cursor = function(opts, cb) {
     var store = opts.index
       ? tr.objectStore(name).index(opts.index)
       : tr.objectStore(name);
-    var req = store.openCursor(opts.range);
+    var req = store.openCursor(parseRange(opts.range));
 
     req.onerror = cb;
     req.onsuccess = function onsuccess(e) {
@@ -615,6 +618,7 @@ Store.prototype.cursor = function(opts, cb) {
 
 require.register("treo/lib/idb-index.js", function (exports, module) {
 var type = require("component~type@1.0.0");
+var parseRange = require("treo/lib/range.js");
 
 /**
  * Expose `Index`.
@@ -649,9 +653,9 @@ function Index(store, name, field, opts) {
 Index.prototype.get = function(key, cb) {
   var result = [];
   var isUnique = this.unique && type(key) == 'string';
-  var opts = { range: key, index: this.name, iterator: iterator };
+  var opts = { range: key, iterator: iterator };
 
-  this.store.cursor(opts, function(err) {
+  this.cursor(opts, function(err) {
     if (err) return cb(err);
     isUnique ? cb(null, result[0]) : cb(null, result);
   });
@@ -676,11 +680,84 @@ Index.prototype.count = function(key, cb) {
   this.store.db.transaction('readonly', [name], function(err, tr) {
     if (err) return cb(err);
     var index = tr.objectStore(name).index(indexName);
-    var req = index.count(key);
+    var req = index.count(parseRange(key));
     req.onerror = cb;
     req.onsuccess = function onsuccess(e) { cb(null, e.target.result) };
   });
 };
+
+/**
+ * Create cursor.
+ * Proxy to `this.store` for convinience.
+ *
+ * @param {Object} opts
+ * @param {Function} cb
+ */
+
+Index.prototype.cursor = function(opts, cb) {
+  opts.index = this.name;
+  this.store.cursor(opts, cb);
+};
+
+});
+
+require.register("treo/lib/range.js", function (exports, module) {
+var type = require("component~type@1.0.0");
+
+/**
+ * Link to `IDBKeyRange`.
+ */
+
+var IDBKeyRange = window.IDBKeyRange
+  || window.webkitIDBKeyRange
+  || window.msIDBKeyRange;
+
+/**
+ * Expose `parseRange()`.
+ */
+
+module.exports = parseRange;
+
+/**
+ * Parse key to valid range.
+ * https://developer.mozilla.org/en-US/docs/Web/API/IDBKeyRange
+ *
+ * Available options (inspired by mongodb):
+ *   gt: - greater
+ *   lt: - lighter
+ *   gte: - greater equal
+ *   lte: - lighter equal
+ *
+ * @param {Object|Any} key
+ * @return {IDBKeyRange}
+ */
+
+function parseRange(key) {
+  if (!key) return;
+  if (key instanceof IDBKeyRange) return key;
+  if (type(key) != 'object') return IDBKeyRange.only(key);
+  var keys = Object.keys(key).sort();
+
+  if (keys.length == 1) {
+    var val = key[keys[0]];
+    switch (keys[0]) {
+      case 'gt':  return IDBKeyRange.lowerBound(val, true);
+      case 'lt':  return IDBKeyRange.upperBound(val, true);
+      case 'gte': return IDBKeyRange.lowerBound(val);
+      case 'lte': return IDBKeyRange.upperBound(val);
+    }
+  } else {
+    var x = key[keys[0]];
+    var y = key[keys[1]];
+
+    switch (keys[0] + '-' + keys[1]) {
+      case 'gt-lt':   return IDBKeyRange.bound(x, y, true, true);
+      case 'gt-lte':  return IDBKeyRange.bound(x, y, true, false);
+      case 'gte-lt':  return IDBKeyRange.bound(x, y, false, true);
+      case 'gte-lte': return IDBKeyRange.bound(x, y, false, false);
+    }
+  }
+}
 
 });
 
