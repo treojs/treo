@@ -21,7 +21,7 @@ store.put('baz', 'value 3', fn);
 store.get('bar', fn); // 'value 2'
 
 // get all
-store.all(fn); // all.length == 3
+store.all(fn); // ['value 1', 'value 2', 'value 3']
 
 // batch more records
 store.batch([
