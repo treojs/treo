@@ -1,6 +1,6 @@
 {
   "name": "treo",
-  "description": "High-level interface to IndexedDB",
+  "description": "jQuery for IndexedDB",
   "version": "0.0.1",
   "keywords": [
     "IndexedDB",
