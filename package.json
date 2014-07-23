@@ -3,7 +3,7 @@
   "description": "jQuery for IndexedDB",
   "author": "Aleksey Kulikov <alekseys.kulikov@gmail.com> (http://twitter.com/ask_11)",
   "repository": "git@github.com:alekseykulikov/treo.git",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "license": "MIT",
   "main": "treo.js",
   "keywords": [

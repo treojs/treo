@@ -554,6 +554,7 @@ Store.prototype.batch = function(vals, cb) {
       if (currentVal === null) {
         req = store.delete(currentKey);
       } else if (keyPath) {
+        if (!currentVal[keyPath]) currentVal[keyPath] = currentKey;
         req = store.put(currentVal);
       } else {
         req = store.put(currentVal, currentKey);
@@ -680,7 +681,7 @@ Index.prototype.count = function(key, cb) {
   this.store.db.transaction('readonly', [name], function(err, tr) {
     if (err) return cb(err);
     var index = tr.objectStore(name).index(indexName);
-    var req = index.count(parseRange(key));
+    var req = index.count(type(key) == 'object' ? parseRange(key) : key);
     req.onerror = cb;
     req.onsuccess = function onsuccess(e) { cb(null, e.target.result) };
   });
