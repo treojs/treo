@@ -45,12 +45,12 @@ var schema = treo.schema()
 var db = treo('library', schema);
 db.version; // 3
 
-// put some data in one transation
+// put some data in one transaction
 var books = db.store('books');
 books.batch([
-  { isbn: 123456, title: 'Quarry Memories', author: 'Fred' },
-  { isbn: 234567, title: 'Water Buffaloes', author: 'Fred' },
-  { isbn: 345678, title: 'Bedrock Nights', author: 'Barney' },
+  { isbn: 123456, title: 'Quarry Memories', author: 'Fred', year: 2012 },
+  { isbn: 234567, title: 'Water Buffaloes', author: 'Fred', year: 2012 },
+  { isbn: 345678, title: 'Bedrock Nights', author: 'Barney', year: 2013 },
 ], function(err) {
   // Before this point, all actions were synchronous, and you don't need to wait
   // for db.open, initialize onupgradeneeded event, create readwrite transaction,
@@ -112,7 +112,7 @@ db.store('storage').put('foo', 'value 1', fn); // connect, create db, put value
 ### schema.addStore(name, opts)
 
   Declare store with `name`.
-  Availble options:
+  Available options:
   * `key` - setup keyPath for easy work with objects [default false].
 
 ### schema.addIndex(name, field, opts)
@@ -181,39 +181,107 @@ db.get('books').put({ isbn: 123456, title: 'Quarry Memories', author: 'Fred' }, 
 
 ### store.batch(opts, fn)
 
-  // current position
-  opts is an object or an array
+  Create/update/remove objects in one transaction.
+  `opts` can be an object or an array (when key option is specified).
+
+```js
+var db = treo('key-value-storage', schema);
+var storage = db.store('storage');
+
+storage.put('key1', 'value 1', fn);
+storage.put('key2', 'value 2', fn);
+
+storage.batch({
+  key1: 'update value',
+  key2: null, // delete value
+  key3: 'new value',
+}, fn);
+```
 
 ### store.count(fn)
+
+  Count records in store.
+
 ### store.all(fn)
+
+  Get all records.
+
 ### store.clear(fn)
+
+  Clear store.
+
 ### store.index(name)
-  get index by name
+
+  Get index by `name`.
 
 ## Index
 
-### index.get(key, fn) key is a string or range
+  Index is a way to filter your data.
+
+### index.get(key, fn)
+
+  Get values by `key`. When index is unique it returns only one value.
+  `key` can be string, [range](https://github.com/alekseykulikov/treo#ranges), or IDBKeyRange object.
+
+```js
+books.index('byTitle').get('Bedrock Nights', fn); // get unique value
+books.index('byAuthor').get('Fred', fn); // get array of matching values
+books.index('byYear').get({ gte: 2012 });
+books.index('byAuthor', IDBKeyRange.only('Barney'));
+```
+
 ### index.count(key, fn)
 
+  Count records by `key`, similar to get, but returns number.
+
 ## Ranges
-gt, gte, lt, lte or any IDBKeyRange instance
-language to IDBKeyRange methods .only can be avoided, because IndexedDB does it by default
+
+  `treo.range(object)` transforms javascript object to [IDBKeyRange](https://developer.mozilla.org/en-US/docs/Web/API/IDBKeyRange).
+  Values inspired by [MongoDB query operators](http://docs.mongodb.org/manual/reference/operator/query-comparison/):
+  - `gt` - greater than
+  - `gte` - greater or equal
+  - `lt` - less than
+  - `lte` - less or equal
 
 ## Promises
-  with then/promise
 
-## keyPath
+  Using [then/promise]()
 
-## Low level methods
+```js
+var Promise = require('promise');
+var books = db.store('books');
+books.get = Promise.denodeify(books.get); // patch get method
 
-### db.getInstance(fn)
+Promise.all([
+  books.get('123456'),
+  books.get('234567'),
+  books.get('345678'),
+]).then(function(records) {
+  // records.length == 3
+});
+```
+
+## Low Level Methods
+
+  Treo is designed to be a foundation for your browser storage.
+  It gives you full power of IndexedDB through set of internal low level methods.
+
 ### db.transaction(type, stores, fn)
-### store.cursor(opts, fn) for custom cursors, see example and article
-### index.cursor(opts, fn)
-### treo.range({})
+
+  Create new transaction to list of stores.
+  Available types: `readonly` and `readwrite`.
+
+### store.cursor(opts, fn), index.cursor(opts, fn)
+
+   Create custom cursors, see [example](https://github.com/alekseykulikov/treo/blob/master/examples/find-in.js) and [article](https://hacks.mozilla.org/2014/06/breaking-the-borders-of-indexeddb/) for more detailed usage.
+
+### treo.Treo, treo.Schema, treo.Store, treo.Index
+
+  Exposed core objects.
+
 ### treo.cmp(a, b)
-### .Treo, .Schema, .Store, .Index
-  core objects
+
+  Compare 2 values using indexeddb's internal key compassion algorithm.
 
 ## License
 
