@@ -1,14 +1,14 @@
 # Treo  [![Build Status](https://travis-ci.org/alekseykulikov/treo.png?branch=master)](https://travis-ci.org/alekseykulikov/treo)
 
   Treo is a lightweight wrapper around [IndexedDB](http://www.w3.org/TR/IndexedDB/) to make browser storage more enjoyable to use.
-  Think about it as jQuery for IndexedDB. It does not add new abstractions, but simplifies API and increases code reliability.
+  Think about it as jQuery for IndexedDB. It does not add new abstractions, but simplifies the API and increases code reliability.
 
-  I think, that as web developers community we have to stop fighting with complex IndexedDB API, stumble on simple tasks, and
-  wait for LevelDB in the browser. Current specification is [stable](http://www.w3.org/TR/IndexedDB/), [available in modern browsers](http://caniuse.com/#search=indexeddb) and coming [2.0 spec](http://lists.w3.org/Archives/Public/public-webapps/2014AprJun/0149.html) will not have braking changes.
+  I think that us web developers have to stop fighting with the complex IndexedDB API, stumbling on simple tasks, and
+  waiting for LevelDB in the browser. Current specification is [stable](http://www.w3.org/TR/IndexedDB/), [available in modern browsers](http://caniuse.com/#search=indexeddb). And the upcoming [2.0 spec](http://lists.w3.org/Archives/Public/public-webapps/2014AprJun/0149.html) will not have breaking changes.
   IndexedDB is powerful technology with support of indexes, stores, transactions and cursors.
-  Which allows to build any kind of client databases. And let's be clear, it's the only one real option to store data in browser,
+  It allows you to build any kind of client databases. And let's be clear, it's the only real option to store data in browser,
   because localStorage is [synchronous](https://hacks.mozilla.org/2012/03/there-is-no-simple-solution-for-local-storage/) and WebSQL is deprecated.
-  I spent a lot of time reading official specification and understanding nuances. With treo I want to save this time for other developers, and help to focus on real problems, and building awesome libraries, making the web better.
+  I spent a lot of time reading the official specification and understanding its nuances. With treo I want to save this time for other developers, and help you focus on real problems, building awesome libraries, and making the web better.
 
 ## Main features
 
@@ -17,12 +17,12 @@
   * Small codebase without dependencies, ~400 LOC, 2.5Kb gziped.
   * Powerful DSL to manage database schema and versions.
   * Better error handling through error first node-style callbacks.
-  * Exposed access to low level IndexedDB methods for cover edge cases.
+  * Exposed access to low-level IndexedDB methods for cover edge cases.
   * Easy to extend and create plugins.
 
 ## Example
 
-  Let's rewrite official [w3c example](http://www.w3.org/TR/IndexedDB/#introduction) with treo:
+  Let's rewrite the official [w3c example](http://www.w3.org/TR/IndexedDB/#introduction) with treo:
 
 ```js
 var treo = require('treo'); // or window.treo
@@ -85,8 +85,8 @@ $ npm install treo --save
 
 # API
 
-  To initialize new `db` instance, create `schema` and pass it to main function.
-  All methods, except multiple indexes and advanced ranges are backward
+  To initialize a new `db` instance, create a `schema` and pass it to main function.
+  All methods, except multiple indexes and advanced ranges, are backward
   compatible with outdated browsers through [IndexedDBShim](https://github.com/axemclion/IndexedDBShim).
 
 ```js
