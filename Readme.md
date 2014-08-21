@@ -65,7 +65,7 @@ books.index('byTitle').get('Bedrock Nights', function(err, book) {});
 books.index('byAuthor').get('Fred', function(err, all) {}); // all.length == 2
 ```
 
-  For more examples check out `[/examples](https://github.com/alekseykulikov/treo/blob/master/examples)` folder.
+  For more examples check out [/examples](https://github.com/alekseykulikov/treo/blob/master/examples) folder.
 
 ## Installation
 
