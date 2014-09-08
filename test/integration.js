@@ -1,7 +1,7 @@
 /* globals after */
 if (!window.indexedDB || window.indexedDB.__useShim) return;
 var expect = require('chai').expect;
-var treo = require('treo');
+var treo = require('../lib');
 var Promise = require('promise');
 var findIn = require('../examples/find-in');
 

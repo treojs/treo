@@ -1,4 +1,4 @@
-var treo = require('treo');
+var treo = require('../lib');
 
 /**
  * Efficient way to get bunch of records by `keys`.

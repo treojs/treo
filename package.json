@@ -25,8 +25,10 @@
     "browserify": "^5.11.1",
     "chai": "^1.9.1",
     "event-stream": "^3.1.5",
+    "mocha": "^1.21.4",
     "promise": "^5.0.0",
     "request": "^2.36.0",
+    "testem": "^0.6.18",
     "uglify-js": "^2.4.15"
   }
 }
