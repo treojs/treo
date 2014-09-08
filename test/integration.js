@@ -12,10 +12,10 @@ describe('integration', function() {
     var data = require('./support/npm-data.json');
     var schema = treo.schema()
       .version(1)
-        .addStore('modules', { key: 'name' })
+        .addStore('modules', { keyPath: 'name' })
       .version(2)
         .getStore('modules')
-        .addIndex('byKeywords', 'keywords', { multi: true })
+        .addIndex('byKeywords', 'keywords', { multiEntry: true })
         .addIndex('byAuthor', 'author')
         .addIndex('byStars', 'stars')
         .addIndex('byMaintainers', 'maintainers', { multi: true });
