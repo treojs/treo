@@ -14,7 +14,7 @@
 
   * Simple API around powerful IndexedDB features, like batch or indexes.
   * Command buffering, you can start read/write right away.
-  * Small codebase without dependencies, ~400 LOC, 2.5Kb gziped.
+  * Small codebase without dependencies, ~370 LOC, 2.5Kb gziped.
   * Powerful DSL to manage database schema and versions.
   * Better error handling through error first node-style callbacks.
   * Exposed access to low-level IndexedDB methods for cover edge cases.

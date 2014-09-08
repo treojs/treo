@@ -1,397 +1,89 @@
-
-;(function(){
+!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.treo=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var type = require('component-type');
+var parseRange = require('./range');
 
 /**
- * Require the module at `name`.
+ * Expose `Index`.
+ */
+
+module.exports = Index;
+
+/**
+ * Initialize new `Index`.
  *
- * @param {String} name
- * @return {Object} exports
- * @api public
- */
-
-function require(name) {
-  var module = require.modules[name];
-  if (!module) throw new Error('failed to require "' + name + '"');
-
-  if (!('exports' in module) && typeof module.definition === 'function') {
-    module.client = module.component = true;
-    module.definition.call(this, module.exports = {}, module);
-    delete module.definition;
-  }
-
-  return module.exports;
-}
-
-/**
- * Registered modules.
- */
-
-require.modules = {};
-
-/**
- * Register module at `name` with callback `definition`.
- *
- * @param {String} name
- * @param {Function} definition
- * @api private
- */
-
-require.register = function (name, definition) {
-  require.modules[name] = {
-    definition: definition
-  };
-};
-
-/**
- * Define a module's exports immediately with `exports`.
- *
- * @param {String} name
- * @param {Generic} exports
- * @api private
- */
-
-require.define = function (name, exports) {
-  require.modules[name] = {
-    exports: exports
-  };
-};
-require.register("component~type@1.0.0", function (exports, module) {
-
-/**
- * toString ref.
- */
-
-var toString = Object.prototype.toString;
-
-/**
- * Return the type of `val`.
- *
- * @param {Mixed} val
- * @return {String}
- * @api public
- */
-
-module.exports = function(val){
-  switch (toString.call(val)) {
-    case '[object Function]': return 'function';
-    case '[object Date]': return 'date';
-    case '[object RegExp]': return 'regexp';
-    case '[object Arguments]': return 'arguments';
-    case '[object Array]': return 'array';
-    case '[object String]': return 'string';
-  }
-
-  if (val === null) return 'null';
-  if (val === undefined) return 'undefined';
-  if (val && val.nodeType === 1) return 'element';
-  if (val === Object(val)) return 'object';
-
-  return typeof val;
-};
-
-});
-
-require.register("treo", function (exports, module) {
-var type = require("component~type@1.0.0");
-var Schema = require("treo/lib/schema.js");
-var Store = require("treo/lib/idb-store.js");
-var Index = require("treo/lib/idb-index.js");
-var range = require("treo/lib/range.js");
-
-/**
- * `indexedDB` reference.
- */
-
-var indexedDB = window.indexedDB
-  || window.msIndexedDB
-  || window.mozIndexedDB
-  || window.webkitIndexedDB;
-
-/**
- * Expose `Treo`.
- */
-
-exports = module.exports = Treo;
-
-/**
- * Initialize new `Treo` instance.
- *
- * @param {String} name
- * @param {Schema} schema
- */
-
-function Treo(name, schema) {
-  if (!(this instanceof Treo)) return new Treo(name, schema);
-  if (type(name) != 'string') throw new TypeError('`name` required');
-  if (!(schema instanceof Schema)) throw new TypeError('not valid schema');
-
-  this.name = name;
-  this.status = 'close';
-  this.origin = null;
-  this.stores = {};
-  this.version = schema.getVersion();
-  this.upgradeCallback = createUpgradeCallback(schema._versions);
-
-  // setup stores and indexes
-  Object.keys(schema._stores).forEach(function(storeName) {
-    var s = schema._stores[storeName];
-    var store = this.stores[storeName] = new Store(this, s.name, s.opts);
-    Object.keys(s.indexes).forEach(function(indexName) {
-      var i = s.indexes[indexName];
-      store.indexes[indexName] = new Index(store, i.name, i.field, i.opts);
-    });
-  }, this);
-}
-
-/**
- * Expose core classes.
- */
-
-exports.schema = Schema;
-exports.range = range;
-exports.cmp = cmp;
-exports.Treo = Treo;
-exports.Schema = Schema;
-exports.Store = Store;
-exports.Index = Index;
-
-/**
- * Drop.
- *
- * @param {Function} cb
- */
-
-Treo.prototype.drop = function(cb) {
-  var name = this.name;
-  this.close(function(err) {
-    if (err) return cb(err);
-    var req = indexedDB.deleteDatabase(name);
-    req.onerror = cb;
-    req.onsuccess = function onsuccess() { cb() };
-  });
-};
-
-/**
- * Close.
- *
- * @param {Function} cb
- */
-
-Treo.prototype.close = function(cb) {
-  if (this.status == 'close') return cb();
-  this.getInstance(function(err, db) {
-    if (err) return cb(err);
-    db.origin = null;
-    db.close();
-    cb();
-  });
-};
-
-/**
- * Get store by `name`.
- *
- * @param {String} name
- * @return {Store}
- */
-
-Treo.prototype.store = function(name) {
-  return this.stores[name];
-};
-
-/**
- * Get db instance. It starts opening transaction only once,
- * another requests will be scheduled to queue.
- *
- * @param {Function} cb
- */
-
-Treo.prototype.getInstance = function(cb) {
-  if (this.status == 'open') return cb(null, this.origin);
-  if (this.status == 'opening') return this.queue.push(cb);
-
-  this.status = 'opening';
-  this.queue = [cb]; // queue callbacks
-
-  var that = this;
-  var req = indexedDB.open(this.name, this.version);
-
-  req.onupgradeneeded = this.upgradeCallback;
-  req.onerror = req.onblocked = function onerror(e) {
-    that.status = 'error';
-    that.queue.forEach(function(cb) { cb(e) });
-    delete that.queue;
-  };
-  req.onsuccess = function onsuccess(e) {
-    that.origin = e.target.result;
-    that.status = 'open';
-    that.queue.forEach(function(cb) { cb(null, that.origin) });
-    delete that.queue;
-  };
-};
-
-/**
- * Create new transaction for selected `stores`.
- *
- * @param {String} type (readwrite|readonly)
- * @param {Array} stores - follow indexeddb semantic
- * @param {Function} cb
- */
-
-Treo.prototype.transaction = function(type, stores, cb) {
-  this.getInstance(function(err, db) {
-    err ? cb(err) : cb(null, db.transaction(stores, type));
-  });
-};
-
-/**
- * Create callback for `upgradeneeded` event based on `versions`.
- *
- * @param {Object} versions
- * @return {Function}
- */
-
-function createUpgradeCallback(versions) {
-  var allVersions = Object.keys(versions)
-    .map(function(v) { return parseInt(v, 10) }).sort();
-
-  return function onupgradeneeded(e) {
-    var db = e.target.result;
-    var tr = e.target.transaction;
-
-    allVersions.forEach(function(version) {
-      if (e.oldVersion >= version) return;
-      var versionSchema = versions[version];
-
-      versionSchema.stores.forEach(function(store) {
-        db.createObjectStore(store.name, { keyPath: store.opts.key });
-      });
-
-      versionSchema.indexes.forEach(function(index) {
-        var store = tr.objectStore(index.store.name);
-        var opts = { unique: index.opts.unique, multiEntry: index.opts.multi };
-        store.createIndex(index.name, index.field, opts);
-      });
-    });
-  };
-}
-
-/**
- * Compare 2 values using IndexedDB comparision algotihm.
- *
- * @param {Mixed} value1
- * @param {Mixed} value2
- * @return {Number} -1|0|1
- */
-
-function cmp() {
-  return indexedDB.cmp.apply(indexedDB, arguments);
-}
-
-});
-
-require.register("treo/lib/schema.js", function (exports, module) {
-var type = require("component~type@1.0.0");
-
-/**
- * Expose `Schema`.
- */
-
-module.exports = Schema;
-
-/**
- * Initialize new `Schema`.
- */
-
-function Schema() {
-  if (!(this instanceof Schema)) return new Schema();
-  this._current = {};
-  this._stores = {};
-  this._versions = {};
-}
-
-/**
- * Set new version.
- *
- * @param {Number} version
- * @return {Schema}
- */
-
-Schema.prototype.version = function(version) {
-  if (type(version) != 'number' || version < 1 || version < this.getVersion())
-    throw new TypeError('not valid version');
-
-  this._versions[version] = { stores: [], indexes: [] };
-  this._current = { version: version, store: null };
-  return this;
-};
-
-/**
- * Add store.
- *
- * @param {String} name
- * @param {Object} [opts] { key: false }
- * @return {Schema}
- */
-
-Schema.prototype.addStore = function(name, opts) {
-  if (type(name) != 'string') throw new TypeError('`name` is required');
-  if (this._stores[name]) throw new TypeError('store is already defined');
-  var store = { name: name, indexes: {}, opts: opts || {} };
-  this._versions[this.getVersion()].stores.push(store);
-  this._stores[name] = store;
-  this._current.store = store;
-  return this;
-};
-
-/**
- * Add index.
- *
+ * @param {Store} store
  * @param {String} name
  * @param {String} field
- * @param {Object} [opts] { unique: false, multi: false }
- * @return {Schema}
+ * @param {Object} opts { unique: false, multi: false }
  */
 
-Schema.prototype.addIndex = function(name, field, opts) {
-  if (type(name) != 'string') throw new TypeError('`name` is required');
-  if (type(field) != 'string') throw new TypeError('`field` is required');
-  var store = this._current.store;
-  var index = { store: store, name: name, field: field, opts: opts || {} };
-  if (store.indexes[name]) throw new TypeError('index is already defined');
-  store.indexes[name] = index;
-  this._versions[this.getVersion()].indexes.push(index);
-  return this;
+function Index(store, name, field, opts) {
+  this.store = store;
+  this.name = name;
+  this.field = field;
+  this.multi = opts.multi || opts.multiEntry || false;
+  this.unique = opts.unique || false;
+}
+
+/**
+ * Get `key`.
+ *
+ * @param {String|IDBKeyRange} key
+ * @param {Function} cb
+ */
+
+Index.prototype.get = function(key, cb) {
+  var result = [];
+  var isUnique = this.unique && type(key) == 'string';
+  var opts = { range: key, iterator: iterator };
+
+  this.cursor(opts, function(err) {
+    if (err) return cb(err);
+    isUnique ? cb(null, result[0]) : cb(null, result);
+  });
+
+  function iterator(cursor) {
+    result.push(cursor.value);
+    cursor.continue();
+  }
 };
 
 /**
- * Change current store.
+ * Count records by `key`.
  *
- * @param {String} name
- * @return {Schema}
+ * @param {String|IDBKeyRange} key
+ * @param {Function} cb
  */
 
-Schema.prototype.getStore = function(name) {
-  if (type(name) != 'string') throw new TypeError('`name` is required');
-  if (!this._stores[name]) throw new TypeError('store is not defined');
-  this._current.store = this._stores[name];
-  return this;
+Index.prototype.count = function(key, cb) {
+  var name = this.store.name;
+  var indexName = this.name;
+
+  this.store.db.transaction('readonly', [name], function(err, tr) {
+    if (err) return cb(err);
+    var index = tr.objectStore(name).index(indexName);
+    var req = index.count(type(key) == 'object' ? parseRange(key) : key);
+    req.onerror = cb;
+    req.onsuccess = function onsuccess(e) { cb(null, e.target.result) };
+  });
 };
 
 /**
- * Get version.
+ * Create cursor.
+ * Proxy to `this.store` for convinience.
  *
- * @return {Number}
+ * @param {Object} opts
+ * @param {Function} cb
  */
 
-Schema.prototype.getVersion = function() {
-  return this._current.version;
+Index.prototype.cursor = function(opts, cb) {
+  opts.index = this.name;
+  this.store.cursor(opts, cb);
 };
 
-});
-
-require.register("treo/lib/idb-store.js", function (exports, module) {
-var type = require("component~type@1.0.0");
-var parseRange = require("treo/lib/range.js");
+},{"./range":4,"component-type":6}],2:[function(require,module,exports){
+var type = require('component-type');
+var parseRange = require('./range');
 
 /**
  * Expose `Store`.
@@ -411,7 +103,8 @@ function Store(db, name, opts) {
   this.db = db;
   this.name = name;
   this.indexes = {};
-  this.key = opts.key || undefined;
+  this.key = opts.key || opts.keyPath || undefined;
+  this.increment = opts.increment || opts.autoIncretement || undefined;
 }
 
 /**
@@ -615,95 +308,196 @@ Store.prototype.cursor = function(opts, cb) {
   });
 };
 
-});
-
-require.register("treo/lib/idb-index.js", function (exports, module) {
-var type = require("component~type@1.0.0");
-var parseRange = require("treo/lib/range.js");
+},{"./range":4,"component-type":6}],3:[function(require,module,exports){
+var type = require('component-type');
+var Schema = require('./schema');
+var Store = require('./idb-store');
+var Index = require('./idb-index');
+var range = require('./range');
 
 /**
- * Expose `Index`.
+ * `indexedDB` reference.
  */
 
-module.exports = Index;
+var indexedDB = window.indexedDB
+  || window.msIndexedDB
+  || window.mozIndexedDB
+  || window.webkitIndexedDB;
 
 /**
- * Initialize new `Index`.
+ * Expose `Treo`.
+ */
+
+exports = module.exports = Treo;
+
+/**
+ * Initialize new `Treo` instance.
  *
- * @param {Store} store
  * @param {String} name
- * @param {String} field
- * @param {Object} opts { unique: false, multi: false }
+ * @param {Schema} schema
  */
 
-function Index(store, name, field, opts) {
-  this.store = store;
+function Treo(name, schema) {
+  if (!(this instanceof Treo)) return new Treo(name, schema);
+  if (type(name) != 'string') throw new TypeError('`name` required');
+  if (!(schema instanceof Schema)) throw new TypeError('not valid schema');
+
   this.name = name;
-  this.field = field;
-  this.multi = opts.multi || false;
-  this.unique = opts.unique || false;
+  this.status = 'close';
+  this.origin = null;
+  this.stores = {};
+  this.version = schema.getVersion();
+  this.versions = schema.getVersions();
+
+  // setup stores and indexes
+  Object.keys(schema._stores).forEach(function(storeName) {
+    var s = schema._stores[storeName];
+    var store = this.stores[storeName] = new Store(this, s.name, s.opts);
+    Object.keys(s.indexes).forEach(function(indexName) {
+      var i = s.indexes[indexName];
+      store.indexes[indexName] = new Index(store, i.name, i.field, i.opts);
+    });
+  }, this);
 }
 
 /**
- * Get `key`.
- *
- * @param {String|IDBKeyRange} key
- * @param {Function} cb
+ * Expose core classes.
  */
 
-Index.prototype.get = function(key, cb) {
-  var result = [];
-  var isUnique = this.unique && type(key) == 'string';
-  var opts = { range: key, iterator: iterator };
-
-  this.cursor(opts, function(err) {
-    if (err) return cb(err);
-    isUnique ? cb(null, result[0]) : cb(null, result);
-  });
-
-  function iterator(cursor) {
-    result.push(cursor.value);
-    cursor.continue();
-  }
-};
+exports.schema = Schema;
+exports.range = range;
+exports.cmp = cmp;
+exports.Treo = Treo;
+exports.Schema = Schema;
+exports.Store = Store;
+exports.Index = Index;
 
 /**
- * Count records by `key`.
+ * Drop.
  *
- * @param {String|IDBKeyRange} key
  * @param {Function} cb
  */
 
-Index.prototype.count = function(key, cb) {
-  var name = this.store.name;
-  var indexName = this.name;
-
-  this.store.db.transaction('readonly', [name], function(err, tr) {
+Treo.prototype.drop = function(cb) {
+  var name = this.name;
+  this.close(function(err) {
     if (err) return cb(err);
-    var index = tr.objectStore(name).index(indexName);
-    var req = index.count(type(key) == 'object' ? parseRange(key) : key);
+    var req = indexedDB.deleteDatabase(name);
     req.onerror = cb;
-    req.onsuccess = function onsuccess(e) { cb(null, e.target.result) };
+    req.onsuccess = function onsuccess() { cb() };
   });
 };
 
 /**
- * Create cursor.
- * Proxy to `this.store` for convinience.
+ * Close.
  *
- * @param {Object} opts
  * @param {Function} cb
  */
 
-Index.prototype.cursor = function(opts, cb) {
-  opts.index = this.name;
-  this.store.cursor(opts, cb);
+Treo.prototype.close = function(cb) {
+  if (this.status == 'close') return cb();
+  this.getInstance(function(err, db) {
+    if (err) return cb(err);
+    db.origin = null;
+    db.close();
+    cb();
+  });
 };
 
-});
+/**
+ * Get store by `name`.
+ *
+ * @param {String} name
+ * @return {Store}
+ */
 
-require.register("treo/lib/range.js", function (exports, module) {
-var type = require("component~type@1.0.0");
+Treo.prototype.store = function(name) {
+  return this.stores[name];
+};
+
+/**
+ * Get db instance. It starts opening transaction only once,
+ * another requests will be scheduled to queue.
+ *
+ * @param {Function} cb
+ */
+
+Treo.prototype.getInstance = function(cb) {
+  if (this.status == 'open') return cb(null, this.origin);
+  if (this.status == 'opening') return this.queue.push(cb);
+
+  this.status = 'opening';
+  this.queue = [cb]; // queue callbacks
+
+  var that = this;
+  var req = indexedDB.open(this.name, this.version);
+
+  req.onupgradeneeded = function onupgradeneeded(e) {
+    var db = e.target.result;
+    var tr = e.target.transaction;
+
+    that.versions.forEach(function(versionSchema) {
+      if (e.oldVersion >= versionSchema.version) return;
+
+      versionSchema.stores.forEach(function(s) {
+        db.createObjectStore(s.name, {
+          keyPath: s.opts.key || s.opts.keyPath,
+          autoIncrement: s.opts.increment || s.opts.autoIncrement,
+        });
+      });
+
+      versionSchema.indexes.forEach(function(i) {
+        var store = tr.objectStore(i.store.name);
+        store.createIndex(i.name, i.field, {
+          unique: i.opts.unique,
+          multiEntry: i.opts.multi || i.opts.multiEntry,
+        });
+      });
+    });
+  };
+
+  req.onerror = req.onblocked = function onerror(e) {
+    that.status = 'error';
+    that.queue.forEach(function(cb) { cb(e) });
+    delete that.queue;
+  };
+
+  req.onsuccess = function onsuccess(e) {
+    that.origin = e.target.result;
+    that.status = 'open';
+    that.queue.forEach(function(cb) { cb(null, that.origin) });
+    delete that.queue;
+  };
+};
+
+/**
+ * Create new transaction for selected `stores`.
+ *
+ * @param {String} type (readwrite|readonly)
+ * @param {Array} stores - follow indexeddb semantic
+ * @param {Function} cb
+ */
+
+Treo.prototype.transaction = function(type, stores, cb) {
+  this.getInstance(function(err, db) {
+    err ? cb(err) : cb(null, db.transaction(stores, type));
+  });
+};
+
+/**
+ * Compare 2 values using IndexedDB comparision algotihm.
+ *
+ * @param {Mixed} value1
+ * @param {Mixed} value2
+ * @return {Number} -1|0|1
+ */
+
+function cmp() {
+  return indexedDB.cmp.apply(indexedDB, arguments);
+}
+
+},{"./idb-index":1,"./idb-store":2,"./range":4,"./schema":5,"component-type":6}],4:[function(require,module,exports){
+var type = require('component-type');
 
 /**
  * Link to `IDBKeyRange`.
@@ -760,13 +554,149 @@ function parseRange(key) {
   }
 }
 
-});
+},{"component-type":6}],5:[function(require,module,exports){
+var type = require('component-type');
 
-if (typeof exports == "object") {
-  module.exports = require("treo");
-} else if (typeof define == "function" && define.amd) {
-  define([], function(){ return require("treo"); });
-} else {
-  this["treo"] = require("treo");
+/**
+ * Expose `Schema`.
+ */
+
+module.exports = Schema;
+
+/**
+ * Initialize new `Schema`.
+ */
+
+function Schema() {
+  if (!(this instanceof Schema)) return new Schema();
+  this._current = {};
+  this._stores = {};
+  this._versions = {};
 }
-})()
+
+/**
+ * Set new version.
+ *
+ * @param {Number} version
+ * @return {Schema}
+ */
+
+Schema.prototype.version = function(version) {
+  if (type(version) != 'number' || version < 1 || version < this.getVersion())
+    throw new TypeError('not valid version');
+
+  this._versions[version] = { stores: [], indexes: [], version: version };
+  this._current = { version: version, store: null };
+  return this;
+};
+
+/**
+ * Add store.
+ *
+ * @param {String} name
+ * @param {Object} [opts] { key: false }
+ * @return {Schema}
+ */
+
+Schema.prototype.addStore = function(name, opts) {
+  if (type(name) != 'string') throw new TypeError('`name` is required');
+  if (this._stores[name]) throw new TypeError('store is already defined');
+  var store = { name: name, indexes: {}, opts: opts || {} };
+  this._versions[this.getVersion()].stores.push(store);
+  this._stores[name] = store;
+  this._current.store = store;
+  return this;
+};
+
+/**
+ * Add index.
+ *
+ * @param {String} name
+ * @param {String} field
+ * @param {Object} [opts] { unique: false, multi: false }
+ * @return {Schema}
+ */
+
+Schema.prototype.addIndex = function(name, field, opts) {
+  if (type(name) != 'string') throw new TypeError('`name` is required');
+  if (type(field) != 'string') throw new TypeError('`field` is required');
+  var store = this._current.store;
+  var index = { store: store, name: name, field: field, opts: opts || {} };
+  if (store.indexes[name]) throw new TypeError('index is already defined');
+  store.indexes[name] = index;
+  this._versions[this.getVersion()].indexes.push(index);
+  return this;
+};
+
+/**
+ * Change current store.
+ *
+ * @param {String} name
+ * @return {Schema}
+ */
+
+Schema.prototype.getStore = function(name) {
+  if (type(name) != 'string') throw new TypeError('`name` is required');
+  if (!this._stores[name]) throw new TypeError('store is not defined');
+  this._current.store = this._stores[name];
+  return this;
+};
+
+/**
+ * Get version.
+ *
+ * @return {Number}
+ */
+
+Schema.prototype.getVersion = function() {
+  return this._current.version;
+};
+
+/**
+ * Get sorted array of versions.
+ *
+ * @return {Array}
+ */
+
+Schema.prototype.getVersions = function() {
+  return Object.keys(this._versions)
+    .map(function(v) { return this._versions[v] }, this)
+    .sort(function(a, b) { return a.version - b.version });
+};
+
+},{"component-type":6}],6:[function(require,module,exports){
+
+/**
+ * toString ref.
+ */
+
+var toString = Object.prototype.toString;
+
+/**
+ * Return the type of `val`.
+ *
+ * @param {Mixed} val
+ * @return {String}
+ * @api public
+ */
+
+module.exports = function(val){
+  switch (toString.call(val)) {
+    case '[object Function]': return 'function';
+    case '[object Date]': return 'date';
+    case '[object RegExp]': return 'regexp';
+    case '[object Arguments]': return 'arguments';
+    case '[object Array]': return 'array';
+    case '[object String]': return 'string';
+  }
+
+  if (val === null) return 'null';
+  if (val === undefined) return 'undefined';
+  if (val && val.nodeType === 1) return 'element';
+  if (val === Object(val)) return 'object';
+
+  return typeof val;
+};
+
+},{}]},{},[3])(3)
+});

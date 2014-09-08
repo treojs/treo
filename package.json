@@ -3,21 +3,20 @@
   "description": "jQuery for IndexedDB",
   "author": "Aleksey Kulikov <alekseys.kulikov@gmail.com> (http://alekseykulikov.com)",
   "repository": "git@github.com:alekseykulikov/treo.git",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "main": "treo.js",
   "keywords": [
     "IndexedDB",
     "treo",
     "offline",
-    "component",
     "browserify"
   ],
   "scripts": {
     "test": "make test"
   },
   "dependencies": {
-    "component-type": "^1.0.0"
+    "component-type": "1.0.0"
   },
   "devDependencies": {
     "JSONStream": "^0.8.4",
