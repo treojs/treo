@@ -2,7 +2,7 @@
   "name": "treo",
   "description": "jQuery for IndexedDB",
   "repository": "alekseykulikov/treo",
-  "main": "lib/index.js",
+  "main": "treo.js",
   "version": "0.1.0",
   "license": "MIT",
   "keywords": [
@@ -10,30 +10,7 @@
     "treo",
     "offline"
   ],
-  "dependencies": {
-    "component/type": "1.0.0"
-  },
   "scripts": [
-    "lib/index.js",
-    "lib/schema.js",
-    "lib/idb-store.js",
-    "lib/idb-index.js",
-    "lib/range.js"
-  ],
-  "development": {
-    "dependencies": {
-      "chaijs/chai": "1.9.1",
-      "segmentio/after": "0.1.0",
-      "then/promise": "5.0.0"
-    },
-    "scripts": [
-      "test/treo.js",
-      "test/integration.js",
-      "examples/find-in.js",
-      "test/vendor/indexeddb-shim.js"
-    ],
-    "json": [
-      "test/support/npm-data.json"
-    ]
-  }
+    "treo.js"
+  ]
 }
