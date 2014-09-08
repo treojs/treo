@@ -113,7 +113,8 @@ db.store('storage').put('foo', 'value 1', fn); // connect, create db, put value
 
   Declare store with `name`.
   Available options:
-  * `key` - setup keyPath for easy work with objects [default false].
+  * `key` - setup keyPath for easy work with objects [default false]
+  * `increment` - generate incremental key automatically [default false]
 
 ### schema.addIndex(name, field, opts)
 
