@@ -3,6 +3,7 @@
   "serve_files": [ "dist/test-bundle.js" ],
   "src_files": [
     "lib/*.js",
+    "plugins/**/*.js",
     "test/*.js"
   ],
   "before_tests": "make build-test",

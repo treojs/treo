@@ -1,7 +1,7 @@
-if (!window.indexedDB) require('./vendor/indexeddb-shim');
 var expect = require('chai').expect;
 var after = require('after');
 var treo = require('../lib');
+var websql = require('../plugins/treo-websql');
 
 describe('treo', function() {
   var db, schema;
@@ -22,7 +22,8 @@ describe('treo', function() {
       .addIndex('byWords', 'words', { multi: true });
 
   beforeEach(function() {
-    db = treo('treo', schema);
+    db = treo('treo', schema)
+      .use(websql());
   });
 
   afterEach(function(done) {
@@ -249,9 +250,6 @@ describe('treo', function() {
     });
 
     it('multi index', function(done) {
-      // https://github.com/axemclion/IndexedDBShim/issues/16
-      if (window.shimIndexedDB) return done();
-
       var magazines = db.store('magazines');
       magazines.batch({
         'id1': { title: 'Quarry Memories', words: ['quarry', 'memories'] },
@@ -260,10 +258,9 @@ describe('treo', function() {
         'id4': { title: 'Waving Wings', words: ['waving', 'wings'] },
       }, function(err) {
         if (err) return done(err);
-        var range = window.IDBKeyRange.bound('bad', 'bad\uffff', false, false); // bad*
         var next = after(2, done);
 
-        magazines.index('byWords').get(range, function(err, result) {
+        magazines.index('byWords').get({ gte: 'bad', lte: 'bad\uffff' }, function(err, result) {
           expect(result).length(2);
           expect(result[0].id).equal('id2');
           next(err);
