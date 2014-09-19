@@ -1,3 +1,4 @@
+var type = require('component-type');
 var isSupported = !! window.indexedDB;
 
 /**
@@ -26,7 +27,7 @@ function plugin() {
       var store = db.store(storeName);
       Object.keys(store.indexes).forEach(function(indexName) {
         var index = store.index(indexName);
-        if (index.multi) addMultiIndexSupport(db, index);
+        if (index.multi) fixIndexSupport(db, index);
       });
     });
   };
@@ -38,27 +39,37 @@ function plugin() {
  * @param {Index} index
  */
 
-function addMultiIndexSupport(db, index) {
+function fixIndexSupport(db, index) {
   index.get = function get(key, cb) {
-    console.warn('treo-websql: multi index is enefficient!');
+    console.warn('treo-websql: index is enefficient');
     var result = [];
     var r = db.constructor.range(key);
+    if (r.upper === undefined) r.upper = '\uffff';
+    if (r.lower === undefined) r.lower = '\uffff';
 
     this.store.cursor({ iterator: iterator }, function(err) {
       err ? cb(err) : cb(null, result);
     });
 
     function iterator(cursor) {
-      var value = cursor.value;
-      var field = value[index.field];
-      if (!Array.isArray(field)) return cursor.continue();
-      field.forEach(function(v) {
-        if (((!r.lowerOpen && v >= r.lower) || (!r.lowerOpen && v > r.lower))
-         && ((!r.upperOpen && v <= r.upper) || (!r.upperOpen && v < r.upper))) {
-          result.push(value);
-        }
-      });
+      var field = cursor.value[index.field];
+
+      if (Array.isArray(field)) {
+        field.forEach(function(v) {
+          if (((!r.lowerOpen && v >= r.lower) || (r.lowerOpen && v > r.lower))
+           && ((!r.upperOpen && v <= r.upper) || (r.upperOpen && v < r.upper))) {
+            result.push(cursor.value);
+          }
+        });
+      }
+
       cursor.continue();
     }
+  };
+
+  index.count = function count(key, cb) {
+    this.get(key, function(err, result) {
+      err ? cb(err) : cb(null, result.length);
+    });
   };
 }

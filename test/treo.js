@@ -236,16 +236,12 @@ describe('treo', function() {
     });
 
     it('#count', function(done) {
-      var next = after(2, done);
-
       books.index('byYear').count(2012, function(err, count) {
         expect(count).equal(2);
-        next(err);
-      });
-
-      books.index('byTitle').count('Water Buffaloes', function(err, count) {
-        expect(count).equal(1);
-        next(err);
+        books.index('byTitle').count('Water Buffaloes', function(err2, count) {
+          expect(count).equal(1);
+          done(err || err2);
+        });
       });
     });
 

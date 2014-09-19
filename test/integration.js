@@ -1,11 +1,12 @@
 /* globals after */
-if (!window.indexedDB || window.indexedDB.__useShim) return;
 var expect = require('chai').expect;
 var treo = require('../lib');
 var Promise = require('promise');
+var websql = require('../plugins/treo-websql');
 var findIn = require('../examples/find-in');
 
 describe('integration', function() {
+  this.timeout(10000);
   var db, modules;
 
   before(function(done) {
@@ -20,7 +21,7 @@ describe('integration', function() {
         .addIndex('byStars', 'stars')
         .addIndex('byMaintainers', 'maintainers', { multi: true });
 
-    db = treo('npm', schema);
+    db = treo('npm', schema).use(websql());
     modules = db.store('modules');
     modules.batch(data, done);
   });
@@ -47,24 +48,15 @@ describe('integration', function() {
   });
 
   it('count by index', function(done) {
-    var next = require('after')(3, done);
-
     modules.index('byStars').count({ gte: 100 }, function(err, count) {
-      if (err) return done(err);
       expect(count).equal(12);
-      next();
-    });
-
-    modules.index('byKeywords').count('grunt', function(err, count) {
-      if (err) return done(err);
-      expect(count).equal(9);
-      next();
-    });
-
-    modules.index('byMaintainers').count('tjholowaychuk', function(err, count) {
-      if (err) return done(err);
-      expect(count).equal(36);
-      next();
+      modules.index('byKeywords').count('grunt', function(err2, count) {
+        expect(count).equal(9);
+        modules.index('byMaintainers').count('tjholowaychuk', function(err3, count) {
+          expect(count).equal(36);
+          done(err || err2 || err3);
+        });
+      });
     });
   });
 
