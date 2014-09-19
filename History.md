@@ -1,3 +1,8 @@
+## 0.3.0 / 2014-09-19
+
+  * add npm's files option
+  * use dist folder for bower and component
+
 ## 0.2.0 / 2014-09-08
 
   * use browserify for build instead of component(1)

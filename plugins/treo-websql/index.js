@@ -1,4 +1,3 @@
-var type = require('component-type');
 var isSupported = !! window.indexedDB;
 
 /**
@@ -27,7 +26,7 @@ function plugin() {
       var store = db.store(storeName);
       Object.keys(store.indexes).forEach(function(indexName) {
         var index = store.index(indexName);
-        if (index.multi) fixIndexSupport(db, index);
+        fixIndexSupport(db, index);
       });
     });
   };
@@ -44,32 +43,37 @@ function fixIndexSupport(db, index) {
     console.warn('treo-websql: index is enefficient');
     var result = [];
     var r = db.constructor.range(key);
-    if (r.upper === undefined) r.upper = '\uffff';
-    if (r.lower === undefined) r.lower = '\uffff';
 
     this.store.cursor({ iterator: iterator }, function(err) {
-      err ? cb(err) : cb(null, result);
+      err ? cb(err) : cb(null, index.unique ? result[0] : result);
     });
 
     function iterator(cursor) {
       var field = cursor.value[index.field];
 
-      if (Array.isArray(field)) {
-        field.forEach(function(v) {
-          if (((!r.lowerOpen && v >= r.lower) || (r.lowerOpen && v > r.lower))
-           && ((!r.upperOpen && v <= r.upper) || (r.upperOpen && v < r.upper))) {
-            result.push(cursor.value);
-          }
-        });
+      if (index.multi) {
+        if (Array.isArray(field)) {
+          field.forEach(function(v) { testValue(v, cursor) });
+        }
+      } else if (field !== undefined) {
+        testValue(field, cursor);
       }
 
       cursor.continue();
+    }
+
+    function testValue(v, cursor) {
+      if (((!r.lowerOpen && v >= r.lower) || (r.lowerOpen && v > r.lower)) && ((!r.upperOpen && v <= r.upper) || (r.upperOpen && v < r.upper))
+        || (r.upper === undefined && ((!r.lowerOpen && v >= r.lower) || (r.lowerOpen && v > r.lower)))
+        || (r.lower === undefined && ((!r.upperOpen && v <= r.upper) || (r.upperOpen && v < r.upper)))) {
+        result.push(cursor.value);
+      }
     }
   };
 
   index.count = function count(key, cb) {
     this.get(key, function(err, result) {
-      err ? cb(err) : cb(null, result.length);
+      err ? cb(err) : cb(null, index.unique && result ? 1 : result.length);
     });
   };
 }

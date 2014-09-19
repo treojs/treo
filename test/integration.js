@@ -49,11 +49,11 @@ describe('integration', function() {
 
   it('count by index', function(done) {
     modules.index('byStars').count({ gte: 100 }, function(err, count) {
-      expect(count).equal(12);
+      try { expect(count).equal(12) } catch (_) { done(_) }
       modules.index('byKeywords').count('grunt', function(err2, count) {
-        expect(count).equal(9);
+        try { expect(count).equal(9) } catch (_) { done(_) }
         modules.index('byMaintainers').count('tjholowaychuk', function(err3, count) {
-          expect(count).equal(36);
+          try { expect(count).equal(36) } catch (_) { done(_) }
           done(err || err2 || err3);
         });
       });

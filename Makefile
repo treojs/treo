@@ -6,11 +6,11 @@ node_modules: package.json
 	@npm install
 	@touch node_modules
 
-treo.js: node_modules $(wildcard lib/*.js)
-	@$(browserify) lib/index.js --standalone treo -o treo.js
+dist/treo.js: node_modules $(wildcard lib/*.js)
+	@$(browserify) lib/index.js --standalone treo -o dist/treo.js
 
-test/support/bundle.js: node_modules $(wildcard lib/*.js) $(wildcard test/*.js)
-	@$(browserify) test/treo.js test/integration.js -o test/support/bundle.js
+dist/test-bundle.js: node_modules $(wildcard lib/*.js) $(wildcard test/*.js) $(wildcard plugins/**/*.js)
+	@$(browserify) test/treo.js test/integration.js -o dist/test-bundle.js
 
 test: node_modules
 	@$(testem) -f test/testem.json ci
@@ -19,16 +19,16 @@ test-server: node_modules
 	@$(testem) -f test/testem.json
 
 install: node_modules
-build: treo.js
-build-test: test/support/bundle.js
+build: dist/treo.js
+build-test: dist/test-bundle.js
 
-size: treo.js
-	@ls -l treo.js
-	@$(uglifyjs) treo.js > treo.min.js
-	@ls -l treo.min.js
-	@gzip treo.min.js
-	@ls -l treo.min.js.gz
-	@rm treo.min.js.gz
+size: dist/treo.js
+	@ls -l dist/treo.js
+	@$(uglifyjs) dist/treo.js > dist/treo.min.js
+	@ls -l dist/treo.min.js
+	@gzip dist/treo.min.js
+	@ls -l dist/treo.min.js.gz
+	@rm dist/treo.min.js.gz
 
 release: test build
 	@echo - "upgrade {package|component|bower}.json (bump 0.0.0|patch|minor|major)"

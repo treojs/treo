@@ -211,17 +211,14 @@ describe('treo', function() {
       });
     });
 
-    it('#get with IDBKeyRange param', function(done) {
-      var next = after(2, done);
-
+    it('#get with object params', function(done) {
       books.index('byYear').get({ gte: 2012 }, function(err, all) {
         expect(all).length(3);
-        next(err);
-      });
 
-      books.index('byYear').get({ gt: 2012, lte: 2013 }, function(err, all) {
-        expect(all).length(1);
-        next(err);
+        books.index('byYear').get({ gt: 2012, lte: 2013 }, function(err, all) {
+          expect(all).length(1);
+          done(err);
+        });
       });
     });
 
@@ -237,10 +234,13 @@ describe('treo', function() {
 
     it('#count', function(done) {
       books.index('byYear').count(2012, function(err, count) {
+        if (err) return done(err);
         expect(count).equal(2);
-        books.index('byTitle').count('Water Buffaloes', function(err2, count) {
+
+        books.index('byTitle').count('Water Buffaloes', function(err, count) {
+          if (err) return done(err);
           expect(count).equal(1);
-          done(err || err2);
+          done();
         });
       });
     });
