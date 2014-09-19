@@ -1,5 +1,4 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.treo=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var type = require('component-type');
 var parseRange = require('./range');
 
 /**
@@ -34,7 +33,7 @@ function Index(store, name, field, opts) {
 
 Index.prototype.get = function(key, cb) {
   var result = [];
-  var isUnique = this.unique && type(key) == 'string';
+  var isUnique = this.unique;
   var opts = { range: key, iterator: iterator };
 
   this.cursor(opts, function(err) {
@@ -62,7 +61,7 @@ Index.prototype.count = function(key, cb) {
   this.store.db.transaction('readonly', [name], function(err, tr) {
     if (err) return cb(err);
     var index = tr.objectStore(name).index(indexName);
-    var req = index.count(type(key) == 'object' ? parseRange(key) : key);
+    var req = index.count(parseRange(key));
     req.onerror = cb;
     req.onsuccess = function onsuccess(e) { cb(null, e.target.result) };
   });
@@ -81,7 +80,7 @@ Index.prototype.cursor = function(opts, cb) {
   this.store.cursor(opts, cb);
 };
 
-},{"./range":4,"component-type":6}],2:[function(require,module,exports){
+},{"./range":4}],2:[function(require,module,exports){
 var type = require('component-type');
 var parseRange = require('./range');
 
@@ -316,15 +315,6 @@ var Index = require('./idb-index');
 var range = require('./range');
 
 /**
- * `indexedDB` reference.
- */
-
-var indexedDB = window.indexedDB
-  || window.msIndexedDB
-  || window.mozIndexedDB
-  || window.webkitIndexedDB;
-
-/**
  * Expose `Treo`.
  */
 
@@ -373,6 +363,18 @@ exports.Store = Store;
 exports.Index = Index;
 
 /**
+ * Use plugin `fn`.
+ *
+ * @param {Function} fn
+ * @return {Treo}
+ */
+
+Treo.prototype.use = function(fn) {
+  fn(this);
+  return this;
+};
+
+/**
  * Drop.
  *
  * @param {Function} cb
@@ -382,7 +384,7 @@ Treo.prototype.drop = function(cb) {
   var name = this.name;
   this.close(function(err) {
     if (err) return cb(err);
-    var req = indexedDB.deleteDatabase(name);
+    var req = indexedDB().deleteDatabase(name);
     req.onerror = cb;
     req.onsuccess = function onsuccess() { cb() };
   });
@@ -430,7 +432,7 @@ Treo.prototype.getInstance = function(cb) {
   this.queue = [cb]; // queue callbacks
 
   var that = this;
-  var req = indexedDB.open(this.name, this.version);
+  var req = indexedDB().open(this.name, this.version);
 
   req.onupgradeneeded = function onupgradeneeded(e) {
     var db = e.target.result;
@@ -493,19 +495,24 @@ Treo.prototype.transaction = function(type, stores, cb) {
  */
 
 function cmp() {
-  return indexedDB.cmp.apply(indexedDB, arguments);
+  return indexedDB().cmp.apply(indexedDB(), arguments);
+}
+
+/**
+ * Dynamic link to `window.indexedDB` for polyfills support.
+ *
+ * @return {IDBDatabase}
+ */
+
+function indexedDB() {
+  return window.indexedDB
+    || window.msIndexedDB
+    || window.mozIndexedDB
+    || window.webkitIndexedDB;
 }
 
 },{"./idb-index":1,"./idb-store":2,"./range":4,"./schema":5,"component-type":6}],4:[function(require,module,exports){
 var type = require('component-type');
-
-/**
- * Link to `IDBKeyRange`.
- */
-
-var IDBKeyRange = window.IDBKeyRange
-  || window.webkitIDBKeyRange
-  || window.msIDBKeyRange;
 
 /**
  * Expose `parseRange()`.
@@ -523,11 +530,12 @@ module.exports = parseRange;
  *   gte: - greater equal
  *   lte: - lighter equal
  *
- * @param {Object|Any} key
+ * @param {Object|IDBKeyRange} key
  * @return {IDBKeyRange}
  */
 
 function parseRange(key) {
+  var IDBKeyRange = keyRange();
   if (!key) return;
   if (key instanceof IDBKeyRange) return key;
   if (type(key) != 'object') return IDBKeyRange.only(key);
@@ -552,6 +560,18 @@ function parseRange(key) {
       case 'gte-lte': return IDBKeyRange.bound(x, y, false, false);
     }
   }
+}
+
+/**
+ * Dynamic link to `window.IDBKeyRange` for polyfills support.
+ *
+ * @return {IDBKeyRange}
+ */
+
+function keyRange() {
+  return window.IDBKeyRange
+    || window.webkitIDBKeyRange
+    || window.msIDBKeyRange;
 }
 
 },{"component-type":6}],5:[function(require,module,exports){
