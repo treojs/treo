@@ -26,8 +26,7 @@ function plugin() {
       var store = db.store(storeName);
       Object.keys(store.indexes).forEach(function(indexName) {
         var index = store.index(indexName);
-        if (!index.multi) return;
-        addMultiIndexSupport(db, index);
+        if (index.multi) addMultiIndexSupport(db, index);
       });
     });
   };
