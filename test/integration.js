@@ -1,9 +1,9 @@
 /* globals after */
 var expect = require('chai').expect;
-var treo = require('../lib');
 var Promise = require('promise');
+var treo = require('../lib');
 var websql = require('../plugins/treo-websql');
-var findIn = require('../examples/find-in');
+var promise = require('../plugins/treo-promise');
 
 describe('integration', function() {
   this.timeout(10000);
@@ -21,7 +21,10 @@ describe('integration', function() {
         .addIndex('byStars', 'stars')
         .addIndex('byMaintainers', 'maintainers', { multi: true });
 
-    db = treo('npm', schema).use(websql());
+    db = treo('npm', schema)
+      .use(websql())
+      .use(promise());
+
     modules = db.store('modules');
     modules.batch(data, done);
   });
@@ -49,28 +52,18 @@ describe('integration', function() {
 
   it('count by index', function(done) {
     modules.index('byStars').count({ gte: 100 }, function(err, count) {
-      try { expect(count).equal(12) } catch (_) { done(_) }
+      expect(count).equal(12);
       modules.index('byKeywords').count('grunt', function(err2, count) {
-        try { expect(count).equal(9) } catch (_) { done(_) }
+        expect(count).equal(9);
         modules.index('byMaintainers').count('tjholowaychuk', function(err3, count) {
-          try { expect(count).equal(36) } catch (_) { done(_) }
+          expect(count).equal(36);
           done(err || err2 || err3);
         });
       });
     });
   });
 
-  it('find in set of ids', function(done) {
-    findIn(modules, ['async', 'request', 'component', 'bla-bla'], function(err, records) {
-      if (err) return done(err);
-      expect(records).length(4);
-      expect(records[1]).undefined;
-      done();
-    });
-  });
-
-  it('works with then/promise', function(done) {
-    modules.get = Promise.denodeify(modules.get);
+  it('works with promises', function(done) {
     Promise.all([
       modules.get('async'),
       modules.get('request'),
