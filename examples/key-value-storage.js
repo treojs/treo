@@ -34,4 +34,4 @@ store.batch([
 store.count(fn); // 6
 
 // close db
-db.close();
+db.close(fn);
