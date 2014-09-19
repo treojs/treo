@@ -9,7 +9,7 @@ describe('integration', function() {
   var db, modules;
 
   before(function(done) {
-    var data = require('./support/npm-data.json');
+    var data = require('./fixtures/npm-data.json');
     var schema = treo.schema()
       .version(1)
         .addStore('modules', { keyPath: 'name' })
