@@ -5,7 +5,7 @@
   "repository": "git@github.com:alekseykulikov/treo.git",
   "version": "0.2.0",
   "license": "MIT",
-  "main": "treo.js",
+  "main": "lib/index.js",
   "keywords": [
     "IndexedDB",
     "treo",
@@ -29,5 +29,10 @@
     "request": "^2.36.0",
     "testem": "^0.6.18",
     "uglify-js": "^2.4.15"
-  }
+  },
+  "files": [
+    "lib",
+    "plugins",
+    "History.md"
+  ]
 }
