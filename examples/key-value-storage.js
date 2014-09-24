@@ -1,4 +1,9 @@
+// This example shows how to use treo for simple string key/value storage.
+// Often you don't need objects and indexes, and just need simple async
+// localStorage. With treo-websql it can be used in all modern browsers.
+
 var treo = require('treo');
+var websql = require('treo/plugins/treo-websql');
 var fn = console.log.bind(console); // use it as callback
 
 // define schema with one storage with string key/values
@@ -7,7 +12,8 @@ var schema = treo.schema()
   .addStore('storage');
 
 // create db
-var db = treo('key-value-storage', schema);
+var db = treo('key-value-storage', schema)
+  .use(websql()); // support legacy browsers
 
 // save link to storage
 var store = db.store('storage');
