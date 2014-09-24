@@ -1,7 +1,7 @@
 {
   "name": "treo",
-  "description": "Lightweight wrapper around IndexedDB (billed as like 'jQuery for IndexedDB')",
-  "version": "0.2.0",
+  "description": "Lightweight wrapper around IndexedDB",
+  "version": "0.3.0",
   "keywords": [
     "IndexedDB",
     "treo",

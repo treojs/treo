@@ -1,9 +1,9 @@
 {
   "name": "treo",
-  "description": "Lightweight wrapper around IndexedDB (billed as like 'jQuery for IndexedDB')",
+  "description": "Lightweight wrapper around IndexedDB",
   "repository": "alekseykulikov/treo",
   "main": "dist/treo.js",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "license": "MIT",
   "keywords": [
     "IndexedDB",
