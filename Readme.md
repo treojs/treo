@@ -3,21 +3,23 @@
   Treo is a lightweight wrapper around [IndexedDB](http://www.w3.org/TR/IndexedDB/) to make browser storage more enjoyable to use.
   Think about it as jQuery for IndexedDB. It does not add new abstractions, but simplifies the API and increases code reliability.
 
-  I think that us web developers have to stop fighting with the complex IndexedDB API, stumbling on simple tasks, and
-  waiting for LevelDB in the browser. Current specification is [stable](http://www.w3.org/TR/IndexedDB/), [available in modern browsers](http://caniuse.com/#search=indexeddb). And the upcoming [2.0 spec](http://lists.w3.org/Archives/Public/public-webapps/2014AprJun/0149.html) will not have breaking changes.
+  I spent a lot of time reading the official specification and understanding its nuances.
+  With treo I want to save this time for other developers, and help to focus on real problems and making the web better,
+  instead of fighting with the complex IndexedDB API and stumbling on simple tasks.
+
   IndexedDB is powerful technology with support of indexes, stores, transactions and cursors.
-  It allows you to build any kind of client databases. And let's be clear, it's the only real option to store data in browser,
+  It allows us to build any kind of client databases. And let's be clear, it's the only real option to store data in browser,
   because localStorage is [synchronous](https://hacks.mozilla.org/2012/03/there-is-no-simple-solution-for-local-storage/) and WebSQL is deprecated.
-  I spent a lot of time reading the official specification and understanding its nuances. With treo I want to save this time for other developers, and help you focus on real problems, building awesome libraries, and making the web better.
 
 ## Main features
 
-  * Simple API around powerful IndexedDB features, like batch or indexes.
+  * Simple API for powerful features like batch or indexes.
   * Command buffering, you can start read/write right away.
   * Small codebase without dependencies, ~370 LOC, 2.5Kb gziped.
   * Powerful DSL to manage database schema and versions.
+  * Plugins for promises support and websql polyfill.
   * Better error handling through error first node-style callbacks.
-  * Exposed access to low-level IndexedDB methods for cover edge cases.
+  * Exposed access to low-level IndexedDB methods to cover edge cases.
   * Easy to extend and create plugins.
 
 ## Example
@@ -65,29 +67,76 @@ books.index('byTitle').get('Bedrock Nights', function(err, book) {});
 books.index('byAuthor').get('Fred', function(err, all) {}); // all.length == 2
 ```
 
-  For more examples check out [/examples](https://github.com/alekseykulikov/treo/blob/master/examples) folder.
+  For more examples check out [/examples](https://github.com/alekseykulikov/treo/blob/master/examples):
+
+  * [simple key value storage](https://github.com/alekseykulikov/treo/blob/master/examples/key-value-storage.js)
+  * [use ES6 generators and promises for nice async workflow](https://github.com/alekseykulikov/treo/blob/master/examples/es6-generators.js)
+  * [plugin example](https://github.com/alekseykulikov/treo/blob/master/examples/find-in-plugin.js)
 
 ## Installation
 
 ```
+$ npm install treo --save
 $ bower install treo
 $ component install alekseykulikov/treo
-$ npm install treo --save
 ```
 
-  Standalone build available as [treo.js](https://github.com/alekseykulikov/treo/blob/master/treo.js).
+  Standalone build available as [dist/treo.js](https://github.com/alekseykulikov/treo/blob/master/dist/treo.js).
 
 ```html
 <script src="treo.js"></script>
-<script src="indexedb-shim.js"></script> <!-- for legacy browsers -->
-<script>window.treo('my-db', schema);</script>
+<script src="treo-websql.js"></script> <!-- [optional] for legacy browsers -->
+<script src="treo-websql.js"></script> <!-- [optional] for es6-promises support -->
+<script>
+  var db = window.treo('my-db', schema)
+    .use(treoWebsql())
+    .use(treoPromise());
+</script>
+```
+
+## Promises
+
+  IndexedDB does not support ES6-Promises, but treo enables it with [treo-promise](https://github.com/alekseykulikov/treo/tree/master/plugins/treo-promise) plugin.
+
+```js
+var promise = require('treo/plugins/treo-promise'); // or window.treoPromise
+var db = treo('library', schema)
+  .use(promise());
+
+var books = db.store('books');
+
+Promise.all([
+  books.get('123456'),
+  books.get('234567'),
+  books.get('345678'),
+]).then(function(records) {
+  console.log(records); // records.length == 3
+
+  books.count().then(function(count) {
+    console.log(count); // total count of records
+  });
+});
+```
+
+## Legacy browsers
+
+  IndexedDB is available only [in modern browsers]((http://caniuse.com/#search=indexeddb),
+  but we still need to support Safari <= 7 and legacy mobile browsers.
+  Treo ships with [treo-websql](https://github.com/alekseykulikov/treo/tree/master/plugins/treo-websql) plugin,
+  which enables fallback to WebSQL and fix all issues of [buggy IndexedDBShim](https://github.com/axemclion/IndexedDBShim/issues).
+  In fact all treo's tests pass even in [phantomjs environment](https://travis-ci.org/alekseykulikov/treo).
+
+  Usage:
+
+```js
+var websql = require('treo/plugins/treo-websql'); // or window.treoWebsql
+var db = treo('library', schema)
+  .use(websql());
 ```
 
 # API
 
   To initialize a new `db` instance, create a `schema` and pass it to main function.
-  All methods, except multiple indexes and advanced ranges, are backward
-  compatible with outdated browsers through [IndexedDBShim](https://github.com/axemclion/IndexedDBShim).
 
 ```js
 // define schema with one storage
@@ -97,7 +146,8 @@ var schema = treo.schema()
 
 // create db
 var db = treo('key-value-storage', schema);
-db.store('storage').put('foo', 'value 1', fn); // connect, create db, put value
+db.store('storage')
+  .put('foo', 'value 1', fn); // connect, create db, put value
 ```
 
 ## Schema
@@ -132,6 +182,10 @@ db.store('storage').put('foo', 'value 1', fn); // connect, create db, put value
 
   It's an interface to manage db connections, create transactions and get access
   to stores, where real work happen.
+
+### db.use(fn)
+
+  Use plugin `fn`, it calls with db instance.
 
 ### db.store(name)
 
@@ -243,24 +297,6 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
   - `gte` - greater or equal
   - `lt` - less than
   - `lte` - less or equal
-
-## Promises
-
-  Using [then/promise](https://github.com/then/promise):
-
-```js
-var Promise = require('promise');
-var books = db.store('books');
-books.get = Promise.denodeify(books.get); // patch get method
-
-Promise.all([
-  books.get('123456'),
-  books.get('234567'),
-  books.get('345678'),
-]).then(function(records) {
-  // records.length == 3
-});
-```
 
 ## Low Level Methods
 
