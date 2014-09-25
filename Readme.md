@@ -185,7 +185,8 @@ db.store('storage')
 
 ### db.use(fn)
 
-  Use plugin `fn`, it calls with db instance.
+  Use plugin `fn(db, treo)`, it calls with `db` instance and `treo` object,
+  so you don't need to require treo as dependencies.
 
 ### db.store(name)
 

@@ -18,7 +18,7 @@ module.exports = plugin;
 function plugin() {
   if (!isSupported) require('./indexeddb-shim');
 
-  return function(db) {
+  return function(db, treo) {
     if (isSupported) return;
     // fix multi index support
     // https://github.com/axemclion/IndexedDBShim/issues/16
@@ -26,7 +26,7 @@ function plugin() {
       var store = db.store(storeName);
       Object.keys(store.indexes).forEach(function(indexName) {
         var index = store.index(indexName);
-        fixIndexSupport(db, index);
+        fixIndexSupport(treo, index);
       });
     });
   };
@@ -38,11 +38,11 @@ function plugin() {
  * @param {Index} index
  */
 
-function fixIndexSupport(db, index) {
+function fixIndexSupport(treo, index) {
   index.get = function get(key, cb) {
     console.warn('treo-websql: index is enefficient');
     var result = [];
-    var r = db.constructor.range(key);
+    var r = treo.range(key);
 
     this.store.cursor({ iterator: iterator }, function(err) {
       err ? cb(err) : cb(null, index.unique ? result[0] : result);
