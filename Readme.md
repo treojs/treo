@@ -86,7 +86,7 @@ $ component install alekseykulikov/treo
 ```html
 <script src="treo.js"></script>
 <script src="treo-websql.js"></script> <!-- [optional] for legacy browsers -->
-<script src="treo-websql.js"></script> <!-- [optional] for es6-promises support -->
+<script src="treo-promise.js"></script> <!-- [optional] for es6-promises support -->
 <script>
   var db = window.treo('my-db', schema)
     .use(treoWebsql())
@@ -120,7 +120,7 @@ Promise.all([
 
 ## Legacy browsers
 
-  IndexedDB is available only [in modern browsers]((http://caniuse.com/#search=indexeddb),
+  IndexedDB is available only [in modern browsers](http://caniuse.com/#search=indexeddb),
   but we still need to support Safari <= 7 and legacy mobile browsers.
   Treo ships with [treo-websql](https://github.com/alekseykulikov/treo/tree/master/plugins/treo-websql) plugin,
   which enables fallback to WebSQL and fix all issues of [buggy IndexedDBShim](https://github.com/axemclion/IndexedDBShim/issues).
@@ -310,7 +310,7 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
 
 ### store.cursor(opts, fn), index.cursor(opts, fn)
 
-   Create custom cursors, see [example](https://github.com/alekseykulikov/treo/blob/master/examples/find-in.js) and [article](https://hacks.mozilla.org/2014/06/breaking-the-borders-of-indexeddb/) for more detailed usage.
+   Create custom cursors, see [example](https://github.com/alekseykulikov/treo/blob/master/examples/find-in-plugin.js) and [article](https://hacks.mozilla.org/2014/06/breaking-the-borders-of-indexeddb/) for more detailed usage.
 
 ### treo.Treo, treo.Schema, treo.Store, treo.Index
 
@@ -320,6 +320,6 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
 
   Compare 2 values using indexeddb's internal key compassion algorithm.
 
-## License
+# License
 
   Aleksey Kulikov, [MIT](http://alekseykulikov.mit-license.org/).
