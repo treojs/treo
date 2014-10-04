@@ -63,6 +63,38 @@ describe('treo', function() {
       magazines.del(5, next);
       magazines.put({ id: 4, message: 'hey' }, next);
     });
+
+    it('drop stores', function(done) {
+      var dropSchema = treo.schema()
+        .version(1)
+          .addStore('books')
+          .addIndex('byTitle', 'title', { unique: true })
+          .addIndex('byAuthor', 'author')
+          .addStore('locals')
+        .version(2)
+          .addStore('magazines', { key: 'id' })
+          .addIndex('byWords', 'words', { multi: true });
+
+      var db = treo('treo', dropSchema).use(websql());
+      db.store('magazines').put({ id: 4, words: ['hey'] }, function(err) {
+        if (err) return done(err);
+        db.close(function() {
+          dropSchema = dropSchema.version(3)
+            .dropStore('books')
+            .getStore('magazines')
+            .dropIndex('byWords');
+          var db = treo('treo', dropSchema).use(websql());
+          expect(Object.keys(db.stores)).length(2);
+          expect(Object.keys(db.store('magazines').indexes)).length(0);
+
+          db.store('magazines').get(4, function(err, obj) {
+            if (err) return done(err);
+            expect(obj).eql({ id: 4, words: ['hey'] });
+            db.drop(done);
+          });
+        });
+      });
+    });
   });
 
   describe('store', function() {
