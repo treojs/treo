@@ -343,4 +343,61 @@ describe('treo', function() {
       });
     });
   });
+
+  describe('reuse transaction', function() {
+    it('in one store', function(done) {
+      var key2;
+      var books = db.store('books');
+
+      books.batch({
+        key1: { title: 'Bedrock Nights', isbn: 'key3' },
+        key2: { title: 'Waving Wings', isbn: 'key4' },
+      }, function() {
+        db.transaction('readwrite', ['books', 'magazines'], function(tr) {
+          var books = db.store('books', { transaction: tr });
+          expect(books.activeTransaction).equal(tr);
+          books.put('key3', { title: 'Quarry Memories', isbn: 'key1' });
+          books.put('key4', { title: 'Water Buffaloes', isbn: 'key2' });
+          books.del('key1');
+          books.get('key2', function(err, res) {
+            if (err) return done(err);
+            key2 = res;
+          });
+        }, function(err) {
+          if (err) return done(err);
+          expect(key2).eql({ title: 'Waving Wings', isbn: 'key4' });
+          expect(books.activeTransaction).not.exist;
+
+          books.all(function(err, all) {
+            expect(all).length(3);
+            expect(all[1]).eql({ title: 'Quarry Memories', isbn: 'key1' });
+            done();
+          });
+        });
+      });
+    });
+
+    it('in many stores', function(done) {
+      db.transaction('readwrite', ['books', 'magazines', 'locals'], function(tr) {
+        var locals = db.store('locals', { transaction: tr });
+        var magazines = db.store('magazines', { transaction: tr });
+
+        locals.batch({ foo: 'val 1', bar: 'val 2', baz: 'val 3' });
+        magazines.put('id1', { title: 'Quarry Memories', words: ['quarry', 'memories'] });
+      }, function(err) {
+        if (err) return done(err);
+        var next = after(2, done);
+
+        db.store('locals').count(function(err, count) {
+          expect(count).equal(3);
+          next();
+        });
+
+        db.store('magazines').count(function(err, count) {
+          expect(count).equal(1);
+          next();
+        });
+      });
+    });
+  });
 });
