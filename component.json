@@ -11,6 +11,6 @@
     "offline"
   ],
   "scripts": [
-    "treo.js"
+    "dist/treo.js"
   ]
 }
