@@ -100,9 +100,12 @@ describe('treo', function() {
   describe('store', function() {
     it('has properties', function() {
       var books = db.store('books');
+      var magazines = db.store('magazines');
       expect(books.name).equal('books');
       expect(books.db).equal(db);
       expect(Object.keys(books.indexes)).length(3);
+      expect(magazines.key).equal('id');
+      expect(magazines.opts.key).equal('id');
     });
 
     it('#put', function(done) {
