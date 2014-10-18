@@ -206,6 +206,7 @@ db.store('storage')
   * version - db version
   * name - db name
   * status - connection status: close, opening, open
+  * origin - original IDBDatabase instance
 
 ## Store
 
@@ -303,6 +304,22 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
 
   Treo is designed to be a foundation for your browser storage.
   It gives you full power of IndexedDB through set of internal low level methods.
+
+### db.getInstance(cb)
+
+  Connect to db and create all defined stores.
+  It's useful, when you need to handle edge cases related with multi-tab apps.
+
+```js
+var db = treo('my-db', schema);
+db.getInstance(function(err, origin) {
+  if (err) return console.log('DB locked, or has error:', err);
+  origin.onversionchange = function() {
+    db.close();
+    alert("A new version of this page is ready. Please reload!");
+  };
+})
+```
 
 ### db.transaction(type, stores, fn)
 
