@@ -67,11 +67,11 @@ books.index('byTitle').get('Bedrock Nights', function(err, book) {});
 books.index('byAuthor').get('Fred', function(err, all) {}); // all.length == 2
 ```
 
-  For more examples check out [/examples](https://github.com/alekseykulikov/treo/blob/master/examples):
+  For more examples check out [/examples](/examples):
 
-  * [simple key value storage](https://github.com/alekseykulikov/treo/blob/master/examples/key-value-storage.js)
-  * [use ES6 generators and promises for nice async workflow](https://github.com/alekseykulikov/treo/blob/master/examples/es6-generators.js)
-  * [plugin example](https://github.com/alekseykulikov/treo/blob/master/examples/find-in-plugin.js)
+  * [simple key value storage](/examples/key-value-storage.js)
+  * [use ES6 generators and promises for nice async workflow](/examples/es6-generators.js)
+  * [plugin example](/examples/find-in-plugin.js)
 
 ## Installation
 
@@ -81,7 +81,7 @@ $ bower install treo
 $ component install alekseykulikov/treo
 ```
 
-  Standalone build available as [dist/treo.js](https://github.com/alekseykulikov/treo/blob/master/dist/treo.js).
+  Standalone build available as [dist/treo.js](/dist/treo.js).
 
 ```html
 <script src="treo.js"></script>
@@ -201,6 +201,44 @@ db.store('storage')
 
   Close connection and drop database.
 
+### db.getInstance(cb)
+
+  Connect to db and create defined stores.
+  It's useful, when you need to handle edge cases related with multi-tabs.
+
+```js
+var db = treo('my-db', schema);
+db.getInstance(function(err, origin) {
+  if (err) return console.log('DB locked, or has error:', err);
+  origin.onversionchange = function() {
+    db.close();
+    alert("A new version of this page is ready. Please reload!");
+  };
+})
+```
+
+### db.transaction(type, stores, fn)
+
+  Create new transaction to list of stores. Available types: `readonly` and `readwrite`.
+
+```js
+db.transaction('readwrite', ['books', 'magazines'], function(tr) {
+  var books = db.store('books', { transaction: tr });
+  var magazines = db.store('magazines', { transaction: tr });
+
+  books.put('key3', { title: 'Quarry Memories', isbn: 'key1' });
+  books.put('key4', { title: 'Water Buffaloes', isbn: 'key2' });
+  books.del('key1');
+  books.get('key2', function(err, res) {
+    if (err) return done(err);
+    console.log(res);
+  });
+  magazines.put('id1', { title: 'Quarry Memories', words: ['quarry', 'memories'] });
+},function(err) {
+  console.log(err || 'success');
+});
+```
+
 ### db.properties
 
   * version - db version
@@ -291,6 +329,19 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
 
   Count records by `key`, similar to get, but returns number.
 
+## treo
+
+### treo(name, schema)
+### treo.schema()
+
+### treo.Treo, treo.Store, treo.Index
+
+  Treo exposes core objects for plugins.
+
+### treo.cmp(a, b)
+
+  Compare 2 values using indexeddb's internal key compassion algorithm.
+
 ## Ranges
 
   `treo.range(object)` transforms javascript object to [IDBKeyRange](https://developer.mozilla.org/en-US/docs/Web/API/IDBKeyRange).
@@ -300,43 +351,7 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
   - `lt` - less than
   - `lte` - less or equal
 
-## Low Level Methods
-
-  Treo is designed to be a foundation for your browser storage.
-  It gives you full power of IndexedDB through set of internal low level methods.
-
-### db.getInstance(cb)
-
-  Connect to db and create all defined stores.
-  It's useful, when you need to handle edge cases related with multi-tab apps.
-
-```js
-var db = treo('my-db', schema);
-db.getInstance(function(err, origin) {
-  if (err) return console.log('DB locked, or has error:', err);
-  origin.onversionchange = function() {
-    db.close();
-    alert("A new version of this page is ready. Please reload!");
-  };
-})
-```
-
-### db.transaction(type, stores, fn)
-
-  Create new transaction to list of stores.
-  Available types: `readonly` and `readwrite`.
-
-### store.cursor(opts, fn), index.cursor(opts, fn)
-
-   Create custom cursors, see [example](https://github.com/alekseykulikov/treo/blob/master/examples/find-in-plugin.js) and [article](https://hacks.mozilla.org/2014/06/breaking-the-borders-of-indexeddb/) for more detailed usage.
-
-### treo.Treo, treo.Schema, treo.Store, treo.Index
-
-  Exposed core objects.
-
-### treo.cmp(a, b)
-
-  Compare 2 values using indexeddb's internal key compassion algorithm.
+## Cursors
 
 # License
 
