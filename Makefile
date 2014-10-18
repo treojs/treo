@@ -1,6 +1,5 @@
 browserify = ./node_modules/.bin/browserify
-uglifyjs = ./node_modules/.bin/uglifyjs
-testem = ./node_modules/.bin/testem
+browserify-mocha = ./node_modules/.bin/browserify-mocha
 
 node_modules: package.json
 	@npm install
@@ -11,14 +10,11 @@ build: node_modules
 	@$(browserify) plugins/treo-promise/index.js -s treo-promise -o dist/treo-promise.js
 	@$(browserify) plugins/treo-websql/index.js -s treo-websql -o dist/treo-websql.js
 
-dist/test-bundle.js: node_modules $(wildcard lib/*.js) $(wildcard test/*.js) $(wildcard plugins/**/*.js)
-	@$(browserify) test/treo.js test/integration.js -o dist/test-bundle.js
-
 test: node_modules
-	@$(testem) -f test/testem.json ci
+	@$(browserify-mocha) ./test/treo.js ./test/integration.js
 
 test-server: node_modules
-	@$(testem) -f test/testem.json
+	@$(browserify-mocha) --watch ./test/treo.js ./test/integration.js
 
 release: test build
 	@echo - "upgrade {package|component|bower}.json (bump 0.0.0|patch|minor|major)"
@@ -30,6 +26,6 @@ release: test build
 
 stat:
 	@cloc lib/ --quiet --by-file
-	@cloc test/ --quiet --by-file --exclude-dir=test/vendor,test/support
+	@cloc test/ --quiet --by-file --exclude-dir=fixtures
 
-.PHONY: build build-test test
+.PHONY: build test
