@@ -30,7 +30,7 @@ describe('treo', function() {
     db.drop(done);
   });
 
-  describe('db', function() {
+  describe.skip('db', function() {
     it('has properties', function() {
       expect(db.name).equal('treo');
       expect(db.version).equal(3);
@@ -347,7 +347,7 @@ describe('treo', function() {
     });
   });
 
-  describe('reuse transaction', function() {
+  describe.skip('reuse transaction', function() {
     it('in one store', function(done) {
       var key2;
       var books = db.store('books');

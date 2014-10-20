@@ -1,6 +1,6 @@
 {
   "name": "treo",
-  "description": "Lightweight wrapper around IndexedDB",
+  "description": "Human interface for IndexedDB",
   "repository": "alekseykulikov/treo",
   "main": "dist/treo.js",
   "version": "0.3.0",

@@ -1,6 +1,6 @@
 {
   "name": "treo",
-  "description": "Lightweight wrapper around IndexedDB",
+  "description": "Human interface for IndexedDB",
   "version": "0.3.0",
   "keywords": [
     "IndexedDB",
