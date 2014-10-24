@@ -13,7 +13,9 @@
     "browserify"
   ],
   "scripts": {
-    "test": "make test"
+    "test": "browserify-test",
+    "start": "browserify-test -w",
+    "stat": "cloc lib/ --by-file && cloc test/ --by-file --exclude-dir=fixtures"
   },
   "dependencies": {
     "component-type": "1.0.0",
@@ -21,7 +23,7 @@
   },
   "devDependencies": {
     "after": "^0.8.1",
-    "browserify-mocha": "^1.0.0",
+    "browserify-test": "^1.0.0",
     "browserify": "^6.1.0",
     "chai": "^1.9.2"
   },
