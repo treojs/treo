@@ -1,4 +1,8 @@
-var isSupported = !! window.indexedDB;
+var isSafari = typeof window.openDatabase !== 'undefined' &&
+    /Safari/.test(navigator.userAgent) &&
+    !/Chrome/.test(navigator.userAgent);
+
+var isSupported = !isSafari && !! window.indexedDB;
 
 /**
  * Expose `plugin()`.
