@@ -312,7 +312,7 @@ storage.batch({
 ### index.get(key, fn)
 
   Get values by `key`. When index is unique it returns only one value.
-  `key` can be string, [range](https://github.com/alekseykulikov/treo#ranges), or IDBKeyRange object.
+  `key` can be string, [range](https://github.com/treojs/idb-range), or IDBKeyRange object.
 
 ```js
 books.index('byTitle').get('Bedrock Nights', fn); // get unique value
@@ -338,15 +338,6 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
 ### treo.cmp(a, b)
 
   Compare 2 values using indexeddb's internal key compassion algorithm.
-
-### treo.range()
-
-  Transforms javascript object to [IDBKeyRange](https://developer.mozilla.org/en-US/docs/Web/API/IDBKeyRange).
-  Values inspired by [MongoDB query operators](http://docs.mongodb.org/manual/reference/operator/query-comparison/):
-  - `gt` - greater than
-  - `gte` - greater or equal
-  - `lt` - less than
-  - `lte` - less or equal
 
 # License
 

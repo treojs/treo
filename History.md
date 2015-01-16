@@ -1,3 +1,7 @@
+## unreleased
+
+  * use [idb-range](https://github.com/treojs/idb-range), and remove treo.range
+
 ## 0.4.0 / 2015-01-16 [PR](https://github.com/alekseykulikov/treo/pull/18)
 
   * pass treo as second argument to `db.use()`

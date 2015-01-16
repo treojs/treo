@@ -1,3 +1,4 @@
+var parseRange = require('idb-range');
 var isSafari = typeof window.openDatabase !== 'undefined' &&
     /Safari/.test(navigator.userAgent) &&
     !/Chrome/.test(navigator.userAgent);
@@ -46,7 +47,7 @@ function fixIndexSupport(treo, index) {
   index.get = function get(key, cb) {
     console.warn('treo-websql: index is enefficient');
     var result = [];
-    var r = treo.range(key);
+    var r = parseRange(key);
 
     this.store.cursor({ iterator: iterator }, function(err) {
       err ? cb(err) : cb(null, index.unique ? result[0] : result);

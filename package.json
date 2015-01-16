@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "component-type": "^1.1.0",
+    "idb-range": "^2.0.0",
     "promise": "^6.1.0"
   },
   "devDependencies": {
