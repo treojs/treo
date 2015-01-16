@@ -6,8 +6,7 @@
 // Treo ships with 2 plugins, and you can check them for more examples.
 
 module.exports = function plugin() {
-  return function(db) {
-    var treo = db.constructor;
+  return function(db, treo) {
     var Index = treo.Index;
     var Store = treo.Store;
 

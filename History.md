@@ -1,3 +1,12 @@
+## 0.4.0 / 2015-01-16 [PR](https://github.com/alekseykulikov/treo/pull/18)
+
+  * pass treo as second argument to `db.use()`
+  * add `schema.dropStore()` and `schema.dropIndex()`
+  * fix iOS 8 & Safari 7.0.6, IE10 & IE11 support
+  * `put` passes the key of the created/updated record to callback
+
+Thanks: [@unkillbob](https://github.com/unkillbob) for fixing websql polyfill.
+
 ## 0.3.0 / 2014-09-24
 
   * add npm's files option for smaller tarbal

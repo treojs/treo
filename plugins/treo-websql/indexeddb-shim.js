@@ -881,6 +881,17 @@ var cleanInterface = false;
         });
     };
 
+    IDBIndex.prototype.__deleteIndex = function(indexName) {
+        var error = function(){
+            idbModules.util.throwDOMException(0, "Could not delete Index", arguments);
+        };
+        var me = this;
+        !me.__idbObjectStore.indexNames.contains(indexName) && error("Index does not exist");
+        me.__idbObjectStore.indexNames.splice(me.__idbObjectStore.indexNames.indexOf(indexName), 1);
+
+        // TODO actually delete the index from the database
+    };
+
     IDBIndex.prototype.openCursor = function(range, direction){
         var cursorRequest = new idbModules.IDBRequest();
         var cursor = new idbModules.IDBCursor(range, direction, this.source, cursorRequest, this.indexName, "value");
@@ -1723,17 +1734,26 @@ var cleanInterface = false;
         window.shimIndexedDB = idbModules.shimIndexedDB;
         if (window.shimIndexedDB) {
             window.shimIndexedDB.__useShim = function(){
-                window.indexedDB = idbModules.shimIndexedDB;
-                window.IDBDatabase = idbModules.IDBDatabase;
-                window.IDBTransaction = idbModules.IDBTransaction;
-                window.IDBCursor = idbModules.IDBCursor;
-                window.IDBKeyRange = idbModules.IDBKeyRange;
-                // On some browsers the assignment fails, overwrite with the defineProperty method
-                if (window.indexedDB !== idbModules.shimIndexedDB && Object.defineProperty) {
-                    Object.defineProperty(window, 'indexedDB', {
-                        value: idbModules.shimIndexedDB
-                    });
-                }
+                try {
+                    window.indexedDB = idbModules.shimIndexedDB;
+                    window.IDBDatabase = idbModules.IDBDatabase;
+                    window.IDBTransaction = idbModules.IDBTransaction;
+                    window.IDBCursor = idbModules.IDBCursor;
+                    window.IDBKeyRange = idbModules.IDBKeyRange;
+                
+                    // On some browsers the assignment fails, overwrite with the defineProperty method
+                    if (window.indexedDB !== idbModules.shimIndexedDB && Object.defineProperty) {
+                        Object.defineProperty(window, 'indexedDB', {
+                            value: idbModules.shimIndexedDB
+                        });
+                    }
+                } catch (e) {}
+
+                window._indexedDB = idbModules.shimIndexedDB;
+                window._IDBDatabase = idbModules.IDBDatabase;
+                window._IDBTransaction = idbModules.IDBTransaction;
+                window._IDBCursor = idbModules.IDBCursor;
+                window._IDBKeyRange = idbModules.IDBKeyRange;
             };
             window.shimIndexedDB.__debug = function(val){
                 idbModules.DEBUG = val;
@@ -1752,7 +1772,9 @@ var cleanInterface = false;
     detect browsers with known IndexedDb issues (e.g. Android pre-4.4)
     */
     var poorIndexedDbSupport = false;
-    if (navigator.userAgent.match(/Android 2/) || navigator.userAgent.match(/Android 3/) || navigator.userAgent.match(/Android 4\.[0-3]/)) {
+    if (navigator.userAgent.match(/Android 2/) || navigator.userAgent.match(/Android 3/) || navigator.userAgent.match(/Android 4\.[0-3]/) ||
+        /Safari/.test(navigator.userAgent)) {
+
         /* Chrome is an exception. It supports IndexedDb */
         if (!navigator.userAgent.match(/Chrome/)) {
             poorIndexedDbSupport = true;

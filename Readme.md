@@ -67,11 +67,11 @@ books.index('byTitle').get('Bedrock Nights', function(err, book) {});
 books.index('byAuthor').get('Fred', function(err, all) {}); // all.length == 2
 ```
 
-  For more examples check out [/examples](https://github.com/alekseykulikov/treo/blob/master/examples):
+  For more examples check out [/examples](/examples):
 
-  * [simple key value storage](https://github.com/alekseykulikov/treo/blob/master/examples/key-value-storage.js)
-  * [use ES6 generators and promises for nice async workflow](https://github.com/alekseykulikov/treo/blob/master/examples/es6-generators.js)
-  * [plugin example](https://github.com/alekseykulikov/treo/blob/master/examples/find-in-plugin.js)
+  * [simple key value storage](/examples/key-value-storage.js)
+  * [use ES6 generators and promises for nice async workflow](/examples/es6-generators.js)
+  * [plugin example](/examples/find-in-plugin.js)
 
 ## Installation
 
@@ -81,7 +81,7 @@ $ bower install treo
 $ component install alekseykulikov/treo
 ```
 
-  Standalone build available as [dist/treo.js](https://github.com/alekseykulikov/treo/blob/master/dist/treo.js).
+  Standalone build available as [dist/treo.js](/dist/treo.js).
 
 ```html
 <script src="treo.js"></script>
@@ -178,6 +178,14 @@ db.store('storage')
 
   Change current store.
 
+### schema.dropStore(name)
+
+  Delete store by `name`.
+
+### schema.dropIndex(name)
+
+  Delete index by `name` from current store.
+
 ## DB
 
   It's an interface to manage db connections, create transactions and get access
@@ -185,7 +193,8 @@ db.store('storage')
 
 ### db.use(fn)
 
-  Use plugin `fn`, it calls with db instance.
+  Use plugin `fn(db, treo)`, it calls with `db` instance and `treo` object,
+  so you don't need to require treo as dependencies.
 
 ### db.store(name)
 
@@ -200,11 +209,33 @@ db.store('storage')
 
   Close connection and drop database.
 
+### db.getInstance(cb)
+
+  Connect to db and create defined stores.
+  It's useful, when you need to handle edge cases related with multi-tabs.
+
+```js
+var db = treo('my-db', schema);
+db.getInstance(function(err, origin) {
+  if (err) return console.log('DB locked, or has error:', err);
+  origin.onversionchange = function() {
+    db.close();
+    alert("A new version of this page is ready. Please reload!");
+  };
+})
+```
+
+### db.transaction(type, stores, fn)
+
+  Create new transaction to list of stores.
+  Available types: `readonly` and `readwrite`.
+
 ### db.properties
 
   * version - db version
   * name - db name
   * status - connection status: close, opening, open
+  * origin - original IDBDatabase instance
 
 ## Store
 
@@ -219,6 +250,7 @@ db.store('storage')
 
   Put `val` to `key`. Put means create or replace.
   If it's an object store with key property, you pass the whole object.
+  `fn` callback returns error and key of new value.
 
 ```js
 var schema = treo.schema()
@@ -269,6 +301,10 @@ storage.batch({
 
   Get index by `name`.
 
+### store.cursor(opts, fn)
+
+  Create custom cursors, see [example](https://github.com/alekseykulikov/treo/blob/master/examples/find-in-plugin.js) and [article](https://hacks.mozilla.org/2014/06/breaking-the-borders-of-indexeddb/) for more detailed usage.
+
 ## Index
 
   Index is a way to filter your data.
@@ -289,36 +325,28 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
 
   Count records by `key`, similar to get, but returns number.
 
-## Ranges
+### index.cursor(opts, fn)
 
-  `treo.range(object)` transforms javascript object to [IDBKeyRange](https://developer.mozilla.org/en-US/docs/Web/API/IDBKeyRange).
+  Similar method as `store.cursor()`.
+
+## treo
+
+### treo.Treo, treo.Store, treo.Index
+
+  Treo exposes core objects for plugins.
+
+### treo.cmp(a, b)
+
+  Compare 2 values using indexeddb's internal key compassion algorithm.
+
+### treo.range()
+
+  Transforms javascript object to [IDBKeyRange](https://developer.mozilla.org/en-US/docs/Web/API/IDBKeyRange).
   Values inspired by [MongoDB query operators](http://docs.mongodb.org/manual/reference/operator/query-comparison/):
   - `gt` - greater than
   - `gte` - greater or equal
   - `lt` - less than
   - `lte` - less or equal
-
-## Low Level Methods
-
-  Treo is designed to be a foundation for your browser storage.
-  It gives you full power of IndexedDB through set of internal low level methods.
-
-### db.transaction(type, stores, fn)
-
-  Create new transaction to list of stores.
-  Available types: `readonly` and `readwrite`.
-
-### store.cursor(opts, fn), index.cursor(opts, fn)
-
-   Create custom cursors, see [example](https://github.com/alekseykulikov/treo/blob/master/examples/find-in-plugin.js) and [article](https://hacks.mozilla.org/2014/06/breaking-the-borders-of-indexeddb/) for more detailed usage.
-
-### treo.Treo, treo.Schema, treo.Store, treo.Index
-
-  Exposed core objects.
-
-### treo.cmp(a, b)
-
-  Compare 2 values using indexeddb's internal key compassion algorithm.
 
 # License
 

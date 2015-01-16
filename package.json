@@ -1,9 +1,9 @@
 {
   "name": "treo",
-  "description": "Lightweight wrapper around IndexedDB",
+  "description": "Human interface for IndexedDB",
   "author": "Aleksey Kulikov <alekseys.kulikov@gmail.com> (http://alekseykulikov.com)",
   "repository": "git@github.com:alekseykulikov/treo.git",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "license": "MIT",
   "main": "lib/index.js",
   "keywords": [
@@ -13,23 +13,24 @@
     "browserify"
   ],
   "scripts": {
-    "test": "make test"
+    "test": "browserify-test",
+    "start": "browserify-test -w",
+    "stat": "cloc lib/ --by-file && cloc test/ --by-file --exclude-dir=fixtures"
   },
   "dependencies": {
-    "component-type": "1.0.0",
-    "promise": "^6.0.0"
+    "component-type": "^1.1.0",
+    "promise": "^6.1.0"
   },
   "devDependencies": {
     "after": "^0.8.1",
-    "browserify": "^5.11.1",
-    "chai": "^1.9.1",
-    "mocha": "^1.21.4",
-    "testem": "^0.6.18",
-    "uglify-js": "^2.4.15"
+    "browserify-test": "^1.0.1",
+    "browserify": "^8.1.1",
+    "chai": "^1.10.0"
   },
   "files": [
     "lib",
     "plugins",
+    "Readme.md",
     "History.md"
   ]
 }
