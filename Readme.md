@@ -178,6 +178,14 @@ db.store('storage')
 
   Change current store.
 
+### schema.dropStore(name)
+
+  Delete store by `name`.
+
+### schema.dropIndex(name)
+
+  Delete index by `name` from current store.
+
 ## DB
 
   It's an interface to manage db connections, create transactions and get access
@@ -216,6 +224,11 @@ db.getInstance(function(err, origin) {
   };
 })
 ```
+
+### db.transaction(type, stores, fn)
+
+  Create new transaction to list of stores.
+  Available types: `readonly` and `readwrite`.
 
 ### db.properties
 
@@ -287,6 +300,10 @@ storage.batch({
 
   Get index by `name`.
 
+### store.cursor(opts, fn)
+
+  Create custom cursors, see [example](https://github.com/alekseykulikov/treo/blob/master/examples/find-in-plugin.js) and [article](https://hacks.mozilla.org/2014/06/breaking-the-borders-of-indexeddb/) for more detailed usage.
+
 ## Index
 
   Index is a way to filter your data.
@@ -307,10 +324,11 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
 
   Count records by `key`, similar to get, but returns number.
 
-## treo
+### index.cursor(opts, fn)
 
-### treo(name, schema)
-### treo.schema()
+  Similar method as `store.cursor()`.
+
+## treo
 
 ### treo.Treo, treo.Store, treo.Index
 
@@ -320,16 +338,14 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
 
   Compare 2 values using indexeddb's internal key compassion algorithm.
 
-## Ranges
+### treo.range()
 
-  `treo.range(object)` transforms javascript object to [IDBKeyRange](https://developer.mozilla.org/en-US/docs/Web/API/IDBKeyRange).
+  Transforms javascript object to [IDBKeyRange](https://developer.mozilla.org/en-US/docs/Web/API/IDBKeyRange).
   Values inspired by [MongoDB query operators](http://docs.mongodb.org/manual/reference/operator/query-comparison/):
   - `gt` - greater than
   - `gte` - greater or equal
   - `lt` - less than
   - `lte` - less or equal
-
-## Cursors
 
 # License
 
