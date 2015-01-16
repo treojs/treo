@@ -1,4 +1,4 @@
-## unreleased
+## 0.4.1 / 2015-01-17
 
   * use [idb-range](https://github.com/treojs/idb-range), and remove treo.range
   * handle `onversionchange` automatically and close db [#17](https://github.com/alekseykulikov/treo/issues/16)

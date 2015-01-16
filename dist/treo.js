@@ -1,5 +1,5 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.treo=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var parseRange = require('./range');
+var parseRange = require('idb-range');
 
 /**
  * Expose `Index`.
@@ -81,9 +81,9 @@ Index.prototype.cursor = function(opts, cb) {
   this.store.cursor(opts, cb);
 };
 
-},{"./range":4}],2:[function(require,module,exports){
+},{"idb-range":6}],2:[function(require,module,exports){
 var type = require('component-type');
-var parseRange = require('./range');
+var parseRange = require('idb-range');
 
 /**
  * Expose `Store`.
@@ -308,12 +308,11 @@ Store.prototype.cursor = function(opts, cb) {
   });
 };
 
-},{"./range":4,"component-type":6}],3:[function(require,module,exports){
+},{"component-type":5,"idb-range":6}],3:[function(require,module,exports){
 var type = require('component-type');
 var Schema = require('./schema');
 var Store = require('./idb-store');
 var Index = require('./idb-index');
-var range = require('./range');
 
 /**
  * Expose `Treo`.
@@ -351,7 +350,6 @@ function Treo(name, schema) {
  */
 
 exports.schema = Schema;
-exports.range = range;
 exports.cmp = cmp;
 exports.Treo = Treo;
 exports.Schema = Schema;
@@ -397,6 +395,7 @@ Treo.prototype.close = function(cb) {
   this.getInstance(function(err, db) {
     if (err) return cb(err);
     db.origin = null;
+    db.status = 'close';
     db.close();
     cb();
   });
@@ -440,6 +439,9 @@ Treo.prototype.getInstance = function(cb) {
   req.onsuccess = function onsuccess(e) {
     that.origin = e.target.result;
     that.status = 'open';
+    that.origin.onversionchange = function onversionchange() {
+      that.close(function() {});
+    };
     that.queue.forEach(function(cb) { cb(null, that.origin) });
     delete that.queue;
   };
@@ -478,77 +480,14 @@ function cmp() {
  */
 
 function indexedDB() {
-  return window._indexedDB || window.indexedDB
+  return window._indexedDB
+    || window.indexedDB
     || window.msIndexedDB
     || window.mozIndexedDB
     || window.webkitIndexedDB;
 }
 
-},{"./idb-index":1,"./idb-store":2,"./range":4,"./schema":5,"component-type":6}],4:[function(require,module,exports){
-var type = require('component-type');
-
-/**
- * Expose `parseRange()`.
- */
-
-module.exports = parseRange;
-
-/**
- * Parse key to valid range.
- * https://developer.mozilla.org/en-US/docs/Web/API/IDBKeyRange
- *
- * Available options (inspired by mongodb):
- *   gt: - greater
- *   lt: - lighter
- *   gte: - greater equal
- *   lte: - lighter equal
- *
- * @param {Object|IDBKeyRange} key
- * @return {IDBKeyRange}
- */
-
-function parseRange(key) {
-  var IDBKeyRange = keyRange();
-  if (!key) return;
-  if (key instanceof IDBKeyRange) return key;
-  if (type(key) != 'object') return IDBKeyRange.only(key);
-  var keys = Object.keys(key).sort();
-
-  if (keys.length == 1) {
-    var val = key[keys[0]];
-    switch (keys[0]) {
-      case 'gt':  return IDBKeyRange.lowerBound(val, true);
-      case 'lt':  return IDBKeyRange.upperBound(val, true);
-      case 'gte': return IDBKeyRange.lowerBound(val);
-      case 'lte': return IDBKeyRange.upperBound(val);
-    }
-  } else {
-    var x = key[keys[0]];
-    var y = key[keys[1]];
-
-    switch (keys[0] + '-' + keys[1]) {
-      case 'gt-lt':   return IDBKeyRange.bound(x, y, true, true);
-      case 'gt-lte':  return IDBKeyRange.bound(x, y, true, false);
-      case 'gte-lt':  return IDBKeyRange.bound(x, y, false, true);
-      case 'gte-lte': return IDBKeyRange.bound(x, y, false, false);
-    }
-  }
-}
-
-/**
- * Dynamic link to `window.IDBKeyRange` for polyfills support.
- *
- * @return {IDBKeyRange}
- */
-
-function keyRange() {
-  return window._IDBKeyRange
-    || window.IDBKeyRange
-    || window.webkitIDBKeyRange
-    || window.msIDBKeyRange;
-}
-
-},{"component-type":6}],5:[function(require,module,exports){
+},{"./idb-index":1,"./idb-store":2,"./schema":4,"component-type":5}],4:[function(require,module,exports){
 var type = require('component-type');
 var Store = require('./idb-store');
 var Index = require('./idb-index');
@@ -732,7 +671,7 @@ Schema.prototype.callback = function() {
   };
 };
 
-},{"./idb-index":1,"./idb-store":2,"component-type":6}],6:[function(require,module,exports){
+},{"./idb-index":1,"./idb-store":2,"component-type":5}],5:[function(require,module,exports){
 /**
  * toString ref.
  */
@@ -767,6 +706,61 @@ module.exports = function(val){
 
   return typeof val;
 };
+
+},{}],6:[function(require,module,exports){
+
+/**
+ * Parse `opts` to valid IDBKeyRange.
+ * https://developer.mozilla.org/en-US/docs/Web/API/IDBKeyRange
+ *
+ * @param {Object|Any} opts
+ * @return {IDBKeyRange}
+ */
+
+module.exports = function range(opts) {
+  var IDBKeyRange = keyRange();
+  if (typeof opts == 'undefined') return;
+  if (typeof opts != 'object') return IDBKeyRange.only(opts);
+  if (opts instanceof IDBKeyRange) return opts;
+  var keys = Object.keys(opts).sort();
+
+  if (keys.length == 1) {
+    var key = keys[0];
+    var val = opts[key];
+    switch (keys[0]) {
+      case 'eq': return IDBKeyRange.only(val);
+      case 'gt': return IDBKeyRange.lowerBound(val, true);
+      case 'lt': return IDBKeyRange.upperBound(val, true);
+      case 'gte': return IDBKeyRange.lowerBound(val);
+      case 'lte': return IDBKeyRange.upperBound(val);
+      default: throw new TypeError('`' + key + '` is not valid key');
+    }
+  } else {
+    var x = opts[keys[0]];
+    var y = opts[keys[1]];
+    var pattern = keys.join('-');
+
+    switch (pattern) {
+      case 'gt-lt': return IDBKeyRange.bound(x, y, true, true);
+      case 'gt-lte': return IDBKeyRange.bound(x, y, true, false);
+      case 'gte-lt': return IDBKeyRange.bound(x, y, false, true);
+      case 'gte-lte': return IDBKeyRange.bound(x, y, false, false);
+      default: throw new TypeError('`' + pattern +'` are conflicted keys');
+    }
+  }
+};
+
+/**
+ * Dynamic link to `window.IDBKeyRange` for polyfills.
+ *
+ * @return {IDBKeyRange}
+ */
+
+function keyRange() {
+  return window.IDBKeyRange
+      || window.webkitIDBKeyRange
+      || window.msIDBKeyRange;
+}
 
 },{}]},{},[3])(3)
 });
