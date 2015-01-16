@@ -113,8 +113,9 @@ describe('treo', function() {
       var magazines = db.store('magazines');
       var next = after(2, done);
 
-      books.put(attrs.isbn, attrs, function(err) {
+      books.put(attrs.isbn, attrs, function(err, key) {
         if (err) return done(err);
+        expect(key).equal(123456);
         books.get(attrs.isbn, function(err, book) {
           if (err) return done(err);
           expect(book).eql(attrs);

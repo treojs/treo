@@ -250,6 +250,7 @@ db.getInstance(function(err, origin) {
 
   Put `val` to `key`. Put means create or replace.
   If it's an object store with key property, you pass the whole object.
+  `fn` callback returns error and key of new value.
 
 ```js
 var schema = treo.schema()
