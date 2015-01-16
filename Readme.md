@@ -217,28 +217,6 @@ db.getInstance(function(err, origin) {
 })
 ```
 
-### db.transaction(type, stores, fn)
-
-  Create new transaction to list of stores. Available types: `readonly` and `readwrite`.
-
-```js
-db.transaction('readwrite', ['books', 'magazines'], function(tr) {
-  var books = db.store('books', { transaction: tr });
-  var magazines = db.store('magazines', { transaction: tr });
-
-  books.put('key3', { title: 'Quarry Memories', isbn: 'key1' });
-  books.put('key4', { title: 'Water Buffaloes', isbn: 'key2' });
-  books.del('key1');
-  books.get('key2', function(err, res) {
-    if (err) return done(err);
-    console.log(res);
-  });
-  magazines.put('id1', { title: 'Quarry Memories', words: ['quarry', 'memories'] });
-},function(err) {
-  console.log(err || 'success');
-});
-```
-
 ### db.properties
 
   * version - db version
