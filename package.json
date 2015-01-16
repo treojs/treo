@@ -18,8 +18,8 @@
     "stat": "cloc lib/ --by-file && cloc test/ --by-file --exclude-dir=fixtures"
   },
   "dependencies": {
-    "component-type": "1.0.0",
-    "promise": "^6.0.1"
+    "component-type": "^1.1.0",
+    "promise": "^6.1.0"
   },
   "devDependencies": {
     "after": "^0.8.1",
