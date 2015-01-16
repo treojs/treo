@@ -6,7 +6,8 @@ var websql = require('../plugins/treo-websql');
 describe('treo', function() {
   var db, schema;
 
-  schema = treo.schema()
+  beforeEach(function() {
+    schema = treo.schema()
     .version(1)
       .addStore('books')
       .addIndex('byTitle', 'title', { unique: true })
@@ -20,8 +21,6 @@ describe('treo', function() {
       .addIndex('byPublisher', 'publisher')
       .addIndex('byFrequency', 'frequency')
       .addIndex('byWords', 'words', { multi: true });
-
-  beforeEach(function() {
     db = treo('treo', schema).use(websql());
   });
 
@@ -90,6 +89,24 @@ describe('treo', function() {
             if (err) return done(err);
             expect(obj).eql({ id: 4, words: ['hey'] });
             db.drop(done);
+          });
+        });
+      });
+    });
+
+    it('handlew onversionchange automatically', function(done) {
+      db.store('magazines').put({ id: 4, words: ['hey'] }, function(err) {
+        if (err) return done(err);
+        var newSchema = schema.version(4).addStore('users');
+        var newDb = treo('treo', newSchema).use(websql());
+        newDb.store('users').put(1, { name: 'Jon'}, function(err, key) {
+          if (err) return done(err);
+          expect(key).equal(1);
+
+          db.store('magazines').get(4, function(err, obj) {
+            if (err) return done(err);
+            expect(obj).eql({ id: 4, words: ['hey'] });
+            done();
           });
         });
       });

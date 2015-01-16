@@ -19,6 +19,7 @@
   * Powerful DSL to manage database schema and versions.
   * Plugins for promises support and websql polyfill.
   * Better error handling through error first node-style callbacks.
+  * Handle `versionchage` event automatically, to safely close and reopen database connection
   * Exposed access to low-level IndexedDB methods to cover edge cases.
   * Easy to extend and create plugins.
 
@@ -209,27 +210,6 @@ db.store('storage')
 
   Close connection and drop database.
 
-### db.getInstance(cb)
-
-  Connect to db and create defined stores.
-  It's useful, when you need to handle edge cases related with multi-tabs.
-
-```js
-var db = treo('my-db', schema);
-db.getInstance(function(err, origin) {
-  if (err) return console.log('DB locked, or has error:', err);
-  origin.onversionchange = function() {
-    db.close();
-    alert("A new version of this page is ready. Please reload!");
-  };
-})
-```
-
-### db.transaction(type, stores, fn)
-
-  Create new transaction to list of stores.
-  Available types: `readonly` and `readwrite`.
-
 ### db.properties
 
   * version - db version
@@ -301,10 +281,6 @@ storage.batch({
 
   Get index by `name`.
 
-### store.cursor(opts, fn)
-
-  Create custom cursors, see [example](https://github.com/alekseykulikov/treo/blob/master/examples/find-in-plugin.js) and [article](https://hacks.mozilla.org/2014/06/breaking-the-borders-of-indexeddb/) for more detailed usage.
-
 ## Index
 
   Index is a way to filter your data.
@@ -325,15 +301,25 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
 
   Count records by `key`, similar to get, but returns number.
 
-### index.cursor(opts, fn)
+## Low Level Methods
 
-  Similar method as `store.cursor()`.
+### db.getInstance(cb)
 
-## treo
+  Connect to db and create defined stores.
+  It's useful, when you need to handle edge cases related with using origin database object.
+
+### db.transaction(type, stores, fn)
+
+  Create new transaction to list of stores.
+  Available types: `readonly` and `readwrite`.
+
+### store.cursor(opts, fn), index.cursor(opts, fn)
+
+  Create custom cursors, see [example](https://github.com/alekseykulikov/treo/blob/master/examples/find-in-plugin.js) and [article](https://hacks.mozilla.org/2014/06/breaking-the-borders-of-indexeddb/) for more detailed usage.
 
 ### treo.Treo, treo.Store, treo.Index
 
-  Treo exposes core objects for plugins.
+  Treo exposes core objects for plugins extension.
 
 ### treo.cmp(a, b)
 
