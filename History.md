@@ -1,3 +1,9 @@
+## 0.4.2 / 2015-02-13
+
+  * fixes the iOS issue on IndexedDBShim [#21](https://github.com/alekseykulikov/treo/pull/21)
+
+Thanks: [@capsula4](https://github.com/capsula4)
+
 ## 0.4.1 / 2015-01-17
 
   * use [idb-range](https://github.com/treojs/idb-range), and remove treo.range

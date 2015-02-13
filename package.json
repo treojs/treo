@@ -3,7 +3,7 @@
   "description": "Human interface for IndexedDB",
   "author": "Aleksey Kulikov <alekseys.kulikov@gmail.com> (http://alekseykulikov.com)",
   "repository": "git@github.com:alekseykulikov/treo.git",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "license": "MIT",
   "main": "lib/index.js",
   "keywords": [
