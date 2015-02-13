@@ -7,10 +7,9 @@
   "license": "MIT",
   "main": "lib/index.js",
   "keywords": [
-    "IndexedDB",
+    "indexeddb",
     "treo",
-    "offline",
-    "browserify"
+    "offline"
   ],
   "scripts": {
     "test": "browserify-test",
