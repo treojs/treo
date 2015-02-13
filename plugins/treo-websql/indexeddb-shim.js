@@ -1584,9 +1584,7 @@ var cleanInterface = false;
             var calledDbCreateError = false;
 
             sysdb.transaction(function(tx){
-                tx.executeSql("CREATE TABLE IF NOT EXISTS dbVersions (name VARCHAR(255), version INT);", [], function(){
-                   updateVersions(); 
-                });
+                tx.executeSql("CREATE TABLE IF NOT EXISTS dbVersions (name VARCHAR(255), version INT);", [], updateVersions);
             }, function() {
                idbModules.DEBUG && console.log("Error in sysdb transaction - when creating dbVersions", arguments);
             });
