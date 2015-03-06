@@ -1776,7 +1776,7 @@ var cleanInterface = false;
     */
     var poorIndexedDbSupport = false;
     if (navigator.userAgent.match(/Android 2/) || navigator.userAgent.match(/Android 3/) || navigator.userAgent.match(/Android 4\.[0-3]/) ||
-        /Safari/.test(navigator.userAgent)) {
+        /Safari|AppleWebKit.*Mobile/.test(navigator.userAgent)) {
 
         /* Chrome is an exception. It supports IndexedDb */
         if (!navigator.userAgent.match(/Chrome/)) {
