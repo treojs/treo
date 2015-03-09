@@ -1,3 +1,9 @@
+## 0.4.3 / 2015-03-09
+
+  * adds support for iOS 8.1.3 [#26](https://github.com/alekseykulikov/treo/pull/26)
+
+Thanks: [@mariusk](https://github.com/mariusk)
+
 ## 0.4.2 / 2015-02-13
 
   * fixes the iOS issue on IndexedDBShim [#21](https://github.com/alekseykulikov/treo/pull/21)
