@@ -325,6 +325,6 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
 
   Compare 2 values using indexeddb's internal key compassion algorithm.
 
-# License
+## License
 
-  Aleksey Kulikov, [MIT](http://alekseykulikov.mit-license.org/).
+MIT

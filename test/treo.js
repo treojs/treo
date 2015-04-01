@@ -1,3 +1,4 @@
+/* globals -after */
 var expect = require('chai').expect;
 var after = require('after');
 var treo = require('../lib');
