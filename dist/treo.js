@@ -12,7 +12,7 @@ module.exports = Index;
  *
  * @param {Store} store
  * @param {String} name
- * @param {String} field
+ * @param {String|Array} field
  * @param {Object} opts { unique: false, multi: false }
  */
 
@@ -28,7 +28,7 @@ function Index(store, name, field, opts) {
 /**
  * Get `key`.
  *
- * @param {String|IDBKeyRange} key
+ * @param {Object|IDBKeyRange} key
  * @param {Function} cb
  */
 
@@ -310,6 +310,191 @@ Store.prototype.cursor = function(opts, cb) {
 
 },{"component-type":5,"idb-range":6}],3:[function(require,module,exports){
 var type = require('component-type');
+var Store = require('./idb-store');
+var Index = require('./idb-index');
+
+/**
+ * Expose `Schema`.
+ */
+
+module.exports = Schema;
+
+/**
+ * Initialize new `Schema`.
+ */
+
+function Schema() {
+  if (!(this instanceof Schema)) return new Schema();
+  this._stores = {};
+  this._current = {};
+  this._versions = {};
+}
+
+/**
+ * Set new version.
+ *
+ * @param {Number} version
+ * @return {Schema}
+ */
+
+Schema.prototype.version = function(version) {
+  if (type(version) != 'number' || version < 1 || version < this.getVersion())
+    throw new TypeError('not valid version');
+
+  this._current = { version: version, store: null };
+  this._versions[version] = {
+    stores: [],      // db.createObjectStore
+    dropStores: [],  // db.deleteObjectStore
+    indexes: [],     // store.createIndex
+    dropIndexes: [], // store.deleteIndex
+    version: version // version
+  };
+
+  return this;
+};
+
+/**
+ * Add store.
+ *
+ * @param {String} name
+ * @param {Object} [opts] { key: false }
+ * @return {Schema}
+ */
+
+Schema.prototype.addStore = function(name, opts) {
+  if (type(name) != 'string') throw new TypeError('`name` is required');
+  if (this._stores[name]) throw new TypeError('store is already defined');
+  var store = new Store(name, opts || {});
+  this._stores[name] = store;
+  this._versions[this.getVersion()].stores.push(store);
+  this._current.store = store;
+  return this;
+};
+
+/**
+ * Drop store.
+ *
+ * @param {String} name
+ * @return {Schema}
+ */
+
+Schema.prototype.dropStore = function(name) {
+  if (type(name) != 'string') throw new TypeError('`name` is required');
+  var store = this._stores[name];
+  if (!store) throw new TypeError('store is not defined');
+  delete this._stores[name];
+  this._versions[this.getVersion()].dropStores.push(store);
+  return this;
+};
+
+/**
+ * Add index.
+ *
+ * @param {String} name
+ * @param {String|Array} field
+ * @param {Object} [opts] { unique: false, multi: false }
+ * @return {Schema}
+ */
+
+Schema.prototype.addIndex = function(name, field, opts) {
+  if (type(name) != 'string') throw new TypeError('`name` is required');
+  if (type(field) != 'string' && type(field) != 'array') throw new TypeError('`field` is required');
+  var store = this._current.store;
+  if (store.indexes[name]) throw new TypeError('index is already defined');
+  var index = new Index(store, name, field, opts || {});
+  store.indexes[name] = index;
+  this._versions[this.getVersion()].indexes.push(index);
+  return this;
+};
+
+/**
+ * Drop index.
+ *
+ * @param {String} name
+ * @return {Schema}
+ */
+
+Schema.prototype.dropIndex = function(name) {
+  if (type(name) != 'string') throw new TypeError('`name` is required');
+  var index = this._current.store.indexes[name];
+  if (!index) throw new TypeError('index is not defined');
+  delete this._current.store.indexes[name];
+  this._versions[this.getVersion()].dropIndexes.push(index);
+  return this;
+};
+
+/**
+ * Change current store.
+ *
+ * @param {String} name
+ * @return {Schema}
+ */
+
+Schema.prototype.getStore = function(name) {
+  if (type(name) != 'string') throw new TypeError('`name` is required');
+  if (!this._stores[name]) throw new TypeError('store is not defined');
+  this._current.store = this._stores[name];
+  return this;
+};
+
+/**
+ * Get version.
+ *
+ * @return {Number}
+ */
+
+Schema.prototype.getVersion = function() {
+  return this._current.version;
+};
+
+/**
+ * Generate onupgradeneeded callback.
+ *
+ * @return {Function}
+ */
+
+Schema.prototype.callback = function() {
+  var versions = Object.keys(this._versions)
+    .map(function(v) { return this._versions[v] }, this)
+    .sort(function(a, b) { return a.version - b.version });
+
+  return function onupgradeneeded(e) {
+    var db = e.target.result;
+    var tr = e.target.transaction;
+
+    versions.forEach(function(versionSchema) {
+      if (e.oldVersion >= versionSchema.version) return;
+
+      versionSchema.stores.forEach(function(s) {
+        db.createObjectStore(s.name, {
+          keyPath: s.key,
+          autoIncrement: s.increment
+        });
+      });
+
+      versionSchema.dropStores.forEach(function(s) {
+        db.deleteObjectStore(s.name);
+      });
+
+      versionSchema.indexes.forEach(function(i) {
+        var store = tr.objectStore(i.store.name);
+        store.createIndex(i.name, i.field, {
+          unique: i.unique,
+          multiEntry: i.multi
+        });
+      });
+
+      versionSchema.dropIndexes.forEach(function(i) {
+        var store = tr.objectStore(i.store.name);
+        store.deleteIndex(i.name);
+      });
+    });
+  };
+};
+
+},{"./idb-index":1,"./idb-store":2,"component-type":5}],4:[function(require,module,exports){
+(function (global){
+var type = require('component-type');
 var Schema = require('./schema');
 var Store = require('./idb-store');
 var Index = require('./idb-index');
@@ -474,204 +659,21 @@ function cmp() {
 }
 
 /**
- * Dynamic link to `window.indexedDB` for polyfills support.
+ * Dynamic link to `global.indexedDB` for polyfills support.
  *
  * @return {IDBDatabase}
  */
 
 function indexedDB() {
-  return window._indexedDB
-    || window.indexedDB
-    || window.msIndexedDB
-    || window.mozIndexedDB
-    || window.webkitIndexedDB;
+  return global._indexedDB
+    || global.indexedDB
+    || global.msIndexedDB
+    || global.mozIndexedDB
+    || global.webkitIndexedDB;
 }
 
-},{"./idb-index":1,"./idb-store":2,"./schema":4,"component-type":5}],4:[function(require,module,exports){
-var type = require('component-type');
-var Store = require('./idb-store');
-var Index = require('./idb-index');
-
-/**
- * Expose `Schema`.
- */
-
-module.exports = Schema;
-
-/**
- * Initialize new `Schema`.
- */
-
-function Schema() {
-  if (!(this instanceof Schema)) return new Schema();
-  this._stores = {};
-  this._current = {};
-  this._versions = {};
-}
-
-/**
- * Set new version.
- *
- * @param {Number} version
- * @return {Schema}
- */
-
-Schema.prototype.version = function(version) {
-  if (type(version) != 'number' || version < 1 || version < this.getVersion())
-    throw new TypeError('not valid version');
-
-  this._current = { version: version, store: null };
-  this._versions[version] = {
-    stores: [],      // db.createObjectStore
-    dropStores: [],  // db.deleteObjectStore
-    indexes: [],     // store.createIndex
-    dropIndexes: [], // store.deleteIndex
-    version: version // version
-  };
-
-  return this;
-};
-
-/**
- * Add store.
- *
- * @param {String} name
- * @param {Object} [opts] { key: false }
- * @return {Schema}
- */
-
-Schema.prototype.addStore = function(name, opts) {
-  if (type(name) != 'string') throw new TypeError('`name` is required');
-  if (this._stores[name]) throw new TypeError('store is already defined');
-  var store = new Store(name, opts || {});
-  this._stores[name] = store;
-  this._versions[this.getVersion()].stores.push(store);
-  this._current.store = store;
-  return this;
-};
-
-/**
- * Drop store.
- *
- * @param {String} name
- * @return {Schema}
- */
-
-Schema.prototype.dropStore = function(name) {
-  if (type(name) != 'string') throw new TypeError('`name` is required');
-  var store = this._stores[name];
-  if (!store) throw new TypeError('store is not defined');
-  delete this._stores[name];
-  this._versions[this.getVersion()].dropStores.push(store);
-  return this;
-};
-
-/**
- * Add index.
- *
- * @param {String} name
- * @param {String} field
- * @param {Object} [opts] { unique: false, multi: false }
- * @return {Schema}
- */
-
-Schema.prototype.addIndex = function(name, field, opts) {
-  if (type(name) != 'string') throw new TypeError('`name` is required');
-  if (type(field) != 'string') throw new TypeError('`field` is required');
-  var store = this._current.store;
-  if (store.indexes[name]) throw new TypeError('index is already defined');
-  var index = new Index(store, name, field, opts || {});
-  store.indexes[name] = index;
-  this._versions[this.getVersion()].indexes.push(index);
-  return this;
-};
-
-/**
- * Drop index.
- *
- * @param {String} name
- * @return {Schema}
- */
-
-Schema.prototype.dropIndex = function(name) {
-  if (type(name) != 'string') throw new TypeError('`name` is required');
-  var index = this._current.store.indexes[name];
-  if (!index) throw new TypeError('index is not defined');
-  delete this._current.store.indexes[name];
-  this._versions[this.getVersion()].dropIndexes.push(index);
-  return this;
-};
-
-/**
- * Change current store.
- *
- * @param {String} name
- * @return {Schema}
- */
-
-Schema.prototype.getStore = function(name) {
-  if (type(name) != 'string') throw new TypeError('`name` is required');
-  if (!this._stores[name]) throw new TypeError('store is not defined');
-  this._current.store = this._stores[name];
-  return this;
-};
-
-/**
- * Get version.
- *
- * @return {Number}
- */
-
-Schema.prototype.getVersion = function() {
-  return this._current.version;
-};
-
-/**
- * Generate onupgradeneeded callback.
- *
- * @return {Function}
- */
-
-Schema.prototype.callback = function() {
-  var versions = Object.keys(this._versions)
-    .map(function(v) { return this._versions[v] }, this)
-    .sort(function(a, b) { return a.version - b.version });
-
-  return function onupgradeneeded(e) {
-    var db = e.target.result;
-    var tr = e.target.transaction;
-
-    versions.forEach(function(versionSchema) {
-      if (e.oldVersion >= versionSchema.version) return;
-
-      versionSchema.stores.forEach(function(s) {
-        db.createObjectStore(s.name, {
-          keyPath: s.key,
-          autoIncrement: s.increment
-        });
-      });
-
-      versionSchema.dropStores.forEach(function(s) {
-        db.deleteObjectStore(s.name);
-      });
-
-      versionSchema.indexes.forEach(function(i) {
-        var store = tr.objectStore(i.store.name);
-        store.createIndex(i.name, i.field, {
-          unique: i.unique,
-          multiEntry: i.multi
-        });
-      });
-
-      versionSchema.dropIndexes.forEach(function(i) {
-        var store = tr.objectStore(i.store.name);
-        store.deleteIndex(i.name);
-      });
-    });
-  };
-};
-
-},{"./idb-index":1,"./idb-store":2,"component-type":5}],5:[function(require,module,exports){
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./idb-index":1,"./idb-store":2,"./schema":3,"component-type":5}],5:[function(require,module,exports){
 /**
  * toString ref.
  */
@@ -708,6 +710,7 @@ module.exports = function(val){
 };
 
 },{}],6:[function(require,module,exports){
+(function (global){
 
 /**
  * Parse `opts` to valid IDBKeyRange.
@@ -719,9 +722,9 @@ module.exports = function(val){
 
 module.exports = function range(opts) {
   var IDBKeyRange = keyRange();
-  if (typeof opts == 'undefined') return;
-  if (typeof opts != 'object') return IDBKeyRange.only(opts);
+  if (typeof opts === 'undefined') return;
   if (opts instanceof IDBKeyRange) return opts;
+  if (!isObject(opts)) return IDBKeyRange.only(opts);
   var keys = Object.keys(opts).sort();
 
   if (keys.length == 1) {
@@ -751,16 +754,28 @@ module.exports = function range(opts) {
 };
 
 /**
- * Dynamic link to `window.IDBKeyRange` for polyfills.
+ * Dynamic link to `global.IDBKeyRange` for polyfills.
  *
  * @return {IDBKeyRange}
  */
 
 function keyRange() {
-  return window.IDBKeyRange
-      || window.webkitIDBKeyRange
-      || window.msIDBKeyRange;
+  return global.IDBKeyRange
+      || global.webkitIDBKeyRange
+      || global.msIDBKeyRange;
 }
 
-},{}]},{},[3])(3)
+/**
+ * Check if `obj` is an object.
+ *
+ * @param {Object} obj
+ * @return {Boolean}
+ */
+
+function isObject(obj) {
+  return Object.prototype.toString.call(obj) == '[object Object]';
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}]},{},[4])(4)
 });

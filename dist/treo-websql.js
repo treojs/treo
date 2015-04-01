@@ -1,4 +1,5 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.treoWebsql = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function (global){
 
 /**
  * Parse `opts` to valid IDBKeyRange.
@@ -10,9 +11,9 @@
 
 module.exports = function range(opts) {
   var IDBKeyRange = keyRange();
-  if (typeof opts == 'undefined') return;
-  if (typeof opts != 'object') return IDBKeyRange.only(opts);
+  if (typeof opts === 'undefined') return;
   if (opts instanceof IDBKeyRange) return opts;
+  if (!isObject(opts)) return IDBKeyRange.only(opts);
   var keys = Object.keys(opts).sort();
 
   if (keys.length == 1) {
@@ -42,104 +43,30 @@ module.exports = function range(opts) {
 };
 
 /**
- * Dynamic link to `window.IDBKeyRange` for polyfills.
+ * Dynamic link to `global.IDBKeyRange` for polyfills.
  *
  * @return {IDBKeyRange}
  */
 
 function keyRange() {
-  return window.IDBKeyRange
-      || window.webkitIDBKeyRange
-      || window.msIDBKeyRange;
+  return global.IDBKeyRange
+      || global.webkitIDBKeyRange
+      || global.msIDBKeyRange;
 }
 
+/**
+ * Check if `obj` is an object.
+ *
+ * @param {Object} obj
+ * @return {Boolean}
+ */
+
+function isObject(obj) {
+  return Object.prototype.toString.call(obj) == '[object Object]';
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],2:[function(require,module,exports){
-var parseRange = require('idb-range');
-var isSafari = typeof window.openDatabase !== 'undefined' &&
-    /Safari/.test(navigator.userAgent) &&
-    !/Chrome/.test(navigator.userAgent);
-
-var isSupported = !isSafari && !! window.indexedDB;
-
-/**
- * Expose `plugin()`.
- */
-
-module.exports = plugin;
-
-/**
- * Create websql polyfill based on:
- * https://github.com/axemclion/IndexedDBShim
- * And fix some polyfill's bugs as:
- *   - multi index support
- *
- * @return {Function}
- */
-
-function plugin() {
-  if (!isSupported) require('./indexeddb-shim');
-
-  return function(db, treo) {
-    if (isSupported) return;
-    // fix multi index support
-    // https://github.com/axemclion/IndexedDBShim/issues/16
-    Object.keys(db.stores).forEach(function(storeName) {
-      var store = db.store(storeName);
-      Object.keys(store.indexes).forEach(function(indexName) {
-        var index = store.index(indexName);
-        fixIndexSupport(treo, index);
-      });
-    });
-  };
-}
-
-/**
- * Patch `index` to support multi property with websql polyfill.
- *
- * @param {Index} index
- */
-
-function fixIndexSupport(treo, index) {
-  index.get = function get(key, cb) {
-    console.warn('treo-websql: index is enefficient');
-    var result = [];
-    var r = parseRange(key);
-
-    this.store.cursor({ iterator: iterator }, function(err) {
-      err ? cb(err) : cb(null, index.unique ? result[0] : result);
-    });
-
-    function iterator(cursor) {
-      var field = cursor.value[index.field];
-
-      if (index.multi) {
-        if (Array.isArray(field)) {
-          field.forEach(function(v) { testValue(v, cursor) });
-        }
-      } else if (field !== undefined) {
-        testValue(field, cursor);
-      }
-
-      cursor.continue();
-    }
-
-    function testValue(v, cursor) {
-      if (((!r.lowerOpen && v >= r.lower) || (r.lowerOpen && v > r.lower)) && ((!r.upperOpen && v <= r.upper) || (r.upperOpen && v < r.upper))
-        || (r.upper === undefined && ((!r.lowerOpen && v >= r.lower) || (r.lowerOpen && v > r.lower)))
-        || (r.lower === undefined && ((!r.upperOpen && v <= r.upper) || (r.upperOpen && v < r.upper)))) {
-        result.push(cursor.value);
-      }
-    }
-  };
-
-  index.count = function count(key, cb) {
-    this.get(key, function(err, result) {
-      err ? cb(err) : cb(null, index.unique && result ? 1 : result.length);
-    });
-  };
-}
-
-},{"./indexeddb-shim":3,"idb-range":1}],3:[function(require,module,exports){
 /*jshint globalstrict: true*/
 'use strict';
 /**
@@ -1946,5 +1873,96 @@ var cleanInterface = false;
 
 }(window, idbModules));
 
-},{}]},{},[2])(2)
+},{}],3:[function(require,module,exports){
+var parseRange = require('idb-range');
+var isSafari = typeof window.openDatabase !== 'undefined' &&
+    /Safari/.test(navigator.userAgent) &&
+    !/Chrome/.test(navigator.userAgent);
+
+var isSupported = !isSafari && !! window.indexedDB;
+
+/**
+ * Expose `plugin()`.
+ */
+
+module.exports = plugin;
+
+/**
+ * Create websql polyfill based on:
+ * https://github.com/axemclion/IndexedDBShim
+ * And fix some polyfill's bugs as:
+ *   - multi index support
+ *
+ * @return {Function}
+ */
+
+function plugin() {
+  if (!isSupported) require('./indexeddb-shim');
+
+  return function(db, treo) {
+    if (isSupported) return;
+    // fix multi index support
+    // https://github.com/axemclion/IndexedDBShim/issues/16
+    Object.keys(db.stores).forEach(function(storeName) {
+      var store = db.store(storeName);
+      Object.keys(store.indexes).forEach(function(indexName) {
+        var index = store.index(indexName);
+        fixIndexSupport(treo, index);
+      });
+    });
+  };
+}
+
+/**
+ * Patch `index` to support multi property with websql polyfill.
+ *
+ * @param {Index} index
+ */
+
+function fixIndexSupport(treo, index) {
+  index.get = function get(key, cb) {
+    console.warn('treo-websql: index is enefficient');
+    var result = [];
+    var r = parseRange(key);
+
+    this.store.cursor({ iterator: iterator }, function(err) {
+      err ? cb(err) : cb(null, index.unique ? result[0] : result);
+    });
+
+    function iterator(cursor) {
+      var field;
+      if (Array.isArray(index.field)) {
+        field = index.field.map(function(field) {
+          return cursor.value[field];
+        });
+      } else {
+        field = cursor.value[index.field];
+      }
+      if (index.multi) {
+        if (Array.isArray(field)) {
+          field.forEach(function(v) {
+            if (testValue(v)) result.push(cursor.value);
+          });
+        }
+      } else if (field !== undefined) {
+        if (testValue(field)) result.push(cursor.value);
+      }
+      cursor.continue();
+    }
+
+    function testValue(v) {
+      return (((!r.lowerOpen && v >= r.lower) || (r.lowerOpen && v > r.lower)) && ((!r.upperOpen && v <= r.upper) || (r.upperOpen && v < r.upper))
+        || (r.upper === undefined && ((!r.lowerOpen && v >= r.lower) || (r.lowerOpen && v > r.lower)))
+        || (r.lower === undefined && ((!r.upperOpen && v <= r.upper) || (r.upperOpen && v < r.upper))));
+    }
+  };
+
+  index.count = function count(key, cb) {
+    this.get(key, function(err, result) {
+      err ? cb(err) : cb(null, index.unique && result ? 1 : result.length);
+    });
+  };
+}
+
+},{"./indexeddb-shim":2,"idb-range":1}]},{},[3])(3)
 });

@@ -1,12 +1,19 @@
+## 0.5.0 / 2015-04-01
+
+  * add support for multi-field indexes [#24](https://github.com/alekseykulikov/treo/issues/24)
+  * add support for web-worker environment
+  * deps: idb-range@2.3.0
+  * add LICENSE file
+
 ## 0.4.3 / 2015-03-09
 
-  * adds support for iOS 8.1.3 [#26](https://github.com/alekseykulikov/treo/pull/26)
+  * add support for iOS 8.1.3 [#26](https://github.com/alekseykulikov/treo/pull/26)
 
 Thanks: [@mariusk](https://github.com/mariusk)
 
 ## 0.4.2 / 2015-02-13
 
-  * fixes the iOS issue on IndexedDBShim [#21](https://github.com/alekseykulikov/treo/pull/21)
+  * fix the iOS issue on IndexedDBShim [#21](https://github.com/alekseykulikov/treo/pull/21)
 
 Thanks: [@capsula4](https://github.com/capsula4)
 
