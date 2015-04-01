@@ -12,6 +12,7 @@ describe('treo', function() {
       .addStore('books')
       .addIndex('byTitle', 'title', { unique: true })
       .addIndex('byAuthor', 'author')
+      .addIndex('byTitleAndAuthor', ['title', 'author'], { unique: true })
       .addStore('locals')
     .version(2)
       .getStore('books')
@@ -119,7 +120,7 @@ describe('treo', function() {
       var magazines = db.store('magazines');
       expect(books.name).equal('books');
       expect(books.db).equal(db);
-      expect(Object.keys(books.indexes)).length(3);
+      expect(Object.keys(books.indexes)).length(4);
       expect(magazines.key).equal('id');
       expect(magazines.opts.key).equal('id');
     });
@@ -320,6 +321,15 @@ describe('treo', function() {
           expect(result[2].id).equal('id4');
           next(err);
         });
+      });
+    });
+
+    it('compound multi-field index', function(done) {
+      books.index('byTitleAndAuthor').get(['Quarry Memories', 'Fred'], function(err, record) {
+        if (err) return done(err);
+        expect(record).exist;
+        expect(record.isbn).equal(1);
+        done();
       });
     });
   });

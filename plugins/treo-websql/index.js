@@ -54,25 +54,30 @@ function fixIndexSupport(treo, index) {
     });
 
     function iterator(cursor) {
-      var field = cursor.value[index.field];
-
+      var field;
+      if (Array.isArray(index.field)) {
+        field = index.field.map(function(field) {
+          return cursor.value[field];
+        });
+      } else {
+        field = cursor.value[index.field];
+      }
       if (index.multi) {
         if (Array.isArray(field)) {
-          field.forEach(function(v) { testValue(v, cursor) });
+          field.forEach(function(v) {
+            if (testValue(v)) result.push(cursor.value);
+          });
         }
       } else if (field !== undefined) {
-        testValue(field, cursor);
+        if (testValue(field)) result.push(cursor.value);
       }
-
       cursor.continue();
     }
 
-    function testValue(v, cursor) {
-      if (((!r.lowerOpen && v >= r.lower) || (r.lowerOpen && v > r.lower)) && ((!r.upperOpen && v <= r.upper) || (r.upperOpen && v < r.upper))
+    function testValue(v) {
+      return (((!r.lowerOpen && v >= r.lower) || (r.lowerOpen && v > r.lower)) && ((!r.upperOpen && v <= r.upper) || (r.upperOpen && v < r.upper))
         || (r.upper === undefined && ((!r.lowerOpen && v >= r.lower) || (r.lowerOpen && v > r.lower)))
-        || (r.lower === undefined && ((!r.upperOpen && v <= r.upper) || (r.upperOpen && v < r.upper)))) {
-        result.push(cursor.value);
-      }
+        || (r.lower === undefined && ((!r.upperOpen && v <= r.upper) || (r.upperOpen && v < r.upper))));
     }
   };
 
