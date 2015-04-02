@@ -65,7 +65,7 @@ describe('treo', function() {
     });
 
     it('drop stores', function(done) {
-      var dropSchema = treo.schema()
+      var delSchema = treo.schema()
         .version(1)
           .addStore('books')
           .addIndex('byTitle', 'title', { unique: true })
@@ -75,15 +75,15 @@ describe('treo', function() {
           .addStore('magazines', { key: 'id' })
           .addIndex('byWords', 'words', { multi: true });
 
-      var db = treo('treo', dropSchema).use(websql());
+      var db = treo('treo', delSchema).use(websql());
       db.store('magazines').put({ id: 4, words: ['hey'] }, function(err) {
         if (err) return done(err);
         db.close(function() {
-          dropSchema = dropSchema.version(3)
-            .dropStore('books')
+          delSchema = delSchema.version(3)
+            .delStore('books')
             .getStore('magazines')
-            .dropIndex('byWords');
-          var db = treo('treo', dropSchema).use(websql());
+            .delIndex('byWords');
+          var db = treo('treo', delSchema).use(websql());
           expect(Object.keys(db.stores)).length(2);
           expect(Object.keys(db.store('magazines').indexes)).length(0);
 
@@ -123,7 +123,6 @@ describe('treo', function() {
       expect(books.db).equal(db);
       expect(Object.keys(books.indexes)).length(4);
       expect(magazines.key).equal('id');
-      expect(magazines.opts.key).equal('id');
     });
 
     it('#put', function(done) {
