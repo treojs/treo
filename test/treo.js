@@ -104,7 +104,7 @@ describe('treo', function() {
           if (err) return done(err);
           expect(key).equal(1);
 
-          db.store('magazines').get(4, function(err, obj) {
+          newDb.store('magazines').get(4, function(err, obj) {
             if (err) return done(err);
             expect(obj).eql({ id: 4, words: ['hey'] });
             done();

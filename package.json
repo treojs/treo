@@ -21,6 +21,7 @@
   "dependencies": {
     "component-type": "^1.1.0",
     "idb-range": "^2.3.0",
+    "idb-schema": "^1.0.0",
     "promise": "^6.1.0"
   },
   "devDependencies": {
@@ -28,7 +29,7 @@
     "browserify": "^9.0.4",
     "browserify-test": "^1.1.0",
     "chai": "^2.1.1",
-    "treo-websql": "^1.0.0"
+    "treo-websql": "^1.0.2"
   },
   "files": [
     "lib",

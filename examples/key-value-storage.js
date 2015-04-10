@@ -3,7 +3,7 @@
 // localStorage. With treo-websql it can be used in all modern browsers.
 
 var treo = require('treo');
-var websql = require('treo/plugins/treo-websql');
+var websql = require('treo-websql');
 var fn = console.log.bind(console); // use it as callback
 
 // define schema with one storage with string key/values

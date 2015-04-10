@@ -123,7 +123,7 @@ Promise.all([
 
   IndexedDB is available only [in modern browsers](http://caniuse.com/#search=indexeddb),
   but we still need to support legacy browsers.
-  [treo-websql](https://github.com/alekseykulikov/treo/tree/master/plugins/treo-websql) enables fallback to WebSQL and fix some issues of [IndexedDBShim](https://github.com/axemclion/IndexedDBShim/issues).
+  [treo-websql](https://github.com/treojs/treo-websql) enables fallback to WebSQL and fix some issues of [IndexedDBShim](https://github.com/axemclion/IndexedDBShim/issues).
   In fact all treo's tests pass in [phantomjs environment](https://travis-ci.org/alekseykulikov/treo).
 
 ```js
