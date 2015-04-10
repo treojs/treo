@@ -1,4 +1,8 @@
-# Treo  [![Build Status](https://travis-ci.org/alekseykulikov/treo.png?branch=master)](https://travis-ci.org/alekseykulikov/treo)
+# Treo
+
+  [![](https://img.shields.io/npm/v/treo.svg)](https://npmjs.org/package/treo)
+  [![](https://img.shields.io/travis/alekseykulikov/treo.svg)](https://travis-ci.org/alekseykulikov/treo)
+  [![](http://img.shields.io/npm/dm/treo.svg)](https://npmjs.org/package/treo)
 
   Treo is a lightweight wrapper around [IndexedDB](http://www.w3.org/TR/IndexedDB/) to make browser storage more enjoyable to use.
   Think about it as jQuery for IndexedDB. It does not add new abstractions, but simplifies the API and increases code reliability.
