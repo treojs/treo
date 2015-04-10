@@ -100,7 +100,7 @@ describe('treo', function() {
         if (err) return done(err);
         var newSchema = schema.version(4).addStore('users');
         var newDb = treo('treo', newSchema).use(websql());
-        newDb.store('users').put(1, { name: 'Jon'}, function(err, key) {
+        newDb.store('users').put(1, { name: 'Jon' }, function(err, key) {
           if (err) return done(err);
           expect(key).equal(1);
 
@@ -153,8 +153,8 @@ describe('treo', function() {
     it('#clear', function(done) {
       var books = db.store('books');
       books.batch({
-        '123456': { title: 'Quarry Memories', author: 'Fred', isbn: '123456' },
-        '234567': { title: 'Water Buffaloes', author: 'Fred', isbn: '234567' },
+        123456: { title: 'Quarry Memories', author: 'Fred', isbn: '123456' },
+        234567: { title: 'Water Buffaloes', author: 'Fred', isbn: '234567' },
       }, function(err) {
         books.count(function(err2, count) {
           expect(count).equal(2);
@@ -171,10 +171,10 @@ describe('treo', function() {
     it('#del', function(done) {
       var magazines = db.store('magazines');
       magazines.batch({
-        'id1': { title: 'Quarry Memories', publisher: 'Bob' },
-        'id2': { title: 'Water Buffaloes', publisher: 'Bob' },
-        'id3': { title: 'Bedrocky Nights', publisher: 'Tim' },
-        'id4': { title: 'Heavy weighting', publisher: 'Ken' },
+        id1: { title: 'Quarry Memories', publisher: 'Bob' },
+        id2: { title: 'Water Buffaloes', publisher: 'Bob' },
+        id3: { title: 'Bedrocky Nights', publisher: 'Tim' },
+        id4: { title: 'Heavy weighting', publisher: 'Ken' },
       }, function(err) {
         if (err) return done(err);
         magazines.del('id1', function(err) {
@@ -208,15 +208,15 @@ describe('treo', function() {
     it('#batch', function(done) {
       var magazines = db.store('magazines');
       magazines.batch({
-        'id1': { title: 'Quarry Memories', publisher: 'Bob' },
-        'id2': { title: 'Water Buffaloes', publisher: 'Bob' },
+        id1: { title: 'Quarry Memories', publisher: 'Bob' },
+        id2: { title: 'Water Buffaloes', publisher: 'Bob' },
       }, function(err) {
         if (err) return done(err);
         magazines.batch({
-          'id1': null,
-          'id3': { title: 'Bedrocky Nights', publisher: 'Tim' },
-          'id4': { title: 'Heavy Weighting', publisher: 'Ken' },
-          'id2': null,
+          id1: null,
+          id3: { title: 'Bedrocky Nights', publisher: 'Tim' },
+          id4: { title: 'Heavy Weighting', publisher: 'Ken' },
+          id2: null,
         }, function(err) {
           if (err) return done(err);
           magazines.count(function(err, count) {
@@ -300,10 +300,10 @@ describe('treo', function() {
     it('multi index', function(done) {
       var magazines = db.store('magazines');
       magazines.batch({
-        'id1': { title: 'Quarry Memories', words: ['quarry', 'memories'] },
-        'id2': { title: 'Water Bad Fellows', words: ['water', 'bad', 'fellows'] },
-        'id3': { title: 'Badrocky Nights', words: ['badrocky', 'nights'] },
-        'id4': { title: 'Waving Wings', words: ['waving', 'wings'] },
+        id1: { title: 'Quarry Memories', words: ['quarry', 'memories'] },
+        id2: { title: 'Water Bad Fellows', words: ['water', 'bad', 'fellows'] },
+        id3: { title: 'Badrocky Nights', words: ['badrocky', 'nights'] },
+        id4: { title: 'Waving Wings', words: ['waving', 'wings'] },
       }, function(err) {
         if (err) return done(err);
         var next = after(2, done);

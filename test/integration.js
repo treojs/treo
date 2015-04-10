@@ -1,4 +1,3 @@
-/* globals after */
 var expect = require('chai').expect;
 var Promise = require('promise');
 var treo = require('../lib');
@@ -12,14 +11,14 @@ describe('integration', function() {
   before(function(done) {
     var data = require('./fixtures/npm-data.json');
     var schema = treo.schema()
-      .version(1)
-        .addStore('modules', { keyPath: 'name' })
-      .version(2)
-        .getStore('modules')
-        .addIndex('byKeywords', 'keywords', { multiEntry: true })
-        .addIndex('byAuthor', 'author')
-        .addIndex('byStars', 'stars')
-        .addIndex('byMaintainers', 'maintainers', { multi: true });
+    .version(1)
+      .addStore('modules', { keyPath: 'name' })
+    .version(2)
+      .getStore('modules')
+      .addIndex('byKeywords', 'keywords', { multiEntry: true })
+      .addIndex('byAuthor', 'author')
+      .addIndex('byStars', 'stars')
+      .addIndex('byMaintainers', 'maintainers', { multi: true });
 
     db = treo('npm', schema)
       .use(websql())
