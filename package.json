@@ -14,11 +14,9 @@
   "scripts": {
     "test": "browserify-test",
     "start": "browserify-test -w",
-    "stat": "cloc lib/ --by-file && cloc test/ --by-file --exclude-dir=fixtures",
-    "build": "npm run build-treo && npm run build-treo-websql && npm run build-treo-promise",
+    "build": "npm run build-treo && npm run build-treo-promise",
     "build-treo": "browserify lib -s treo -o dist/treo.js",
-    "build-treo-websql": "browserify plugins/treo-promise -s treoPromise -o dist/treo-promise.js",
-    "build-treo-promise": "browserify plugins/treo-websql -s treoWebsql -o dist/treo-websql.js"
+    "build-treo-promise": "browserify plugins/treo-promise -s treoPromise -o dist/treo-promise.js"
   },
   "dependencies": {
     "component-type": "^1.1.0",
@@ -27,9 +25,10 @@
   },
   "devDependencies": {
     "after": "^0.8.1",
-    "browserify-test": "^1.1.0",
     "browserify": "^9.0.4",
-    "chai": "^2.1.1"
+    "browserify-test": "^1.1.0",
+    "chai": "^2.1.1",
+    "treo-websql": "^1.0.0"
   },
   "files": [
     "lib",

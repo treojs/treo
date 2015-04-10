@@ -2,7 +2,7 @@
 var expect = require('chai').expect;
 var Promise = require('promise');
 var treo = require('../lib');
-var websql = require('../plugins/treo-websql');
+var websql = require('treo-websql');
 var promise = require('../plugins/treo-promise');
 
 describe('integration', function() {

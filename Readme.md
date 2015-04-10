@@ -90,12 +90,8 @@ $ component install alekseykulikov/treo
 
 ```html
 <script src="treo.js"></script>
-<script src="treo-websql.js"></script> <!-- [optional] for legacy browsers -->
-<script src="treo-promise.js"></script> <!-- [optional] for es6-promises support -->
 <script>
-  var db = window.treo('my-db', schema)
-    .use(treoWebsql())
-    .use(treoPromise());
+  var db = window.treo('library');
 </script>
 ```
 
@@ -105,8 +101,8 @@ $ component install alekseykulikov/treo
 
 ```js
 var promise = require('treo/plugins/treo-promise'); // or window.treoPromise
-var db = treo('library', schema)
-  .use(promise());
+var db = treo('library', schema);
+db.use(promise());
 
 var books = db.store('books');
 
@@ -126,17 +122,14 @@ Promise.all([
 ## Legacy browsers
 
   IndexedDB is available only [in modern browsers](http://caniuse.com/#search=indexeddb),
-  but we still need to support Safari <= 7 and legacy mobile browsers.
-  Treo ships with [treo-websql](https://github.com/alekseykulikov/treo/tree/master/plugins/treo-websql) plugin,
-  which enables fallback to WebSQL and fix all issues of [buggy IndexedDBShim](https://github.com/axemclion/IndexedDBShim/issues).
-  In fact all treo's tests pass even in [phantomjs environment](https://travis-ci.org/alekseykulikov/treo).
-
-  Usage:
+  but we still need to support legacy browsers.
+  [treo-websql](https://github.com/alekseykulikov/treo/tree/master/plugins/treo-websql) enables fallback to WebSQL and fix some issues of [IndexedDBShim](https://github.com/axemclion/IndexedDBShim/issues).
+  In fact all treo's tests pass in [phantomjs environment](https://travis-ci.org/alekseykulikov/treo).
 
 ```js
-var websql = require('treo/plugins/treo-websql'); // or window.treoWebsql
-var db = treo('library', schema)
-  .use(websql());
+var websql = require('treo-websql'); // or window.treoWebsql
+var db = treo('library', schema);
+db.use(websql());
 ```
 
 # API

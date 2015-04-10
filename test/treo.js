@@ -1,8 +1,7 @@
-/* globals -after */
 var expect = require('chai').expect;
 var after = require('after');
 var treo = require('../lib');
-var websql = require('../plugins/treo-websql');
+var websql = require('treo-websql');
 
 describe('treo', function() {
   var db, schema;
