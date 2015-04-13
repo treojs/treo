@@ -200,7 +200,12 @@ describe('treo', function() {
         magazines.all(function(err, result) {
           expect(result).length(4);
           expect(result[0].id).equal('id1');
-          done(err);
+
+          magazines.all({ gt: 'id2' }, function(err2, result) {
+            expect(result).length(2);
+            expect(result[0].id).equal('id3');
+            done(err || err2);
+          });
         });
       });
     });
