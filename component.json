@@ -1,7 +1,7 @@
 {
   "name": "treo",
   "description": "Human interface for IndexedDB",
-  "repository": "alekseykulikov/treo",
+  "repository": "treojs/treo",
   "main": "dist/treo.js",
   "version": "0.5.0",
   "license": "MIT",
