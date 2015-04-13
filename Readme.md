@@ -305,10 +305,10 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
   Connect to db and create defined stores.
   It's useful, when you need to handle edge cases related with using origin database object.
 
-### db.transaction(type, stores, fn)
+### db.transaction(stores, mode, fn)
 
   Create new transaction to list of stores.
-  Available types: `readonly` and `readwrite`.
+  Available modes: `readonly` and `readwrite`.
 
 ### store.cursor(opts, fn), index.cursor(opts, fn)
 
