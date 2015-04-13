@@ -13,15 +13,12 @@
   "scripts": {
     "test": "browserify-test",
     "start": "browserify-test -w",
-    "build": "npm run build-treo && npm run build-treo-promise",
-    "build-treo": "browserify lib -s treo -o dist/treo.js",
-    "build-treo-promise": "browserify plugins/treo-promise -s treoPromise -o dist/treo-promise.js"
+    "build": "browserify lib -s treo -o dist/treo.js"
   },
   "dependencies": {
     "component-type": "^1.1.0",
     "idb-range": "^2.3.0",
-    "idb-schema": "^1.0.0",
-    "promise": "^6.1.0"
+    "idb-schema": "^1.0.0"
   },
   "devDependencies": {
     "after": "^0.8.1",
@@ -31,7 +28,6 @@
     "treo-websql": "^1.0.3"
   },
   "files": [
-    "lib",
-    "plugins"
+    "lib"
   ]
 }
