@@ -1,40 +1,38 @@
 // ES6-generators is a powerful way to approach async workflow
-// This example uses [co](https://github.com/visionmedia/co) and treo-promise
+// This example uses [co](https://github.com/visionmedia/co)
 // to provide great readability.
 // It's a near future, because Chrome enabled ES6-Generators by default and
-// ES7 async/await proposal is basically the same approach.
-// Right now, we can compile generators with https://github.com/facebook/regenerator
-// and write nice code today.
+// ES7 async/await is basically the same approach.
+// It can be compiled with https://github.com/facebook/regenerator
+// for older browsers.
 
-var treo = require('treo');
-var promise = require('treo/plugins/treo-promise');
 var co = require('co');
+var treo = require('treo');
 
 // define schema
 
 var schema = treo.schema()
-  .version(1)
-    .addStore('books')
-    .addIndex('byTitle', 'title', { unique: true })
-    .addIndex('byAuthor', 'author')
-    .addStore('locals')
-  .version(2)
-    .getStore('books')
-    .addIndex('byYear', 'year')
-  .version(3)
-    .addStore('magazines', { key: 'id' })
-    .addIndex('byPublisher', 'publisher')
-    .addIndex('byFrequency', 'frequency')
-    .addIndex('byWords', 'words', { multi: true });
+.version(1)
+  .addStore('books')
+  .addIndex('byTitle', 'title', { unique: true })
+  .addIndex('byAuthor', 'author')
+  .addStore('locals')
+.version(2)
+  .getStore('books')
+  .addIndex('byYear', 'year')
+.version(3)
+  .addStore('magazines', { key: 'id' })
+  .addIndex('byPublisher', 'publisher')
+  .addIndex('byFrequency', 'frequency')
+  .addIndex('byWords', 'words', { multi: true });
 
 // create db with promises support
 
-var db = treo('library', schema)
-  .use(promise());
+var db = treo('library', schema);
 
 // wrap async operations with generator.
 
-co(function*() {
+co(function* () {
   var books = db.store('books');
   var magazines = db.store('magazines');
 
@@ -55,12 +53,7 @@ co(function*() {
 
   // run queries
 
-  var book = yield books.index('byTitle').get('Bedrock Nights');
-  console.log('Find book by unique index:', book);
-
-  var byAuthor = yield books.index('byAuthor').get('Fred');
-  console.log('Filter books:', byAuthor);
-
-  var magazinesCount = yield magazines.count();
-  console.log('Count magazines:', magazinesCount);
-});
+  console.log('Find book by unique index:', yield books.index('byTitle').get('Bedrock Nights'));
+  console.log('Filter books:', yield books.index('byAuthor').getAll('Fred'));
+  console.log('Count magazines:', yield magazines.count());
+}).call();

@@ -1,9 +1,7 @@
 // Example of simple treo plugin, which can be used as:
 //
-// var db = treo('library', schema)
-//   .use(require('./find-in-plugin'));
-//
-// Treo ships with 2 plugins, and you can check them for more examples.
+// var db = treo('library', schema);
+// db.use(require('./find-in-plugin')());
 
 module.exports = function plugin() {
   return function(db, treo) {
@@ -35,7 +33,7 @@ module.exports = function plugin() {
     Store.prototype.findIn = function(keys, cb) {
       var result = [];
       var current = 0;
-      keys = keys.sort(treo.cmp);
+      keys = keys.sort(window.indexedDB.cmp);
 
       this.cursor({ iterator: iterator }, done);
 

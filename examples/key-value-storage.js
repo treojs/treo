@@ -7,13 +7,11 @@ var websql = require('treo-websql');
 var fn = console.log.bind(console); // use it as callback
 
 // define schema with one storage with string key/values
-var schema = treo.schema()
-  .version(1)
-  .addStore('storage');
+var schema = treo.schema().addStore('storage');
 
 // create db
-var db = treo('key-value-storage', schema)
-  .use(websql()); // support legacy browsers
+var db = treo('key-value-storage', schema);
+db.use(websql()); // support legacy browsers
 
 // save link to storage
 var store = db.store('storage');
@@ -27,7 +25,7 @@ store.put('baz', 'value 3', fn);
 store.get('bar', fn); // 'value 2'
 
 // get all
-store.all(fn); // ['value 1', 'value 2', 'value 3']
+store.getAll({ gte: 'ba' }, fn); // ['value 1', 'value 2', 'value 3']
 
 // batch more records
 store.batch([
