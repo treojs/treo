@@ -48,7 +48,7 @@ describe('treo', function() {
       var books = db.store('books');
       var magazines = db.store('magazines');
       var next = after(4, function() {
-        books.all(function(err, records) {
+        books.getAll(function(err, records) {
           expect(records).length(3);
           magazines.count(function(err2, count) {
             expect(count).equal(1);
@@ -187,7 +187,7 @@ describe('treo', function() {
       });
     });
 
-    it('#all', function(done) {
+    it('#getAll', function(done) {
       var magazines = db.store('magazines');
       magazines.batch([
         { id: 'id1', title: 'Quarry Memories', publisher: 'Bob' },
@@ -197,11 +197,11 @@ describe('treo', function() {
       ], function(err) {
         if (err) return done(err);
 
-        magazines.all(function(err, result) {
+        magazines.getAll(function(err, result) {
           expect(result).length(4);
           expect(result[0].id).equal('id1');
 
-          magazines.all({ gt: 'id2' }, function(err2, result) {
+          magazines.getAll({ gt: 'id2' }, function(err2, result) {
             expect(result).length(2);
             expect(result[0].id).equal('id3');
             done(err || err2);
@@ -273,24 +273,22 @@ describe('treo', function() {
     });
 
     it('#get by not unique index', function(done) {
-      books.index('byAuthor').get('Fred', function(err, records) {
+      books.index('byAuthor').get('Fred', function(err, val) {
         if (err) return done(err);
-        expect(records).length(2);
-        expect(records[0].isbn).equal(1);
+        expect(val.isbn).equal(1);
 
-        books.index('byYear').get(2013, function(err, records) {
-          expect(records).length(1);
-          expect(records[0].isbn).equal(2);
+        books.index('byYear').get(2013, function(err, val) {
+          expect(val.isbn).equal(2);
           done(err);
         });
       });
     });
 
-    it('#get with object params', function(done) {
-      books.index('byYear').get({ gte: 2012 }, function(err, all) {
+    it('#getAll with object params', function(done) {
+      books.index('byYear').getAll({ gte: 2012 }, function(err, all) {
         expect(all).length(3);
 
-        books.index('byYear').get({ gt: 2012, lte: 2013 }, function(err, all) {
+        books.index('byYear').getAll({ gt: 2012, lte: 2013 }, function(err, all) {
           expect(all).length(1);
           done(err);
         });
@@ -331,13 +329,13 @@ describe('treo', function() {
         if (err) return done(err);
         var next = after(2, done);
 
-        magazines.index('byWords').get({ gte: 'bad', lte: 'bad\uffff' }, function(err, result) {
+        magazines.index('byWords').getAll({ gte: 'bad', lte: 'bad\uffff' }, function(err, result) {
           expect(result).length(2);
           expect(result[0].id).equal('id2');
           next(err);
         });
 
-        magazines.index('byWords').get({ gte: 'w', lte: 'w\uffff' }, function(err, result) {
+        magazines.index('byWords').getAll({ gte: 'w', lte: 'w\uffff' }, function(err, result) {
           expect(result).length(3);
           expect(result[1].id).equal('id4');
           expect(result[2].id).equal('id4');

@@ -19,10 +19,10 @@ var storeMethods = [
   ['put', 3],
   ['get', 2],
   ['del', 2],
-  ['count', 1],
+  ['count', 2],
   ['clear', 1],
   ['batch', 2],
-  ['all', 1],
+  ['all', 2],
 ];
 
 var indexMethods = [
