@@ -314,13 +314,9 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
 
   Create custom cursors, see [example](https://github.com/treojs/treo/blob/master/examples/find-in-plugin.js) and [article](https://hacks.mozilla.org/2014/06/breaking-the-borders-of-indexeddb/) for more detailed usage.
 
-### treo.Treo, treo.Store, treo.Index
+### treo.Database, treo.Store, treo.Index
 
   Treo exposes core objects for plugins extension.
-
-### treo.cmp(a, b)
-
-  Compare 2 values using indexeddb's internal key compassion algorithm.
 
 ## License
 
