@@ -1,7 +1,7 @@
 # Treo
 
   [![](https://img.shields.io/npm/v/treo.svg)](https://npmjs.org/package/treo)
-  [![](https://img.shields.io/travis/alekseykulikov/treo.svg)](https://travis-ci.org/alekseykulikov/treo)
+  [![](https://img.shields.io/travis/treojs/treo.svg)](https://travis-ci.org/treojs/treo)
   [![](http://img.shields.io/npm/dm/treo.svg)](https://npmjs.org/package/treo)
 
   Treo is a lightweight wrapper around [IndexedDB](http://www.w3.org/TR/IndexedDB/) to make browser storage more enjoyable to use.
@@ -83,7 +83,7 @@ books.index('byAuthor').get('Fred', function(err, all) {}); // all.length == 2
 ```
 $ npm install treo --save
 $ bower install treo
-$ component install alekseykulikov/treo
+$ component install treojs/treo
 ```
 
   Standalone build available as [dist/treo.js](/dist/treo.js).
@@ -101,7 +101,7 @@ $ component install alekseykulikov/treo
 
 ## Promises
 
-  IndexedDB does not support ES6-Promises, but treo enables it with [treo-promise](https://github.com/alekseykulikov/treo/tree/master/plugins/treo-promise) plugin.
+  IndexedDB does not support ES6-Promises, but treo enables it with [treo-promise](https://github.com/treojs/treo/tree/master/plugins/treo-promise) plugin.
 
 ```js
 var promise = require('treo/plugins/treo-promise'); // or window.treoPromise
@@ -127,9 +127,9 @@ Promise.all([
 
   IndexedDB is available only [in modern browsers](http://caniuse.com/#search=indexeddb),
   but we still need to support Safari <= 7 and legacy mobile browsers.
-  Treo ships with [treo-websql](https://github.com/alekseykulikov/treo/tree/master/plugins/treo-websql) plugin,
+  Treo ships with [treo-websql](https://github.com/treojs/treo/tree/master/plugins/treo-websql) plugin,
   which enables fallback to WebSQL and fix all issues of [buggy IndexedDBShim](https://github.com/axemclion/IndexedDBShim/issues).
-  In fact all treo's tests pass even in [phantomjs environment](https://travis-ci.org/alekseykulikov/treo).
+  In fact all treo's tests pass even in [phantomjs environment](https://travis-ci.org/treojs/treo).
 
   Usage:
 
@@ -204,7 +204,7 @@ db.store('storage')
 ### db.store(name)
 
   Get store by `name`.
-  See [Store API](https://github.com/alekseykulikov/treo#store) for more information.
+  See [Store API](https://github.com/treojs/treo#store) for more information.
 
 ### db.close([fn])
 
@@ -319,7 +319,7 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
 
 ### store.cursor(opts, fn), index.cursor(opts, fn)
 
-  Create custom cursors, see [example](https://github.com/alekseykulikov/treo/blob/master/examples/find-in-plugin.js) and [article](https://hacks.mozilla.org/2014/06/breaking-the-borders-of-indexeddb/) for more detailed usage.
+  Create custom cursors, see [example](https://github.com/treojs/treo/blob/master/examples/find-in-plugin.js) and [article](https://hacks.mozilla.org/2014/06/breaking-the-borders-of-indexeddb/) for more detailed usage.
 
 ### treo.Treo, treo.Store, treo.Index
 
