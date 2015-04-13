@@ -308,7 +308,7 @@ books.index('byAuthor', IDBKeyRange.only('Barney'));
 ### db.transaction(stores, mode, fn)
 
   Create new transaction to list of stores.
-  Available modes: `readonly` and `readwrite`.
+  Available modes: `read` or `write` (`readonly` or `readwrite` also support).
 
 ### store.cursor(opts, fn), index.cursor(opts, fn)
 
