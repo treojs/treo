@@ -231,6 +231,24 @@ describe('treo', function() {
         });
       });
     });
+
+    it('#count', function(done) {
+      var books = db.store('books');
+      books.batch({
+        id1: { title: 'Quarry Memories', author: 'Fred', year: 2012 },
+        id2: { title: 'Water Buffaloes', author: 'Fred', year: 2013 },
+        id3: { title: 'Bedrock Nights', author: 'Barney', year: 2012 },
+      }, function(err) {
+        if (err) return done(err);
+        books.count(function(err, count) {
+          expect(count).equal(3);
+          books.count({ gte: 'id2' }, function(err2, count) {
+            expect(count).equal(2);
+            done(err || err2);
+          });
+        });
+      });
+    });
   });
 
   describe('index', function() {
