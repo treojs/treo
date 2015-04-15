@@ -1,12 +1,14 @@
 var expect = require('chai').expect;
 var Promise = require('es6-promise').Promise;
 var treo = require('../lib');
-var data = require('./fixtures/npm-data.json');
+var data = require('./support/npm-data.json');
 
-describe.only('integration', function() {
+describe('integration test', function() {
   var db, modules;
+  treo.Promise = Promise; // set Promise library
 
   before(function() {
+    this.timeout(10000);
     var schema = treo.schema()
     .addStore('modules', { keyPath: 'name' })
     .addIndex('byKeywords', 'keywords', { multiEntry: true })
@@ -14,7 +16,6 @@ describe.only('integration', function() {
     .addIndex('byStars', 'stars')
     .addIndex('byMaintainers', 'maintainers', { multi: true });
 
-    treo.Promise = Promise; // set Promise library
     db = treo('npm', schema);
 
     modules = db.store('modules');

@@ -23,11 +23,11 @@
     "idb-schema": "^1.0.0"
   },
   "devDependencies": {
-    "after": "^0.8.1",
-    "browserify": "^9.0.4",
-    "browserify-test": "^1.1.0",
-    "chai": "^2.1.1",
+    "browserify": "^9.0.8",
+    "browserify-test": "^1.1.1",
+    "chai": "^2.2.0",
     "es6-promise": "^2.0.1",
+    "lodash.pluck": "^3.0.2",
     "treo-websql": "^1.0.3"
   },
   "files": [
