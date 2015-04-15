@@ -18,6 +18,7 @@
   "dependencies": {
     "component-type": "^1.1.0",
     "idb-range": "^2.3.0",
+    "idb-request": "^1.1.0",
     "idb-schema": "^1.0.0"
   },
   "devDependencies": {

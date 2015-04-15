@@ -2,7 +2,6 @@ var expect = require('chai').expect;
 var Promise = require('promise');
 var treo = require('../lib');
 var websql = require('treo-websql');
-var promise = require('../plugins/treo-promise');
 
 describe('integration', function() {
   this.timeout(10000);
@@ -20,9 +19,8 @@ describe('integration', function() {
       .addIndex('byStars', 'stars')
       .addIndex('byMaintainers', 'maintainers', { multi: true });
 
-    db = treo('npm', schema)
-      .use(websql())
-      .use(promise());
+    db = treo('npm', schema);
+    db.use(websql());
 
     modules = db.store('modules');
     modules.batch(data, done);
