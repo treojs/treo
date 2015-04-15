@@ -23,7 +23,7 @@ describe('Integration test', function() {
   });
 
   after(function() {
-    return db.drop();
+    return db.del();
   });
 
   it('get module', function() {

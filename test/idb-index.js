@@ -22,7 +22,7 @@ describe('Index', function() {
   });
 
   afterEach(function() {
-    return db.drop();
+    return db.del();
   });
 
   it('has properties', function() {
