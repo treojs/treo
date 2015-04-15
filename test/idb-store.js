@@ -29,11 +29,11 @@ describe('Store', function() {
 
     expect(books.key).equal('isbn');
     expect(books.name).equal('books');
-    expect(Object.keys(books.indexes)).length(4);
+    expect(Object.keys(books.indexes)).length(3);
 
     expect(magazines.key).equal('id');
     expect(magazines.name).equal('magazines');
-    expect(Object.keys(magazines.indexes)).length(3);
+    expect(Object.keys(magazines.indexes)).length(4);
   });
 
   it('#put', function() {
@@ -103,17 +103,33 @@ describe('Store', function() {
 
   it('#batch', function() {
     var magazines = db.store('magazines');
-    return magazines.batch({
-      id1: null,
-      id3: { title: 'Bedrocky Nights', publisher: 'Bob' },
-      id4: { title: 'Heavy Weighting', publisher: 'Bob' },
-      id2: null,
-    }).then(function() {
-      return Promise.all([
-        magazines.count().then(function(count) { expect(count).equal(2) }),
-        magazines.get('id3').then(function(val) { expect(val.publisher).equal('Bob') }),
-      ]);
-    });
+    var storage = db.store('storage');
+
+    return Promise.all([
+      magazines.batch({
+        id1: null,
+        id3: { title: 'Bedrocky Nights', publisher: 'Bob' },
+        id4: { title: 'Heavy Weighting', publisher: 'Bob' },
+        id2: null,
+      }).then(function() {
+        return Promise.all([
+          magazines.count().then(function(count) { expect(count).equal(2) }),
+          magazines.get('id3').then(function(val) { expect(val.publisher).equal('Bob') }),
+        ]);
+      }),
+
+      storage.batch({
+        foo: 'val 1',
+        bar: 'val 2',
+        baz: 'val 3',
+      }, function() {
+        return Promise.all([
+          storage.get('bar').then(function(val) { expect(val).equal('val 2') }),
+          storage.get('fake').then(function(val) { expect(val).not.exist }),
+          storage.count().then(function(count) { expect(count).equal(3) }),
+        ]);
+      }),
+    ]);
   });
 
   it('#cursor', function() {

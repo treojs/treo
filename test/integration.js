@@ -3,7 +3,7 @@ var Promise = require('es6-promise').Promise;
 var treo = require('../lib');
 var data = require('./support/npm-data.json');
 
-describe('integration test', function() {
+describe('Integration test', function() {
   var db, modules;
   treo.Promise = Promise; // set Promise library
 

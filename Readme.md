@@ -119,7 +119,7 @@ treo.Promise = require('es6-promise'); // change Promise library
 
 // Database represents connection to a database.
 var db = treo('name', schema);
-db.on('error', 'abort', 'versionchange');
+db.on('open', 'error', 'abort', 'versionchange');
 db.transaction([name, name], mode); // create transaction
 async db.close(); // database might be in opening state
 async db.del(); // close && deleteDatabase (avoid onversionchange)
@@ -139,7 +139,7 @@ async store.del(key);
 async store.batch(ops); // best way to reuse transaction
 async store.count([range]);
 async store.clear();
-async store.cursor([key], [direction], fn); // low level
+async store.cursor({ [key], [direction], iterator }); // low level
 store.index(name); // new Index()
 store.name;
 store.key;
@@ -150,7 +150,7 @@ var index = store.index('byAuthor');
 async index.get(key); // undefined if record does not exist
 async index.getAll([range]);
 async index.count([range]);
-async index.cursor([key], [direction], fn); // low level
+async index.cursor({ [key], [direction], iterator }); // low level
 index.name;
 index.key;
 index.unique;
