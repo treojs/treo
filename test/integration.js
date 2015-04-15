@@ -1,73 +1,54 @@
 var expect = require('chai').expect;
-var Promise = require('promise');
+var Promise = require('es6-promise').Promise;
 var treo = require('../lib');
-var websql = require('treo-websql');
+var data = require('./fixtures/npm-data.json');
 
-describe('integration', function() {
-  this.timeout(10000);
+describe.only('integration', function() {
   var db, modules;
 
-  before(function(done) {
-    var data = require('./fixtures/npm-data.json');
+  before(function() {
     var schema = treo.schema()
-    .version(1)
-      .addStore('modules', { keyPath: 'name' })
-    .version(2)
-      .getStore('modules')
-      .addIndex('byKeywords', 'keywords', { multiEntry: true })
-      .addIndex('byAuthor', 'author')
-      .addIndex('byStars', 'stars')
-      .addIndex('byMaintainers', 'maintainers', { multi: true });
+    .addStore('modules', { keyPath: 'name' })
+    .addIndex('byKeywords', 'keywords', { multiEntry: true })
+    .addIndex('byAuthor', 'author')
+    .addIndex('byStars', 'stars')
+    .addIndex('byMaintainers', 'maintainers', { multi: true });
 
+    treo.Promise = Promise; // set Promise library
     db = treo('npm', schema);
-    db.use(websql());
 
     modules = db.store('modules');
-    modules.batch(data, done);
+    return modules.batch(data);
   });
 
-  after(function(done) {
-    db.drop(done);
+  after(function() {
+    return db.drop();
   });
 
-  it('get module', function(done) {
-    modules.get('browserify', function(err, mod) {
-      if (err) return done(err);
+  it('get module', function() {
+    return modules.get('browserify').then(function(mod) {
       expect(mod).exist;
       expect(mod.author).equal('James Halliday');
-      done();
     });
   });
 
-  it('count all modules', function(done) {
-    modules.count(function(err, count) {
-      if (err) return done(err);
+  it('count all modules', function() {
+    return modules.count().then(function(count) {
       expect(count).equal(473);
-      done();
     });
   });
 
-  it('count by index', function(done) {
-    modules.index('byStars').count({ gte: 100 }, function(err, count) {
-      expect(count).equal(12);
-      modules.index('byKeywords').count('grunt', function(err2, count) {
+  it('count by index', function() {
+    return Promise.all([
+      modules.index('byStars').count({ gte: 100 }).then(function(count) {
+        expect(count).equal(12);
+      }),
+      modules.index('byKeywords').count('grunt').then(function(count) {
         expect(count).equal(9);
-        modules.index('byMaintainers').count('tjholowaychuk', function(err3, count) {
-          expect(count).equal(36);
-          done(err || err2 || err3);
-        });
-      });
-    });
-  });
-
-  it('works with promises', function(done) {
-    Promise.all([
-      modules.get('async'),
-      modules.get('request'),
-      modules.get('component'),
-    ]).then(function(records) {
-      expect(records).length(3);
-      done();
-    }, done);
+      }),
+      modules.index('byMaintainers').count('tjholowaychuk').then(function(count) {
+        expect(count).equal(36);
+      }),
+    ]);
   });
 });

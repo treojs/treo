@@ -16,6 +16,7 @@
     "build": "browserify lib -s treo -o dist/treo.js"
   },
   "dependencies": {
+    "component-emitter": "^1.2.0",
     "component-type": "^1.1.0",
     "idb-range": "^2.3.0",
     "idb-request": "^1.1.0",
@@ -26,6 +27,7 @@
     "browserify": "^9.0.4",
     "browserify-test": "^1.1.0",
     "chai": "^2.1.1",
+    "es6-promise": "^2.0.1",
     "treo-websql": "^1.0.3"
   },
   "files": [
