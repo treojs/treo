@@ -160,8 +160,8 @@ index.multi;
 var tr = db.transaction(['books', 'magazines'], 'write');
 tr.on('error', 'abort', 'complete');
 tr.store(name); // new Store() - use store in current transaction
-tr.abort();
 tr.mode;
+async tr.abort(); // database might be in opening state
 async tr; // thenable
 ```
 

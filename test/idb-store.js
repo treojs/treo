@@ -29,11 +29,11 @@ describe('Store', function() {
 
     expect(books.key).equal('isbn');
     expect(books.name).equal('books');
-    expect(Object.keys(books.indexes)).length(3);
+    expect(books.indexes).length(3);
 
     expect(magazines.key).equal('id');
     expect(magazines.name).equal('magazines');
-    expect(Object.keys(magazines.indexes)).length(4);
+    expect(magazines.indexes).length(4);
   });
 
   it('#put', function() {
