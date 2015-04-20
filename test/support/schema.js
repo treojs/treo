@@ -1,4 +1,4 @@
-var treo = require('../../lib');
+const treo = require('../../lib')
 
 /**
  * Shared schema.
@@ -19,4 +19,4 @@ module.exports = treo.schema()
   .addIndex('byNameAndFrequency', ['name', 'frequency'], { unique: true })
   .addIndex('byKeywords', 'keywords', { multi: true })
 .version(4)
-  .addStore('storage'); // key-value
+  .addStore('storage') // key-value

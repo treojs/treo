@@ -11,9 +11,9 @@
     "offline"
   ],
   "scripts": {
-    "test": "browserify-test",
-    "start": "browserify-test -w",
-    "build": "browserify lib -s treo -o dist/treo.js"
+    "test": "browserify-test -t babelify",
+    "start": "browserify-test -t babelify -w",
+    "build": "browserify -t babelify lib/index.js -s treo -o dist/treo.js"
   },
   "dependencies": {
     "component-emitter": "^1.2.0",
@@ -23,6 +23,7 @@
     "idb-schema": "^1.0.0"
   },
   "devDependencies": {
+    "babelify": "^6.0.2",
     "browserify": "^9.0.8",
     "browserify-test": "^1.1.1",
     "chai": "^2.2.0",
