@@ -4,7 +4,7 @@
   "repository": "git@github.com:treojs/treo.git",
   "version": "0.5.0",
   "license": "MIT",
-  "main": "lib/index.js",
+  "main": "node/index.js",
   "keywords": [
     "indexeddb",
     "treo",
@@ -13,7 +13,8 @@
   "scripts": {
     "test": "browserify-test -t babelify",
     "start": "browserify-test -t babelify -w",
-    "build": "browserify -t babelify lib/index.js -s treo -o dist/treo.js"
+    "prepublish": "babel lib -d node",
+    "build": "npm run prepublish && browserify node/index.js -s treo -o dist/treo.js"
   },
   "dependencies": {
     "component-emitter": "^1.2.0",
@@ -23,15 +24,16 @@
     "idb-schema": "^1.0.0"
   },
   "devDependencies": {
+    "babel": "^5.1.13",
     "babelify": "^6.0.2",
     "browserify": "^9.0.8",
     "browserify-test": "^1.1.1",
-    "chai": "^2.2.0",
-    "es6-promise": "^2.0.1",
-    "lodash.pluck": "^3.0.2",
+    "chai": "^2.3.0",
+    "es6-promise": "^2.1.1",
+    "lodash.pluck": "^3.1.0",
     "treo-websql": "^1.0.3"
   },
   "files": [
-    "lib"
+    "node"
   ]
 }

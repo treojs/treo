@@ -3,12 +3,11 @@ const Promise = require('es6-promise').Promise
 const treo = require('../lib')
 const data = require('./support/npm-data.json')
 
-describe('Integration test', function() {
-  let db, modules, schema;
+describe('Integration test', () => {
+  let db, modules, schema
   treo.Promise = Promise // set Promise library
 
-  before(function() {
-    this.timeout(10000)
+  before(() => {
     schema = treo.schema()
     .addStore('modules', { keyPath: 'name' })
     .addIndex('byKeywords', 'keywords', { multiEntry: true })
@@ -22,32 +21,32 @@ describe('Integration test', function() {
     return modules.batch(data)
   })
 
-  after(function() {
+  after(() => {
     return db.del()
   })
 
-  it('get module', function() {
-    return modules.get('browserify').then(function(mod) {
+  it('get module', () => {
+    return modules.get('browserify').then((mod) => {
       expect(mod).exist
       expect(mod.author).equal('James Halliday')
     })
   })
 
-  it('count all modules', function() {
-    return modules.count().then(function(count) {
+  it('count all modules', () => {
+    return modules.count().then((count) => {
       expect(count).equal(473)
     })
   })
 
-  it('count by index', function() {
+  it('count by index', () => {
     return Promise.all([
-      modules.index('byStars').count({ gte: 100 }).then(function(count) {
+      modules.index('byStars').count({ gte: 100 }).then((count) => {
         expect(count).equal(12)
       }),
-      modules.index('byKeywords').count('grunt').then(function(count) {
+      modules.index('byKeywords').count('grunt').then((count) => {
         expect(count).equal(9)
       }),
-      modules.index('byMaintainers').count('tjholowaychuk').then(function(count) {
+      modules.index('byMaintainers').count('tjholowaychuk').then((count) => {
         expect(count).equal(36)
       }),
     ])
