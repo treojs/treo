@@ -1,14 +1,16 @@
 var expect = require('chai').expect
 var Promise = require('es6-promise').Promise
+var treoWebsql = require('treo-websql')
 var treo = require('../lib')
 var schema = require('./support/schema')
 
-describe.skip('Database', function() {
+describe('Database', function() {
   var db
   treo.Promise = Promise // set Promise library
 
   beforeEach(function() {
     db = treo('treo.database', schema)
+    db.use(treoWebsql())
   })
 
   afterEach(function() {
@@ -71,23 +73,16 @@ describe.skip('Database', function() {
     })
   })
 
-  it('#on "abort", "error"', function(done) {
+  it('#on "error"', function(done) {
     var magazines = db.store('magazines')
-    var events = []
 
     magazines.put({ publisher: 'Leanpub' }).then(function(val) {
-      magazines.add({ id: val, publisher: 'Leanpub' }) // dublicate key
-
+      magazines.add(val, { publisher: 'Leanpub' }).then(function() {
+        done('should be an error')
+      })
       db.on('error', function(err) {
         expect(err).exist
-        events.push('error')
-        if (events.length == 2) return done()
-      })
-
-      db.on('abort', function() {
-        expect(arguments).length(0)
-        events.push('abort')
-        if (events.length == 2) return done()
+        done()
       })
     })
   })
