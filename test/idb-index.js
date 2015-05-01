@@ -3,6 +3,7 @@ var pluck = require('lodash.pluck')
 var Promise = require('es6-promise').Promise
 var treo = require('../lib')
 var schema = require('./support/schema')
+if (!global.indexedDB) require('indexeddbshim')
 
 describe('Index', function() {
   var db

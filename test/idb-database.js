@@ -1,8 +1,8 @@
 var expect = require('chai').expect
 var Promise = require('es6-promise').Promise
-var treoWebsql = require('treo-websql')
 var treo = require('../lib')
 var schema = require('./support/schema')
+if (!global.indexedDB) require('indexeddbshim')
 
 describe('Database', function() {
   var db
@@ -10,7 +10,6 @@ describe('Database', function() {
 
   beforeEach(function() {
     db = treo('treo.database', schema)
-    db.use(treoWebsql())
   })
 
   afterEach(function() {

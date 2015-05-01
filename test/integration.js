@@ -2,6 +2,7 @@ var expect = require('chai').expect
 var Promise = require('es6-promise').Promise
 var treo = require('../lib')
 var data = require('./support/npm-data.json')
+if (!global.indexedDB) require('indexeddbshim')
 
 describe('Integration test', function() {
   var db, modules, schema
@@ -16,7 +17,6 @@ describe('Integration test', function() {
     .addIndex('byMaintainers', 'maintainers', { multi: true })
 
     db = treo('npm', schema)
-
     modules = db.store('modules')
     return modules.batch(data)
   })
