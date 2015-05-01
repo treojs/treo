@@ -1,4 +1,4 @@
-const treo = require('../../lib')
+var treo = require('../../lib')
 
 /**
  * Shared schema.
