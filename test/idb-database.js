@@ -39,7 +39,7 @@ describe('Database', function() {
     })
   })
 
-  it('handles "onversionchange" automatically', function() {
+  it.skip('handles "onversionchange" automatically', function() {
     var isCalled = false
     db.on('versionchange', function() { isCalled = true })
 
@@ -79,6 +79,7 @@ describe('Database', function() {
       magazines.add(val, { publisher: 'Leanpub' }).then(function() {
         done('should be an error')
       })
+
       db.on('error', function(err) {
         expect(err).exist
         done()

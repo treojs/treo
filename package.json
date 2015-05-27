@@ -19,13 +19,13 @@
   "dependencies": {
     "component-emitter": "^1.2.0",
     "component-type": "^1.1.0",
-    "idb-range": "^2.3.1",
+    "idb-range": "^2.4.0",
     "idb-request": "^1.1.2",
     "idb-schema": "^2.0.0"
   },
   "devDependencies": {
     "browserify": "^10.2.1",
-    "browserify-test": "^1.1.1",
+    "browserify-test": "^1.2.0",
     "chai": "^2.3.0",
     "es6-promise": "^2.1.1",
     "indexeddbshim": "^2.0.2",

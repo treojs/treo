@@ -119,7 +119,7 @@ treo.Promise = require('es6-promise'); // change Promise library
 
 // Database represents connection to a database.
 var db = treo('name', schema);
-db.on('open', 'error', 'abort', 'versionchange');
+db.on('close', 'error', 'abort', 'versionchange');
 db.transaction([name, name], mode); // create transaction
 async db.close(); // database might be in opening state
 async db.del(); // close && deleteDatabase (avoid onversionchange)

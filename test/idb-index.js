@@ -123,7 +123,7 @@ describe('Index', function() {
     var magazines = db.store('magazines')
     var results = []
     return magazines.index('byFrequency').cursor({
-      direction: '',
+      direction: 'prevunique',
       iterator: iterator
     }).then(function() {
       expect(pluck(results, 'frequency')).eql([52, 24, 12, 6])
