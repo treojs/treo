@@ -24,12 +24,12 @@
     "idb-schema": "^2.0.0"
   },
   "devDependencies": {
-    "browserify": "^9.0.8",
+    "browserify": "^10.2.1",
     "browserify-test": "^1.1.1",
     "chai": "^2.3.0",
     "es6-promise": "^2.1.1",
-    "indexeddbshim": "^1.0.14",
-    "lodash.pluck": "^3.1.0"
+    "indexeddbshim": "^2.0.2",
+    "lodash.pluck": "^3.1.2"
   },
   "files": [
     "lib"

@@ -40,7 +40,7 @@ describe('Database', function() {
   })
 
   it('handles "onversionchange" automatically', function() {
-    var isCalled
+    var isCalled = false
     db.on('versionchange', function() { isCalled = true })
 
     return db.store('magazines').put({ id: 4, words: ['hey'] }).then(function() {
