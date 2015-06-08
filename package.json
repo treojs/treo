@@ -24,11 +24,11 @@
     "idb-schema": "^2.0.0"
   },
   "devDependencies": {
-    "browserify": "^10.2.1",
+    "browserify": "^10.2.4",
     "browserify-test": "^1.2.0",
-    "chai": "^2.3.0",
-    "es6-promise": "^2.1.1",
-    "indexeddbshim": "^2.0.2",
+    "chai": "^3.0.0",
+    "es6-promise": "^2.2.0",
+    "indexeddbshim": "^2.0.3",
     "lodash.pluck": "^3.1.2"
   },
   "files": [

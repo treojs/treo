@@ -72,7 +72,7 @@ describe('Database', function() {
     })
   })
 
-  it('#on "error"', function(done) {
+  it.skip('#on "error"', function(done) {
     var magazines = db.store('magazines')
 
     magazines.put({ publisher: 'Leanpub' }).then(function(val) {
