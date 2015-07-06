@@ -76,9 +76,14 @@ describe('Store', function() {
   it('#count', function() {
     var magazines = db.store('magazines')
     return Promise.all([
-      magazines.count().then(function(count) { expect(count).equal(4) }),
-      magazines.count({ gte: 'id2' }).then(function(count) { expect(count).equal(3) }),
-    ])
+      magazines.count(),
+      magazines.count('id3'),
+      magazines.count({ gte: 'id2' }),
+    ]).then(function(results) {
+      expect(results[0]).equal(4)
+      expect(results[1]).equal(1)
+      expect(results[2]).equal(3)
+    })
   })
 
   it('#clear', function() {
