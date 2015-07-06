@@ -2,9 +2,12 @@
   "name": "treo",
   "description": "Human interface for IndexedDB",
   "repository": "git@github.com:treojs/treo.git",
-  "version": "0.5.0",
+  "version": "0.6.0-rc1",
   "license": "MIT",
   "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
   "keywords": [
     "indexeddb",
     "treo",
@@ -12,8 +15,8 @@
   ],
   "scripts": {
     "test": "browserify-test",
-    "start": "browserify-test -w",
-    "build": "browserify lib/index.js -s treo -o dist/treo.js",
+    "development": "browserify-test -w",
+    "build": "browserify lib/index.js -s treo -o dist/treo.js && uglifyjs dist/treo.js -m > dist/treo.min.js",
     "stat": "cloc --quiet --by-file lib/ && cloc --quiet --by-file --exclude-ext=json test/"
   },
   "dependencies": {
@@ -27,11 +30,9 @@
     "browserify": "^10.2.4",
     "browserify-test": "^1.2.0",
     "chai": "^3.0.0",
-    "es6-promise": "^2.2.0",
-    "indexeddbshim": "^2.0.3",
-    "lodash.pluck": "^3.1.2"
-  },
-  "files": [
-    "lib"
-  ]
+    "es6-promise": "^2.3.0",
+    "indexeddbshim": "^2.0.4",
+    "lodash.pluck": "^3.1.2",
+    "uglify-js": "^2.4.23"
+  }
 }
