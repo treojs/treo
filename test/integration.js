@@ -1,12 +1,13 @@
 var expect = require('chai').expect
 var Promise = require('es6-promise').Promise
-var treo = require('../lib')
 var data = require('./support/npm-data.json')
+var treo = require('../lib')
 if (!global.indexedDB) require('indexeddbshim')
+treo.Promise = Promise // set Promise library
 
 describe('Integration test', function() {
+  this.timeout(10000)
   var db, modules, schema
-  treo.Promise = Promise // set Promise library
 
   before(function() {
     schema = treo.schema()

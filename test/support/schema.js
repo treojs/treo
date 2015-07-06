@@ -4,7 +4,7 @@ var treo = require('../../lib')
  * Shared schema.
  */
 
-module.exports = treo.schema()
+var schema = treo.schema()
 .version(1)
   .addStore('books', { key: 'isbn' })
   .addIndex('byTitle', 'title', { unique: true })
@@ -20,3 +20,9 @@ module.exports = treo.schema()
   .addIndex('byKeywords', 'keywords', { multi: true })
 .version(4)
   .addStore('storage') // key-value
+
+/**
+ * Expose `schema`.
+ */
+
+module.exports = schema

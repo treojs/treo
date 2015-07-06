@@ -1,13 +1,13 @@
 var expect = require('chai').expect
 var pluck = require('lodash.pluck')
 var Promise = require('es6-promise').Promise
-var treo = require('../lib')
 var schema = require('./support/schema')
+var treo = require('../lib')
 if (!global.indexedDB) require('indexeddbshim')
+treo.Promise = Promise // set Promise library
 
 describe('Index', function() {
   var db
-  treo.Promise = Promise // set Promise library
 
   beforeEach(function() {
     db = treo('treo.index', schema)
@@ -120,7 +120,7 @@ describe('Index', function() {
     }
   })
 
-  it.only('#cursor direction=prevunique', function() {
+  it('#cursor direction=prevunique', function() {
     var magazines = db.store('magazines')
     var results = {}
 

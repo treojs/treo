@@ -2,11 +2,12 @@ var expect = require('chai').expect
 var Promise = require('es6-promise').Promise
 var treo = require('../lib')
 var schema = require('./support/schema')
+var treo = require('../lib')
 if (!global.indexedDB) require('indexeddbshim')
+treo.Promise = Promise // set Promise library
 
 describe('Database', function() {
   var db
-  treo.Promise = Promise // set Promise library
 
   beforeEach(function() {
     db = treo('treo.database', schema)
@@ -72,7 +73,7 @@ describe('Database', function() {
     })
   })
 
-  it.skip('#on "error"', function(done) {
+  it('#on "error"', function(done) {
     var magazines = db.store('magazines')
 
     magazines.put({ publisher: 'Leanpub' }).then(function(val) {

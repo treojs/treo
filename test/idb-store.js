@@ -1,13 +1,13 @@
 var expect = require('chai').expect
 var pluck = require('lodash.pluck')
 var Promise = require('es6-promise').Promise
-var treo = require('../lib')
 var schema = require('./support/schema')
+var treo = require('../lib')
 if (!global.indexedDB) require('indexeddbshim')
+treo.Promise = Promise // set Promise library
 
 describe('Store', function() {
   var db
-  treo.Promise = Promise // set Promise library
 
   beforeEach(function() {
     db = treo('treo.store', schema)
