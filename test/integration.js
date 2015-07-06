@@ -2,8 +2,10 @@ var expect = require('chai').expect
 var Promise = require('es6-promise').Promise
 var data = require('./support/npm-data.json')
 var treo = require('../lib')
-if (!global.indexedDB) require('indexeddbshim')
+var websql = require('./support/treo-websql')
+
 treo.Promise = Promise // set Promise library
+websql(treo) // patch to support WebSQL env
 
 describe('Integration test', function() {
   this.timeout(10000)

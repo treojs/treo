@@ -3,8 +3,10 @@ var pluck = require('lodash.pluck')
 var Promise = require('es6-promise').Promise
 var schema = require('./support/schema')
 var treo = require('../lib')
-if (!global.indexedDB) require('indexeddbshim')
+var websql = require('./support/treo-websql')
+
 treo.Promise = Promise // set Promise library
+websql(treo) // patch to support WebSQL env
 
 describe('Store', function() {
   var db

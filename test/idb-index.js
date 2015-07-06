@@ -2,9 +2,11 @@ var expect = require('chai').expect
 var pluck = require('lodash.pluck')
 var Promise = require('es6-promise').Promise
 var schema = require('./support/schema')
+var websql = require('./support/treo-websql')
 var treo = require('../lib')
-if (!global.indexedDB) require('indexeddbshim')
+
 treo.Promise = Promise // set Promise library
+websql(treo) // patch to support WebSQL env
 
 describe('Index', function() {
   var db

@@ -3,8 +3,10 @@ var Promise = require('es6-promise').Promise
 var treo = require('../lib')
 var schema = require('./support/schema')
 var treo = require('../lib')
-if (!global.indexedDB) require('indexeddbshim')
+var websql = require('./support/treo-websql')
+
 treo.Promise = Promise // set Promise library
+websql(treo) // patch to support WebSQL env
 
 describe('Database', function() {
   var db
@@ -80,7 +82,6 @@ describe('Database', function() {
       magazines.add(val, { publisher: 'Leanpub' }).then(function() {
         done('should be an error')
       })
-
       db.on('error', function(err) {
         expect(err).exist
         done()
