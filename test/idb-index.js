@@ -86,6 +86,7 @@ describe('Index', function() {
   it('#cursor', function() {
     var magazines = db.store('magazines')
     var results = {}
+
     return Promise.all([
       magazines.index('byName').cursor({
         iterator: iterator(1)
@@ -119,19 +120,32 @@ describe('Index', function() {
     }
   })
 
-  it.skip('#cursor direction=prevunique', function() {
+  it.only('#cursor direction=prevunique', function() {
     var magazines = db.store('magazines')
-    var results = []
-    return magazines.index('byFrequency').cursor({
-      direction: 'prevunique',
-      iterator: iterator
-    }).then(function() {
-      expect(pluck(results, 'frequency')).eql([52, 24, 12, 6])
-    })
+    var results = {}
 
-    function iterator(cursor) {
-      results.push(cursor.value)
-      cursor.continue()
+    return Promise.all([
+      magazines.index('byFrequency').cursor({
+        direction: 'prevunique',
+        iterator: iterator(1)
+      }).then(function() {
+        expect(pluck(results[1], 'frequency')).eql([52, 24, 12, 6])
+      }),
+      magazines.index('byKeywords').cursor({
+        range: 'political',
+        direction: 'prevunique',
+        iterator: iterator(2)
+      }).then(function() {
+        expect(pluck(results[2], 'name')).eql(['M1'])
+      }),
+    ])
+
+    function iterator(index) {
+      results[index] = []
+      return function(cursor) {
+        results[index].push(cursor.value)
+        cursor.continue()
+      }
     }
   })
 })
