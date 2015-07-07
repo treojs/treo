@@ -19,6 +19,13 @@ describe('Database', function() {
     return db.del()
   })
 
+  it('exposes core classes', function() {
+    expect(treo).equal(treo.Database)
+    expect(Object.keys(treo).sort()).eql(
+      ['Database', 'Index', 'Schema', 'Store', 'Transaction',
+       'range', 'request', 'schema'])
+  })
+
   it('has properties', function() {
     expect(db.name).equal('treo.database')
     expect(db.version).equal(4)
@@ -42,6 +49,40 @@ describe('Database', function() {
     })
   })
 
+  it('#close', function() {
+    return db.close().then(function() {
+      expect(db.status).equal('close')
+      expect(db.origin).null
+      expect(Object.keys(db._callbacks || {})).length(0)
+    })
+  })
+
+  it('#use', function(done) {
+    db.use(function(localDb, localTreo) {
+      expect(db).equal(localDb)
+      expect(localTreo).equal(treo)
+      done()
+    })
+  })
+
+  it('#on "error"', function(done) {
+    var magazines = db.store('magazines')
+
+    magazines.put({ publisher: 'Leanpub' }).then(function(val) {
+      magazines.add(val, { publisher: 'Leanpub' }).then(function() {
+        done('should be an error')
+      })
+      db.on('error', function(err) {
+        expect(err).exist
+        done()
+      })
+    })
+  })
+
+  it('#on "versionchange"')
+  it('#on "close"')
+  it('#on "abort"')
+
   it.skip('handles "onversionchange" automatically', function() {
     var isCalled = false
     db.on('versionchange', function() { isCalled = true })
@@ -63,28 +104,6 @@ describe('Database', function() {
       ]).then(function() {
         expect(db.status).equal('close')
         expect(isCalled).true
-      })
-    })
-  })
-
-  it('#close', function() {
-    return db.close().then(function() {
-      expect(db.status).equal('close')
-      expect(db.origin).null
-      expect(Object.keys(db._callbacks || {})).length(0)
-    })
-  })
-
-  it('#on "error"', function(done) {
-    var magazines = db.store('magazines')
-
-    magazines.put({ publisher: 'Leanpub' }).then(function(val) {
-      magazines.add(val, { publisher: 'Leanpub' }).then(function() {
-        done('should be an error')
-      })
-      db.on('error', function(err) {
-        expect(err).exist
-        done()
       })
     })
   })

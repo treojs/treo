@@ -1,9 +1,10 @@
 
 /**
- * Expose `websql()`.
+ * Exports.
  */
 
-module.exports = websql
+exports = module.exports = websql
+exports.polyfill = polyfill
 
 /**
  * Enable support of IndexedDB in WebSQL env.
@@ -20,7 +21,7 @@ module.exports = websql
  */
 
 function websql(treo) {
-  if (!global.indexedDB) require('indexeddbshim')
+  polyfill()
   if (typeof global.shimIndexedDB == 'undefined') return
   var Index = treo.Index
   var Store = treo.Store
@@ -78,5 +79,24 @@ function websql(treo) {
   Transaction.prototype.onerror = function(e) {
     this.emit('error', e)
     this.db.emit('error', e)
+  }
+}
+
+function polyfill() {
+  if (global.indexedDB) return
+  require('indexeddbshim')
+  var IDBKeyRange = global.IDBKeyRange
+
+  /**
+   * Follow ranges spec.
+   * https://github.com/axemclion/IndexedDBShim/issues/212
+   */
+
+  IDBKeyRange.lowerBound = function(value, open) {
+    return new IDBKeyRange(value, undefined, open || false, true)
+  }
+
+  IDBKeyRange.upperBound = function(value, open) {
+    return new IDBKeyRange(undefined, value, true, open || false)
   }
 }

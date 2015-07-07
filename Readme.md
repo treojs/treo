@@ -109,60 +109,63 @@ Standalone build available as [dist/treo.js](./dist/treo.js).
 Short version of API is:
 
 ```js
-var treo = require('treo'); // alternative to window.indexedDB
-treo.schema(); // create idb-schema
-treo.Database;
-treo.Transaction;
-treo.Store;
-treo.Index;
-treo.Promise = require('es6-promise'); // change Promise library
+var treo = require('treo') // alternative to window.indexedDB
+treo.schema() // create idb-schema
+treo.Database
+treo.Transaction
+treo.Store
+treo.Index
+treo.Promise = require('es6-promise') // change Promise library
+treo.Schema // reference to using idb-schema
+treo.request // reference to using idb-request
+treo.range // reference to using idb-range
 
 // Database represents connection to a database.
-var db = treo('name', schema);
-db.on('close', 'error', 'abort', 'versionchange');
-db.transaction([name, name], mode); // create transaction
-async db.close(); // database might be in opening state
-async db.del(); // close && deleteDatabase (avoid onversionchange)
-db.name;
-db.version;
-db.stores; // array of stores
-db.use(fn); // use plugin fn(db, treo)
-db.store(name); // create store with automatic transactions
+var db = treo('name', schema)
+db.on('close', 'error', 'abort', 'versionchange')
+db.transaction([name, name], mode) // create transaction
+async db.close() // database might be in opening state
+async db.del() // close && deleteDatabase (avoid onversionchange)
+db.name
+db.version
+db.stores // array of stores
+db.use(fn) // use plugin fn(db, treo)
+db.store(name) // create store with automatic transactions
 
 // Store is the primary mechanism for storing data.
-var store = db.store('books');
-async store.get(key); // returns undefined when record does not exists
-async store.getAll([range]); // array
-async store.put(key, val); // out-of-line keys
-async store.put(obj); // in-line keys with keyPath
-async store.del(key);
-async store.batch(ops); // best way to reuse transaction
-async store.count([range]);
-async store.clear();
-async store.cursor({ [key], [direction], iterator }); // low level
-store.index(name); // new Index()
-store.name;
-store.key;
-store.indexes; // array of indexes
+var store = db.store('books')
+async store.get(key) // returns undefined when record does not exists
+async store.getAll([range]) // array
+async store.put(key, val) // out-of-line keys
+async store.put(obj) // in-line keys with keyPath
+async store.del(key)
+async store.batch(ops) // best way to reuse transaction
+async store.count([range])
+async store.clear()
+async store.cursor({ [key], [direction], iterator }) // low level
+store.index(name) // new Index()
+store.name
+store.key
+store.indexes // array of indexes
 
 // Index allows to looking up records in a store using properties of the values.
-var index = store.index('byAuthor');
-async index.get(key); // undefined if record does not exist
-async index.getAll([range]);
-async index.count([range]);
-async index.cursor({ [key], [direction], iterator }); // low level
-index.name;
-index.key;
-index.unique;
-index.multi;
+var index = store.index('byAuthor')
+async index.get(key) // undefined if record does not exist
+async index.getAll([range])
+async index.count([range])
+async index.cursor({ [key], [direction], iterator }) // low level
+index.name
+index.key
+index.unique
+index.multi
 
 // Transaction represents atomic operation on data (uses internally).
-var tr = db.transaction(['books', 'magazines'], 'write');
-tr.on('error', 'abort', 'complete');
-tr.store(name); // new Store() - use store in current transaction
-tr.mode;
-async tr.abort(); // database might be in opening state
-async tr; // thenable
+var tr = db.transaction(['books', 'magazines'], 'write')
+tr.on('error', 'abort', 'complete')
+tr.store(name) // new Store() - use store in current transaction
+tr.mode
+async tr.abort() // database might be in opening state
+async tr // thenable
 ```
 
 ## License
