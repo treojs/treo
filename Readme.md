@@ -168,6 +168,13 @@ async tr.abort() // database might be in opening state
 async tr // thenable
 ```
 
+## Notable issues
+
+- Webkit does not support transactions to multiple stores https://bugs.webkit.org/show_bug.cgi?id=136937,
+  it's an only issue you can experience with treo and Safari, in other cases, it just works.
+  It's better than not support it at all.
+- IndexedDBShim does not properly abort transactions
+
 ## License
 
 [MIT](./LICENSE)
