@@ -2,11 +2,7 @@ var expect = require('chai').expect
 var pluck = require('lodash.pluck')
 var Promise = require('es6-promise').Promise
 var schema = require('./support/schema')
-var websql = require('./support/treo-websql')
-var treo = require('../lib')
-
-treo.Promise = Promise // set Promise library
-websql(treo) // patch to support WebSQL env
+var treo = require('./support/treo')
 
 describe('Index', function() {
   var db
@@ -97,6 +93,13 @@ describe('Index', function() {
       }),
 
       magazines.index('byFrequency').cursor({
+        direction: 'prevunique',
+        iterator: iterator(2)
+      }).then(function() {
+        expect(pluck(results[2], 'frequency')).eql([52, 24, 12, 6])
+      }),
+
+      magazines.index('byFrequency').cursor({
         range: { gte: 20 },
         direction: 'prev',
         iterator: iterator(3)
@@ -122,32 +125,21 @@ describe('Index', function() {
     }
   })
 
-  it('#cursor direction=prevunique', function() {
+  it.skip('#cursor direction=prevunique multiEntry=true', function() {
     var magazines = db.store('magazines')
-    var results = {}
+    var results = []
 
-    return Promise.all([
-      magazines.index('byFrequency').cursor({
-        direction: 'prevunique',
-        iterator: iterator(1)
-      }).then(function() {
-        expect(pluck(results[1], 'frequency')).eql([52, 24, 12, 6])
-      }),
-      magazines.index('byKeywords').cursor({
-        range: 'political',
-        direction: 'prevunique',
-        iterator: iterator(2)
-      }).then(function() {
-        expect(pluck(results[2], 'name')).eql(['M1'])
-      }),
-    ])
+    return magazines.index('byKeywords').cursor({
+      range: 'political',
+      direction: 'prevunique',
+      iterator: iterator,
+    }).then(function() {
+      expect(pluck(results, 'name')).eql(['M1'])
+    })
 
-    function iterator(index) {
-      results[index] = []
-      return function(cursor) {
-        results[index].push(cursor.value)
-        cursor.continue()
-      }
+    function iterator(cursor) {
+      results.push(cursor.value)
+      cursor.continue()
     }
   })
 })

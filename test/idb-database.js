@@ -2,11 +2,7 @@ var expect = require('chai').expect
 var Promise = require('es6-promise').Promise
 var treo = require('../lib')
 var schema = require('./support/schema')
-var treo = require('../lib')
-var websql = require('./support/treo-websql')
-
-treo.Promise = Promise // set Promise library
-websql(treo) // patch to support WebSQL env
+var treo = require('./support/treo')
 
 describe('Database', function() {
   var db

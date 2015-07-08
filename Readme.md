@@ -176,6 +176,8 @@ async tr // thenable
 - transaction abort often crushes Safari
 - IndexedDBShim - transactions run synchronously, abort does not work https://github.com/axemclion/IndexedDBShim/blob/master/src/IDBTransaction.js
 - https://bugs.webkit.org/show_bug.cgi?id=136888
+- versionchage has not fired https://bugs.webkit.org/show_bug.cgi?id=136155
+- multiEntry does not supported by IE10
 
 ## License
 
