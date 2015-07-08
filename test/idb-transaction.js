@@ -8,7 +8,7 @@ var websql = require('./support/treo-websql')
 treo.Promise = Promise // set Promise library
 websql(treo) // patch to support WebSQL env
 
-describe.only('Transaction', function() {
+describe('Transaction', function() {
   var db
 
   beforeEach(function() {
@@ -38,6 +38,7 @@ describe.only('Transaction', function() {
     expect(tr.then).a('function')
     expect(tr.catch).a('function')
     tr.store('books').put({ isbn: 'id1', title: 'Quarry Memories', author: 'Fred' })
+
     return tr.then(function() {
       return db.store('books').get('id1').then(function(book) {
         expect(book).eql({ isbn: 'id1', title: 'Quarry Memories', author: 'Fred' })
@@ -64,7 +65,35 @@ describe.only('Transaction', function() {
     })
   })
 
-  it('#on "complete"')
-  it('#on "abort"')
-  it('#on "error"')
+  it.skip('#on "abort"', function(done) {
+    var tr = db.transaction(['magazines'], 'write')
+    tr.store('magazines').put({ id: 'id1', title: 'Quarry Memories', publisher: 'Bob' })
+    tr.abort()
+    tr.on('abort', function() {
+      expect(tr.status).equal('aborted')
+      done()
+    })
+  })
+
+  it('#on "complete"', function(done) {
+    var tr = db.transaction(['books'], 'write')
+    tr.store('books').put({ isbn: 'id1', title: 'Quarry Memories', author: 'Fred' })
+    tr.on('complete', function() {
+      expect(tr.status).equal('complete')
+      done()
+    })
+  })
+
+  it('#on "error"', function(done) {
+    db.store('magazines').put({ publisher: 'Leanpub' }).then(function(key) {
+      var tr = db.transaction(['magazines'], 'write')
+      tr.store('magazines').add(key, { publisher: 'Leanpub' }).then(function() {
+        done('should be an error')
+      })
+      tr.on('error', function() {
+        expect(tr.status).equal('error')
+        done()
+      })
+    })
+  })
 })

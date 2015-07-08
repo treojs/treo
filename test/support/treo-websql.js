@@ -77,6 +77,7 @@ function websql(treo) {
    */
 
   Transaction.prototype.onerror = function(e) {
+    this.status = 'error'
     this.emit('error', e)
     this.db.emit('error', e)
   }
