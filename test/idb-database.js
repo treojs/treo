@@ -49,36 +49,10 @@ describe('Database', function() {
     })
   })
 
-  it.skip('handles "onversionchange" automatically', function() {
-    var isCalled = false
-    db.on('versionchange', function() { isCalled = true })
-
-    return db.store('magazines').put({ id: 4, words: ['hey'] }).then(function() {
-      var newSchema = schema.clone().version(5).addStore('users')
-      var newDb = treo('treo.database', newSchema)
-
-      expect(newDb.version).equal(5)
-      expect(newDb.stores.sort()).eql(['books', 'magazines', 'storage', 'users'])
-
-      return Promise.all([
-        newDb.store('users').put(1, { name: 'Jon' }).then(function(key) {
-          expect(key).equal(1)
-        }),
-        newDb.store('magazines').get(4, function(err, obj) {
-          expect(obj).eql({ id: 4, words: ['hey'] })
-        }),
-      ]).then(function() {
-        expect(db.status).equal('close')
-        expect(isCalled).true
-      })
-    })
-  })
-
   it('#close', function() {
     return db.close().then(function() {
       expect(db.status).equal('close')
       expect(db.origin).null
-      expect(Object.keys(db._callbacks || {})).length(0)
     })
   })
 
@@ -104,7 +78,38 @@ describe('Database', function() {
     })
   })
 
-  it('#on "versionchange"')
-  it('#on "close"')
-  it('#on "abort"')
+  it.skip('#on "versionchange" automatically', function() {
+    var isCalled = false
+    db.on('versionchange', function() { isCalled = true })
+
+    return db.store('magazines').put({ id: 4, words: ['hey'] }).then(function() {
+      var newSchema = schema.clone().version(5).addStore('users')
+      var newDb = treo('treo.database', newSchema)
+
+      expect(newDb.version).equal(5)
+      expect(newDb.stores.sort()).eql(['books', 'magazines', 'storage', 'users'])
+
+      return Promise.all([
+        newDb.store('users').put(1, { name: 'Jon' }).then(function(key) {
+          expect(key).equal(1)
+        }),
+        newDb.store('magazines').get(4, function(err, obj) {
+          expect(obj).eql({ id: 4, words: ['hey'] })
+        }),
+      ]).then(function() {
+        expect(db.status).equal('close')
+        expect(isCalled).true
+      })
+    })
+  })
+
+  it.skip('#on "abort"', function(done) {
+    var tr = db.transaction(['books'], 'write')
+    tr.store('books').put({ isbn: 'id1', title: 'Quarry Memories', author: 'Fred' })
+    tr.abort()
+    db.on('abort', function() {
+      expect(tr.status).equal('aborted')
+      done()
+    })
+  })
 })

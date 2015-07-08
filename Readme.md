@@ -122,7 +122,7 @@ treo.range // reference to using idb-range
 
 // Database represents connection to a database.
 var db = treo('name', schema)
-db.on('close', 'error', 'abort', 'versionchange')
+db.on('error', 'abort', 'versionchange')
 db.transaction([name, name], mode) // create transaction
 async db.close() // database might be in opening state
 async db.del() // close && deleteDatabase (avoid onversionchange)
@@ -174,7 +174,7 @@ async tr // thenable
   it's an only issue you can experience with treo and Safari, in other cases, it just works.
   It's better than not support it at all.
 - transaction abort often crushes Safari
-- IndexedDBShim - transactions run synchronously, abort does not work
+- IndexedDBShim - transactions run synchronously, abort does not work https://github.com/axemclion/IndexedDBShim/blob/master/src/IDBTransaction.js
 - https://bugs.webkit.org/show_bug.cgi?id=136888
 
 ## License
