@@ -178,3 +178,14 @@ Create custom cursors, see [example](https://github.com/treojs/treo/blob/master/
 ### treo.Database, treo.Store, treo.Index
 
 Treo exposes core objects for plugins extension.
+
+## Notable issues
+
+- Webkit does not support transactions to multiple stores https://bugs.webkit.org/show_bug.cgi?id=136937,
+  it's an only issue you can experience with treo and Safari, in other cases, it just works.
+  It's better than not support it at all.
+- transaction abort often crushes Safari
+- IndexedDBShim - transactions run synchronously, abort does not work https://github.com/axemclion/IndexedDBShim/blob/master/src/IDBTransaction.js
+- https://bugs.webkit.org/show_bug.cgi?id=136888
+- versionchage has not fired https://bugs.webkit.org/show_bug.cgi?id=136155
+- multiEntry does not supported by IE10

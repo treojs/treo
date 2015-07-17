@@ -5,36 +5,46 @@
 [![](http://img.shields.io/npm/dm/treo.svg)](https://npmjs.org/package/treo)
 
 Treo is a wrapper around [IndexedDB](http://www.w3.org/TR/IndexedDB/) to make browser storage more enjoyable to use.
-Think about it as jQuery for IndexedDB. It does not add new abstractions, but simplifies the API and increases code reliability.
+Think about it as jQuery for IndexedDB. It does not add new abstractions, but simplifies the API, eliminates browsers inconsistency, and increases code reliability.
 
-I spent a lot of time reading the official specification and understanding its nuances.
-With treo I want to save this time for other developers, and help to focus on real problems and making the web better,
-instead of fighting with the complex IndexedDB API and stumbling on simple tasks.
-
-IndexedDB is powerful technology with support of indexes, stores, transactions and cursors.
-It allows us to build any kind of client-side databases.
+[IndexedDB](http://www.w3.org/TR/IndexedDB/) is powerful technology with support of indexes, stores, transactions and cursors. It allows us to build any kind of client-side databases.
 And let's be clear, it's the only real option to store data in browser, because localStorage is [synchronous](https://hacks.mozilla.org/2012/03/there-is-no-simple-solution-for-local-storage/) and WebSQL is deprecated.
+
+We spent a lot of time reading the official specification and understanding its nuances.
+With treo, we want to save this time for other developers, and help to focus on real problems and making the web better, instead of fighting with the complex IndexedDB API and stumbling on simple tasks.
 
 ## Main features
 
-- Synchronous db.open. You can start read/write right away.
-- Cover 100% of IndexedDB functionality
-- Promise encapsulate behavior (no .origin, even for core objects)
+* Synchronous db.open. You can start read/write right away.
+* Cover 100% of IndexedDB functionality.
+* ES6 Promises for asynchronous operations.
 * Expressive DSL to manage database schema migrations.
-* Easy to extend and create plugins.
+* Small and [modular](https://github.com/treojs) codebase: ~346 LOC, 4.13 kB gzipped.
 * Simple API for powerful features like batch or indexes.
-* Small codebase without dependencies, ~370 LOC, 2.5Kb gziped.
-* Plugins for promises support and websql polyfill.
-* Better error handling through error first node-style callbacks.
-* Handle `versionchage` event automatically, to safely close and reopen database connection
-* Exposed access to low-level IndexedDB methods to cover edge cases.
+* Easy to extend and create plugins.
+* Access to low-level IndexedDB methods to cover edge cases.
+
+## Installation
+
+```
+$ npm install treo --save
+$ bower install treo
+$ component install treojs/treo
+```
+
+Standalone build available as [dist/treo.js](./dist/treo.js) or [dist/treo.min.js](./dist/treo.min.js).
+
+```html
+<script src="treo.min.js"></script>
+<script>var db = window.treo('library')</script>
+```
 
 ## Example
 
 Let's rewrite the official [w3c example](http://www.w3.org/TR/IndexedDB/#introduction) with treo:
 
 ```js
-var treo = require('treo'); // or window.treo
+var treo = require('treo') // or window.treo
 
 // define db schema
 var schema = treo.schema()
@@ -48,15 +58,14 @@ var schema = treo.schema()
 .version(3)
   .addStore('magazines')
   .addIndex('byPublisher', 'publisher')
-  .addIndex('byFrequency', 'frequency');
+  .addIndex('byFrequency', 'frequency')
 
 // open db synchronously
-var db = treo('library', schema);
-db.version; // 3
-db.stores; // ['books', 'magazines']
+var db = treo('library', schema)
+db.version // 3
 
 // put some data in one transaction
-var books = db.store('books');
+var books = db.store('books')
 books.batch([
   { isbn: 123456, title: 'Quarry Memories', author: 'Fred', year: 2012 },
   { isbn: 234567, title: 'Water Buffaloes', author: 'Fred', year: 2012 },
@@ -67,15 +76,15 @@ books.batch([
   // and handle all possible errors, and blocks.
 
   // get a single book by title using an index
-  books.index('byTitle').get('Bedrock Nights').then(function(book) {});
+  books.index('byTitle').get('Bedrock Nights').then(function(book) {})
 
   // get all books filtered by author
-  books.index('byAuthor').getAll('Fred').then(function(all) {}); // all.length == 2
-});
+  books.index('byAuthor').getAll('Fred').then(function(all) {}) // all.length == 2
+})
 
 // If any error happen, you get it as an `err`.
 // But it's better to handle each error separately using .catch
-db.on('error', function(err) {});
+db.on('error', function(err) {})
 ```
 
 Check out more [./examples](./examples):
@@ -83,21 +92,6 @@ Check out more [./examples](./examples):
 * [use ES6 generators to improve async workflow](./examples/es6-generators.js)
 * [simple key/value storage](./examples/key-value-storage.js)
 * [plugin example](./examples/find-in-plugin.js)
-
-## Installation
-
-```
-$ npm install treo --save
-$ bower install treo
-$ component install treojs/treo
-```
-
-Standalone build available as [dist/treo.js](./dist/treo.js).
-
-```html
-<script src="treo.js"></script>
-<script>var db = window.treo('library');</script>
-```
 
 ## Plugins
 
@@ -119,6 +113,7 @@ treo.Promise = require('es6-promise') // change Promise library
 treo.Schema // reference to using idb-schema
 treo.request // reference to using idb-request
 treo.range // reference to using idb-range
+treo.idb // link to available window.indexedDB
 
 // Database represents connection to a database.
 var db = treo('name', schema)
@@ -167,17 +162,6 @@ tr.mode
 async tr.abort() // database might be in opening state
 async tr // thenable
 ```
-
-## Notable issues
-
-- Webkit does not support transactions to multiple stores https://bugs.webkit.org/show_bug.cgi?id=136937,
-  it's an only issue you can experience with treo and Safari, in other cases, it just works.
-  It's better than not support it at all.
-- transaction abort often crushes Safari
-- IndexedDBShim - transactions run synchronously, abort does not work https://github.com/axemclion/IndexedDBShim/blob/master/src/IDBTransaction.js
-- https://bugs.webkit.org/show_bug.cgi?id=136888
-- versionchage has not fired https://bugs.webkit.org/show_bug.cgi?id=136155
-- multiEntry does not supported by IE10
 
 ## License
 
