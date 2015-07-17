@@ -2,7 +2,7 @@
   "name": "treo",
   "description": "Human interface for IndexedDB",
   "repository": "git@github.com:treojs/treo.git",
-  "version": "0.6.0-rc1",
+  "version": "0.6.0-rc2",
   "license": "MIT",
   "main": "lib/index.js",
   "files": [

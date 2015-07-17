@@ -1,3 +1,20 @@
+## 0.6.0-rc2 / 2015-07-17
+
+Beta release for internal testing and improving plugins infrastructure.
+
+  * move to [treojs](https://github.com/treojs) organization
+  * use ES6 Promises by default
+  * introduce Transaction object to perform low level operations and transaction reuse [#32](https://github.com/treojs/treo/issues/32)
+  * extract [idb-schema](https://github.com/treojs/idb-schema)
+  * move treo-websql to separate repository
+  * `index.get(range)` separated to `index.get(key)` and `index.getAll([range])`
+  * `store.all()` is deprecated, use `store.getAll([range])` instead
+  * `db.drop()` renamed to `db.del()`
+  * store.cursor(opts) supports "direction" [#28](https://github.com/treojs/treo/issues/28)
+  * store.count([range]) and index.count([range]) accepts optional key range [#30](https://github.com/treojs/treo/issues/30)
+  * add `store.add()`
+  * and much more, check out [pull request #29](https://github.com/treojs/treo/pull/29)
+
 ## 0.5.0 / 2015-04-01
 
   * add support for multi-field indexes [#24](https://github.com/treojs/treo/issues/24)
