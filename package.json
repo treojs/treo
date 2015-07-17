@@ -31,8 +31,8 @@
     "browserify-test": "^1.3.0",
     "chai": "^3.0.0",
     "es6-promise": "^2.3.0",
-    "indexeddbshim": "^2.0.4",
     "lodash.pluck": "^3.1.2",
+    "treo-websql": "^2.0.0",
     "uglify-js": "^2.4.23"
   }
 }
