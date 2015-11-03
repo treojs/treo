@@ -466,10 +466,14 @@ Schema.prototype.callback = function() {
       if (e.oldVersion >= versionSchema.version) return;
 
       versionSchema.stores.forEach(function(s) {
-        db.createObjectStore(s.name, {
-          keyPath: s.key,
-          autoIncrement: s.increment
-        });
+        var options = {};
+
+        // Only pass the options that are explicitly specified to createObjectStore() otherwise IE/Edge
+        // can throw an InvalidAccessError - see https://msdn.microsoft.com/en-us/library/hh772493(v=vs.85).aspx
+        if (typeof s.key !== 'undefined') options.keyPath = s.key;
+        if (typeof s.increment !== 'undefined') options.autoIncrement = s.increment;
+
+        db.createObjectStore(s.name, options);
       });
 
       versionSchema.dropStores.forEach(function(s) {
@@ -716,64 +720,53 @@ module.exports = function(val){
  * Parse `opts` to valid IDBKeyRange.
  * https://developer.mozilla.org/en-US/docs/Web/API/IDBKeyRange
  *
- * @param {Object|Any} opts
+ * @param {Object} opts
  * @return {IDBKeyRange}
  */
 
 module.exports = function range(opts) {
-  var IDBKeyRange = keyRange();
-  if (typeof opts === 'undefined') return;
-  if (opts instanceof IDBKeyRange) return opts;
-  if (!isObject(opts)) return IDBKeyRange.only(opts);
-  var keys = Object.keys(opts).sort();
+  var IDBKeyRange = global.IDBKeyRange || global.webkitIDBKeyRange
+  if (opts instanceof IDBKeyRange) return opts
+  if (typeof opts === 'undefined') return null
+  if (!isObject(opts)) return IDBKeyRange.only(opts)
+  var keys = Object.keys(opts).sort()
 
   if (keys.length == 1) {
-    var key = keys[0];
-    var val = opts[key];
-    switch (keys[0]) {
-      case 'eq': return IDBKeyRange.only(val);
-      case 'gt': return IDBKeyRange.lowerBound(val, true);
-      case 'lt': return IDBKeyRange.upperBound(val, true);
-      case 'gte': return IDBKeyRange.lowerBound(val);
-      case 'lte': return IDBKeyRange.upperBound(val);
-      default: throw new TypeError('`' + key + '` is not valid key');
+    var key = keys[0]
+    var val = opts[key]
+
+    switch (key) {
+      case 'eq': return IDBKeyRange.only(val)
+      case 'gt': return IDBKeyRange.lowerBound(val, true)
+      case 'lt': return IDBKeyRange.upperBound(val, true)
+      case 'gte': return IDBKeyRange.lowerBound(val)
+      case 'lte': return IDBKeyRange.upperBound(val)
+      default: throw new TypeError('`' + key + '` is not valid key')
     }
   } else {
-    var x = opts[keys[0]];
-    var y = opts[keys[1]];
-    var pattern = keys.join('-');
+    var x = opts[keys[0]]
+    var y = opts[keys[1]]
+    var pattern = keys.join('-')
 
     switch (pattern) {
-      case 'gt-lt': return IDBKeyRange.bound(x, y, true, true);
-      case 'gt-lte': return IDBKeyRange.bound(x, y, true, false);
-      case 'gte-lt': return IDBKeyRange.bound(x, y, false, true);
-      case 'gte-lte': return IDBKeyRange.bound(x, y, false, false);
-      default: throw new TypeError('`' + pattern +'` are conflicted keys');
+      case 'gt-lt': return IDBKeyRange.bound(x, y, true, true)
+      case 'gt-lte': return IDBKeyRange.bound(x, y, true, false)
+      case 'gte-lt': return IDBKeyRange.bound(x, y, false, true)
+      case 'gte-lte': return IDBKeyRange.bound(x, y, false, false)
+      default: throw new TypeError('`' + pattern +'` are conflicted keys')
     }
   }
-};
-
-/**
- * Dynamic link to `global.IDBKeyRange` for polyfills.
- *
- * @return {IDBKeyRange}
- */
-
-function keyRange() {
-  return global.IDBKeyRange
-      || global.webkitIDBKeyRange
-      || global.msIDBKeyRange;
 }
 
 /**
- * Check if `obj` is an object.
+ * Check if `obj` is an object (an even not an array).
  *
  * @param {Object} obj
  * @return {Boolean}
  */
 
 function isObject(obj) {
-  return Object.prototype.toString.call(obj) == '[object Object]';
+  return Object.prototype.toString.call(obj) == '[object Object]'
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})

@@ -3,7 +3,7 @@
   "description": "Human interface for IndexedDB",
   "repository": "treojs/treo",
   "main": "dist/treo.js",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "license": "MIT",
   "keywords": [
     "IndexedDB",
