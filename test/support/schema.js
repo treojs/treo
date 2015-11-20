@@ -1,11 +1,8 @@
-import Promise from 'es6-promise'
 import treo from '../../src'
 
 /**
  * Polyfill promise.
  */
-
-Promise.polyfill()
 
 /**
  * Shared schema.

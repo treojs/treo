@@ -1,5 +1,5 @@
 import parseRange from 'idb-range'
-import { request, requestCursor } from '../../idb-request/src'
+import request from 'idb-request'
 
 export default class Index {
 
@@ -82,7 +82,7 @@ export default class Index {
         const req = index.openCursor(parseRange(range), 'prev')
         const keys = {} // count unique keys
 
-        return requestCursor(req, (cursor) => {
+        return request(req, (cursor) => {
           if (!keys[cursor.key]) {
             keys[cursor.key] = true
             iterator(cursor)
@@ -92,7 +92,7 @@ export default class Index {
         })
       }
       const req = index.openCursor(parseRange(range), direction || 'next')
-      return requestCursor(req, iterator)
+      return request(req, iterator)
     })
   }
 }

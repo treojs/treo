@@ -1,5 +1,5 @@
 import parseRange from 'idb-range'
-import { request, requestCursor } from '../../idb-request/src'
+import request from 'idb-request'
 import Index from './idb-index'
 
 export default class Store {
@@ -213,7 +213,7 @@ export default class Store {
     return this.db.getInstance().then((db) => {
       const store = db.transaction(this.name, 'readonly').objectStore(this.name)
       const req = store.openCursor(parseRange(range), direction || 'next')
-      return requestCursor(req, iterator)
+      return request(req, iterator)
     })
   }
 }

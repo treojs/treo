@@ -11,36 +11,40 @@
   "keywords": [
     "indexeddb",
     "treo",
+    "consistency",
     "offline"
   ],
   "scripts": {
-    "test": "browserify-test",
-    "development": "browserify-test -w",
-    "build": "browserify lib/index.js -s treo -o dist/treo.js && uglifyjs dist/treo.js -m > dist/treo.min.js"
+    "prepublish": "babel src --out-dir lib",
+    "build": "npm run build:full && npm run build:light",
+    "build:full": "browserify -t babelify src/index.js -s treo -o dist/treo.js && uglifyjs dist/treo.js -m > dist/treo.min.js",
+    "build:light": "browserify -t babelify src/treo.js -s treo -o dist/treo-light.js && uglifyjs dist/treo-light.js -m > dist/treo-light.min.js",
+    "test": "eslint src/ test/ && browserify-test -t babelify",
+    "development": "browserify-test -t babelify -w"
   },
   "dependencies": {
     "component-emitter": "^1.2.0",
+    "es6-promise": "^3.0.2",
     "idb-range": "^3.1.2",
     "idb-request": "^1.1.2",
     "idb-schema": "^3.1.1",
     "indexeddbshim": "^2.2.1"
   },
   "devDependencies": {
-    "browserify": "^12.0.1",
-    "es6-promise": "^3.0.2",
-    "lodash.pluck": "^3.1.2",
-    "treo-websql": "^2.0.0",
-    "uglify-js": "^2.4.23",
     "babel-cli": "6.1.18",
     "babel-core": "6.1.18",
     "babel-eslint": "^4.1.5",
     "babel-plugin-add-module-exports": "^0.1.1",
     "babel-preset-es2015": "^6.1.18",
     "babelify": "^7.2.0",
+    "browserify": "^12.0.1",
     "browserify-test": "^2.1.2",
     "chai": "^3.4.1",
-    "eslint": "^1.9.0",
+    "eslint": "^1.10.0",
     "eslint-config-airbnb": "^1.0.0",
+    "lodash.pluck": "^3.1.2",
+    "treo-websql": "^2.0.0",
+    "uglify-js": "^2.4.23",
     "zuul": "^3.7.3"
   }
 }
