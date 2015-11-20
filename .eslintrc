@@ -1,0 +1,16 @@
+{
+  "env": {
+    "mocha": true
+  },
+  "extends": "airbnb/base",
+  "parser": "babel-eslint",
+  "rules": {
+    "semi": [2, "never"],
+    "object-curly-spacing": [2, "always"],
+    "no-use-before-define": [2, "nofunc"],
+    "indent": [2, 2, {"SwitchCase": 1}],
+    "no-param-reassign": 0,
+    "id-length": 0,
+    "one-var": [2, { "uninitialized": "always", "initialized": "never" }]
+  }
+}

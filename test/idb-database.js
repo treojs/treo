@@ -1,109 +1,97 @@
-var expect = require('chai').expect
-var Promise = require('es6-promise').Promise
-var treo = require('../lib')
-var schema = require('./support/schema')
-var treo = require('./support/treo')
+import { expect } from 'chai'
+import schema from './support/schema'
+import treo from './support/treo'
 
-describe('Database', function() {
-  var db
+describe('Database', () => {
+  let db
 
-  beforeEach(function() {
+  beforeEach(() => {
     db = treo('treo.database', schema)
   })
 
-  afterEach(function() {
+  afterEach(() => {
     return db.del()
   })
 
-  it('exposes core classes', function() {
-    expect(treo).equal(treo.Database)
-    expect(Object.keys(treo).sort()).eql(
-      ['Database', 'Index', 'Schema', 'Store', 'Transaction',
-       'range', 'request', 'schema'])
+  it('exposes core classes', () => {
+    expect(treo).a('function')
+    expect(treo).keys(['Database', 'Index', 'Schema', 'Store', 'Transaction', 'range', 'schema'])
   })
 
-  it('has properties', function() {
+  it('has properties', () => {
     expect(db.name).equal('treo.database')
     expect(db.version).equal(4)
     expect(db.stores).length(3)
   })
 
-  it('supports parallel write & read', function() {
-    var books = db.store('books')
-    var magazines = db.store('magazines')
+  it('supports parallel write & read', () => {
+    const books = db.store('books')
+    const magazines = db.store('magazines')
 
     return Promise.all([
       books.batch({ 1: { name: 'book 1' }, 2: { id: 2, name: 'book 2' } }),
       books.put(3, { id: 3, name: 'book 3' }),
       magazines.del(5),
       magazines.put({ id: 4, message: 'hey' }),
-    ]).then(function() {
+    ]).then(() => {
       return Promise.all([
-        books.getAll().then(function(records) { expect(records).length(3) }),
-        magazines.count().then(function(count) { expect(count).equal(1) }),
+        books.getAll().then((records) => expect(records).length(3)),
+        magazines.count().then((count) => expect(count).equal(1)),
       ])
     })
   })
 
-  it('#close', function() {
-    return db.close().then(function() {
+  it('#close', () => {
+    return db.close().then(() => {
       expect(db.status).equal('close')
-      expect(db.origin).null
+      expect(db.origin).equal(null)
     })
   })
 
-  it('#use', function(done) {
-    db.use(function(localDb, localTreo) {
-      expect(db).equal(localDb)
-      expect(localTreo).equal(treo)
-      done()
-    })
-  })
+  it('#on "error"', (done) => {
+    const magazines = db.store('magazines')
 
-  it('#on "error"', function(done) {
-    var magazines = db.store('magazines')
-
-    magazines.put({ publisher: 'Leanpub' }).then(function(val) {
-      magazines.add(val, { publisher: 'Leanpub' }).then(function() {
+    magazines.put({ publisher: 'Leanpub' }).then((val) => {
+      magazines.add(val, { publisher: 'Leanpub' }).then(() => {
         done('should be an error')
       })
-      db.on('error', function(err) {
-        expect(err).exist
+      db.on('error', (err) => {
+        expect(!!err).equal(true)
         done()
       })
     })
   })
 
-  it.skip('#on "versionchange" automatically', function() {
-    var isCalled = false
-    db.on('versionchange', function() { isCalled = true })
+  it.skip('#on "versionchange" automatically', () => {
+    let isCalled = false
+    db.on('versionchange', () => { isCalled = true })
 
-    return db.store('magazines').put({ id: 4, words: ['hey'] }).then(function() {
-      var newSchema = schema.clone().version(5).addStore('users')
-      var newDb = treo('treo.database', newSchema)
+    return db.store('magazines').put({ id: 4, words: ['hey'] }).then(() => {
+      const newSchema = schema.clone().version(5).addStore('users')
+      const newDb = treo('treo.database', newSchema)
 
       expect(newDb.version).equal(5)
       expect(newDb.stores.sort()).eql(['books', 'magazines', 'storage', 'users'])
 
       return Promise.all([
-        newDb.store('users').put(1, { name: 'Jon' }).then(function(key) {
+        newDb.store('users').put(1, { name: 'Jon' }).then((key) => {
           expect(key).equal(1)
         }),
-        newDb.store('magazines').get(4, function(err, obj) {
+        newDb.store('magazines').get(4, (err, obj) => {
           expect(obj).eql({ id: 4, words: ['hey'] })
         }),
-      ]).then(function() {
+      ]).then(() => {
         expect(db.status).equal('close')
-        expect(isCalled).true
+        expect(isCalled).equal(true)
       })
     })
   })
 
-  it.skip('#on "abort"', function(done) {
-    var tr = db.transaction(['books'], 'write')
+  it.skip('#on "abort"', (done) => {
+    const tr = db.transaction(['books'], 'write')
     tr.store('books').put({ isbn: 'id1', title: 'Quarry Memories', author: 'Fred' })
     tr.abort()
-    db.on('abort', function() {
+    db.on('abort', () => {
       expect(tr.status).equal('aborted')
       done()
     })

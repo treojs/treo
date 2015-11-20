@@ -1,8 +1,9 @@
-var ie = require('./treo-ie')
-var treo = require('../../lib')
-var websql = require('treo-websql')
+import ie from './treo-ie'
+import websql from 'treo-websql'
+import treo from '../../src'
+import Promise from 'es6-promise'
 
-treo.Promise = Promise // set Promise library
+Promise.polyfill()
 websql(treo) // patch to support WebSQL env
 ie(treo)
 
@@ -10,4 +11,4 @@ ie(treo)
  * Expose treo.
  */
 
-module.exports = treo
+export default treo

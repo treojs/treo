@@ -1,10 +1,10 @@
-var treo = require('../../lib')
+import treo from '../../src'
 
 /**
  * Shared schema.
  */
 
-var schema = treo.schema()
+export default treo.schema()
 .version(1)
   .addStore('books', { key: 'isbn' })
   .addIndex('byTitle', 'title', { unique: true })
@@ -20,9 +20,3 @@ var schema = treo.schema()
   .addIndex('byKeywords', 'keywords', { multi: true })
 .version(4)
   .addStore('storage') // key-value
-
-/**
- * Expose `schema`.
- */
-
-module.exports = schema

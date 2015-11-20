@@ -1,51 +1,50 @@
-var expect = require('chai').expect
-var pluck = require('lodash.pluck')
-var Promise = require('es6-promise').Promise
-var schema = require('./support/schema')
-var treo = require('./support/treo')
+import { expect } from 'chai'
+import pluck from 'lodash.pluck'
+import schema from './support/schema'
+import treo from './support/treo'
 
-describe('Index', function() {
-  var db
+describe('Index', () => {
+  let db
 
-  beforeEach(function() {
+  beforeEach(() => {
     db = treo('treo.index', schema)
-    var magazines = db.store('magazines')
+    const magazines = db.store('magazines')
 
     return Promise.all([
       magazines.put({ name: 'M1', frequency: 12, keywords: ['political'] }),
-      magazines.put({ name: 'M2', frequency: 6,  keywords: ['gaming'] }),
+      magazines.put({ name: 'M2', frequency: 6, keywords: ['gaming'] }),
       magazines.put({ name: 'M3', frequency: 52, keywords: ['political', 'news'] }),
       magazines.put({ name: 'M4', frequency: 24, keywords: ['gadgets', 'gaming', 'computers'] }),
       magazines.put({ name: 'M5', frequency: 52, keywords: ['computers', 'gaming'] }),
     ])
   })
 
-  afterEach(function() {
+  afterEach(() => {
     return db.del()
   })
 
-  it('has properties', function() {
-    var byTitle = db.store('books').index('byTitle')
+  it('has properties', () => {
+    const byTitle = db.store('books').index('byTitle')
     expect(byTitle.name).equal('byTitle')
     expect(byTitle.field).equal('title')
-    expect(byTitle.unique).true
-    expect(byTitle.multi).false
+    expect(byTitle.unique).equal(true)
+    expect(byTitle.multi).equal(false)
 
-    var byKeywords = db.store('magazines').index('byKeywords')
+    const byKeywords = db.store('magazines').index('byKeywords')
     expect(byKeywords.name).equal('byKeywords')
     expect(byKeywords.field).equal('keywords')
-    expect(byKeywords.unique).false
-    expect(byKeywords.multi).true
+    expect(byKeywords.unique).equal(false)
+    expect(byKeywords.multi).equal(true)
   })
 
-  it('#get', function() {
-    var magazines = db.store('magazines')
+  it('#get', () => {
+    const magazines = db.store('magazines')
     return Promise.all([
       magazines.index('byName').get('M2'),
       magazines.index('byFrequency').get(52),
       magazines.index('byKeywords').get('political'),
       magazines.index('byNameAndFrequency').get(['M4', 24]),
-    ]).then(function(results) {
+    ]).then((results) => {
       expect(results[0].name).equal('M2')
       expect(results[1].name).equal('M3')
       expect(results[2].name).equal('M1')
@@ -53,14 +52,14 @@ describe('Index', function() {
     })
   })
 
-  it('#getAll', function() {
-    var magazines = db.store('magazines')
+  it('#getAll', () => {
+    const magazines = db.store('magazines')
     return Promise.all([
       magazines.index('byName').getAll('M4'),
       magazines.index('byFrequency').getAll({ gte: 30 }),
       magazines.index('byKeywords').getAll('gaming'),
       magazines.index('byKeywords').getAll({ gte: 'c', lte: 'c\uffff' }),
-    ]).then(function(results) {
+    ]).then((results) => {
       expect(pluck(results[0], 'name')).eql(['M4'])
       expect(pluck(results[1], 'name')).eql(['M3', 'M5'])
       expect(pluck(results[2], 'name')).eql(['M2', 'M4', 'M5'])
@@ -68,72 +67,72 @@ describe('Index', function() {
     })
   })
 
-  it('#count', function() {
-    var magazines = db.store('magazines')
+  it('#count', () => {
+    const magazines = db.store('magazines')
     return Promise.all([
       magazines.index('byName').count({ gte: 'M3' }),
       magazines.index('byFrequency').count({ lt: 12 }),
       magazines.index('byKeywords').count('political'),
-    ]).then(function(results) {
+    ]).then((results) => {
       expect(results[0]).equal(3)
       expect(results[1]).equal(1)
       expect(results[2]).equal(2)
     })
   })
 
-  it('#cursor', function() {
-    var magazines = db.store('magazines')
-    var results = {}
+  it('#cursor', () => {
+    const magazines = db.store('magazines')
+    const results = {}
 
     return Promise.all([
       magazines.index('byName').cursor({
-        iterator: iterator(1)
-      }).then(function() {
+        iterator: iterator(1),
+      }).then(() => {
         expect(pluck(results[1], 'name')).eql(['M1', 'M2', 'M3', 'M4', 'M5'])
       }),
 
       magazines.index('byFrequency').cursor({
         direction: 'prevunique',
-        iterator: iterator(2)
-      }).then(function() {
+        iterator: iterator(2),
+      }).then(() => {
         expect(pluck(results[2], 'frequency')).eql([52, 24, 12, 6])
       }),
 
       magazines.index('byFrequency').cursor({
         range: { gte: 20 },
         direction: 'prev',
-        iterator: iterator(3)
-      }).then(function() {
+        iterator: iterator(3),
+      }).then(() => {
         expect(pluck(results[3], 'frequency')).eql([52, 52, 24])
       }),
 
       magazines.index('byKeywords').cursor({
         range: 'gaming',
         direction: 'nextunique',
-        iterator: iterator(4)
-      }).then(function() {
+        iterator: iterator(4),
+      }).then(() => {
         expect(pluck(results[4], 'name')).eql(['M2'])
       }),
     ])
 
     function iterator(index) {
       results[index] = []
-      return function(cursor) {
+      return (cursor) => {
         results[index].push(cursor.value)
         cursor.continue()
       }
     }
   })
 
-  it.skip('#cursor direction=prevunique multiEntry=true', function() {
-    var magazines = db.store('magazines')
-    var results = []
+  it.skip('#cursor direction=prevunique multiEntry=true', () => {
+    const magazines = db.store('magazines')
+    const results = []
 
     return magazines.index('byKeywords').cursor({
       range: 'political',
       direction: 'prevunique',
       iterator: iterator,
-    }).then(function() {
+    }).then(() => {
       expect(pluck(results, 'name')).eql(['M1'])
     })
 
