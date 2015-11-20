@@ -28,7 +28,8 @@
     "idb-range": "^3.1.2",
     "idb-request": "^1.1.2",
     "idb-schema": "^3.1.1",
-    "indexeddbshim": "^2.2.1"
+    "indexeddbshim": "^2.2.1",
+    "storage-emitter": "^1.0.0"
   },
   "devDependencies": {
     "babel-cli": "6.1.18",

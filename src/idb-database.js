@@ -1,4 +1,5 @@
 import Emitter from 'component-emitter'
+import sEmitter from 'storage-emitter'
 import Schema from 'idb-schema'
 import Store from './idb-store'
 import request from 'idb-request'
@@ -46,29 +47,22 @@ export default class Database extends Emitter {
    */
 
   del() {
-    return this.close().then(() => {
+    this.close()
+    return new Promise((resolve) => setTimeout(resolve, 100)).then(() => {
+      sEmitter.emit('versionchange', { name: this.name, isDelete: true })
       return request(Database.idb.deleteDatabase(this.name))
     })
   }
 
   /**
    * Close database.
-   *
-   * @return {Promise}
    */
 
   close() {
-    if (this.status === 'close') return Promise.resolve()
-    return this.getInstance().then((db) => {
-      db.close()
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          this.origin = null
-          this.status = 'close'
-          resolve()
-        }, 100) // Safari bug
-      })
-    })
+    if (this.status !== 'open') return
+    this.origin.close()
+    this.origin = null
+    this.status = 'close'
   }
 
   /**
@@ -94,36 +88,54 @@ export default class Database extends Emitter {
 
   getInstance() {
     if (this.status === 'open') return Promise.resolve(this.origin)
-    if (this.status === 'error') return new Error('database error')
+    if (this.status === 'error') return Promise.reject(new Error('database error'))
     if (this.status === 'opening') return this.promise
 
     this.status = 'opening'
+    this.repeatOpen = false
     this.promise = new Promise((resolve, reject) => {
-      const req = Database.idb.open(this.name, this.version)
+      const openDB = () => {
+        const req = Database.idb.open(this.name, this.version)
 
-      req.onupgradeneeded = this.schema.callback()
-      req.onerror =
-      req.onblocked = (e) => {
-        delete this.promise
-        this.status = 'error'
-        reject(e)
-      }
-
-      req.onsuccess = (ev1) => {
-        const db = ev1.target.result
-        delete this.promise
-        this.status = 'open'
-        this.origin = db
-
-        db.onerror = (err) => this.emit('error', err)
-        db.onversionchange = (ev2) => {
-          db.close()
-          this.origin = null
-          this.status = 'close'
-          this.emit('versionchange', ev2)
+        req.onupgradeneeded = this.schema.callback()
+        req.onerror =
+        req.onblocked = (e) => {
+          if (this.repeatOpen) {
+            delete this.promise
+            this.status = 'error'
+            reject(e)
+          } else {
+            // safari bug, db is locked try again in 100ms
+            setTimeout(() => {
+              this.repeatOpen = true
+              openDB()
+            }, 100)
+          }
         }
-        resolve(db)
+
+        req.onsuccess = (ev1) => {
+          const db = ev1.target.result
+          delete this.promise
+          this.status = 'open'
+          this.origin = db
+
+          db.onerror = (err) => this.emit('error', err)
+          db.onversionchange = () => {
+            this.close()
+            this.emit('versionchange')
+          }
+
+          sEmitter.once('versionchange', ({ name, version, isDelete }) => {
+            if (this.status !== 'close' && name === this.name && (version > this.version || isDelete)) {
+              this.close()
+              this.emit('versionchange')
+            }
+          })
+          resolve(db)
+        }
       }
+      sEmitter.emit('versionchange', { name: this.name, version: this.version })
+      openDB()
     })
 
     return this.promise

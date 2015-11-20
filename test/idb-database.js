@@ -41,7 +41,9 @@ describe('Database', () => {
   })
 
   it('#close', () => {
-    return db.close().then(() => {
+    return db.getInstance().then(() => {
+      expect(db.status).equal('open')
+      db.close()
       expect(db.status).equal('close')
       expect(db.origin).equal(null)
     })
@@ -61,7 +63,7 @@ describe('Database', () => {
     })
   })
 
-  it.skip('#on "versionchange" automatically', () => {
+  it('#on "versionchange" automatically', () => {
     let isCalled = false
     db.on('versionchange', () => { isCalled = true })
 
@@ -73,7 +75,7 @@ describe('Database', () => {
       expect(newDb.stores.sort()).eql(['books', 'magazines', 'storage', 'users'])
 
       return Promise.all([
-        newDb.store('users').put(1, { name: 'Jon' }).then((key) => {
+        newDb.store('users').put(1, { name: 'John' }).then((key) => {
           expect(key).equal(1)
         }),
         newDb.store('magazines').get(4, (err, obj) => {
@@ -82,6 +84,8 @@ describe('Database', () => {
       ]).then(() => {
         expect(db.status).equal('close')
         expect(isCalled).equal(true)
+        expect(newDb.status).equal('open')
+        newDb.close()
       })
     })
   })
