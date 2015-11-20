@@ -42,16 +42,7 @@ export default class Store {
    */
 
   put(key, val) {
-    if (this.key && typeof val !== 'undefined') {
-      val[this.key] = key
-    } else if (this.key) {
-      val = key
-    }
-    return this.db.getInstance().then((db) => {
-      const tr = db.transaction(this.name, 'readwrite')
-      const store = tr.objectStore(this.name)
-      return request(this.key ? store.put(val) : store.put(val, key), tr)
-    })
+    return this._validateIndexAndRunMethod(key, val, 'put')
   }
 
   /**
@@ -63,16 +54,7 @@ export default class Store {
    */
 
   add(key, val) {
-    if (this.key && typeof val !== 'undefined') {
-      val[this.key] = key
-    } else if (this.key) {
-      val = key
-    }
-    return this.db.getInstance().then((db) => {
-      const tr = db.transaction(this.name, 'readwrite')
-      const store = tr.objectStore(this.name)
-      return request(this.key ? store.add(val) : store.add(val, key), tr)
-    })
+    return this._validateIndexAndRunMethod(key, val, 'add')
   }
 
   /**
@@ -214,6 +196,49 @@ export default class Store {
       const store = db.transaction(this.name, 'readonly').objectStore(this.name)
       const req = store.openCursor(parseRange(range), direction || 'next')
       return request(req, iterator)
+    })
+  }
+
+  /**
+   * Internal method to perform index validation for put/add operations.
+   * It fixes ConstraintError in Safari and WebSQL shim
+   * https://bugs.webkit.org/show_bug.cgi?id=149107
+   * https://github.com/axemclion/IndexedDBShim/issues/56
+   *
+   * @param {Any} key
+   * @param {Any} val
+   * @param {String} method
+   * @return {Promise}
+   */
+
+  _validateIndexAndRunMethod(key, val, method) {
+    if (this.key && typeof val !== 'undefined') {
+      val[this.key] = key
+    } else if (this.key) {
+      val = key
+    }
+    return this.db.getInstance().then((db) => {
+      const requests = this.indexes.map((indexName) => {
+        const index = this.index(indexName)
+        const indexVal = Array.isArray(index.field)
+        ? index.field.map((indexKey) => val[indexKey]).filter((v) => Boolean(v))
+        : val[index.field]
+
+        return [ index, indexVal ]
+      }).filter(([ index, indexVal ]) => {
+        return index.unique && (Array.isArray(index.field) ? indexVal.length : indexVal)
+      }).map(([ index, indexVal ]) => {
+        return index.get(indexVal)
+      })
+
+      return Promise.all(requests).then((records) => {
+        const uniqueRecors = records.filter((record) => Boolean(record))
+        if (uniqueRecors.length) return Promise.reject(new Error('Unique index ConstraintError'))
+
+        const tr = db.transaction(this.name, 'readwrite')
+        const store = tr.objectStore(this.name)
+        return request(this.key ? store[method](val) : store[method](val, key), tr)
+      })
     })
   }
 }

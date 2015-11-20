@@ -173,4 +173,24 @@ describe('Store', () => {
       }
     }
   })
+
+  it('validates unique index', (done) => {
+    const books = db.store('books')
+    const magazines = db.store('magazines')
+
+    // simple index
+    books.put(1, { title: 'book' }).then(() => {
+      books.put(2, { title: 'book' }).catch((err) => {
+        expect(!!err).equal(true)
+
+        // compound index
+        magazines.add({ name: 'magazine', frequency: 1 }).then(() => {
+          magazines.add({ name: 'magazine', frequency: 1 }).catch((err2) => {
+            expect(!!err2).equal(true)
+            done()
+          })
+        })
+      })
+    })
+  })
 })
