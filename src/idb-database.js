@@ -1,6 +1,5 @@
 import Emitter from 'component-emitter'
 import Schema from 'idb-schema'
-import Transaction from './idb-transaction'
 import Store from './idb-store'
 import { request } from '../../idb-request/src'
 
@@ -67,7 +66,7 @@ export default class Database extends Emitter {
           this.origin = null
           this.status = 'close'
           resolve()
-        }, 50)
+        }, 100) // Safari bug
       })
     })
   }
@@ -76,28 +75,13 @@ export default class Database extends Emitter {
    * Get store by `name`.
    *
    * @param {String} name
-   * @param {Transaction} [tr]
    * @return {Store}
    */
 
-  store(name, tr) {
+  store(name) {
     const i = this.stores.indexOf(name)
     if (i === -1) throw new TypeError('invalid store name')
-    return new Store(this, tr, this.opts[i])
-  }
-
-  /**
-   * Create new transaction for selected `scope`.
-   *
-   * @param {Array} scope - follow indexeddb semantic
-   * @param {String} [mode] - readonly|readwrite or read|write
-   * @return {Transaction}
-   */
-
-  transaction(scope, mode = 'readonly') {
-    if (mode === 'read') mode = 'readonly'
-    if (mode === 'write') mode = 'readwrite'
-    return new Transaction(this, scope, mode)
+    return new Store(this, this.opts[i])
   }
 
   /**
@@ -132,10 +116,11 @@ export default class Database extends Emitter {
         this.origin = db
 
         db.onerror = (err) => this.emit('error', err)
-        db.onabort = () => this.emit('abort')
         db.onversionchange = (ev2) => {
+          db.close()
+          this.origin = null
+          this.status = 'close'
           this.emit('versionchange', ev2)
-          this.close().catch((err) => this.emit('error', err)) // default handler
         }
         resolve(db)
       }

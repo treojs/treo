@@ -8,13 +8,11 @@ export default class Store {
    * Initialize new `Store`.
    *
    * @param {Database} db
-   * @param {Transaction} tr
    * @param {Object} opts { name, keyPath, autoIncrement, indexes }
    */
 
-  constructor(db, tr, opts) {
+  constructor(db, opts) {
     this.db = db
-    this.tr = tr
     this.opts = opts.indexes
     this.name = opts.name
     this.key = opts.keyPath
@@ -49,9 +47,10 @@ export default class Store {
     } else if (this.key) {
       val = key
     }
-    return this._tr('write').then((tr) => {
+    return this.db.getInstance().then((db) => {
+      const tr = db.transaction(this.name, 'readwrite')
       const store = tr.objectStore(this.name)
-      return request(this.key ? store.put(val) : store.put(val, key), this.tr ? null : tr)
+      return request(this.key ? store.put(val) : store.put(val, key), tr)
     })
   }
 
@@ -69,9 +68,10 @@ export default class Store {
     } else if (this.key) {
       val = key
     }
-    return this._tr('write').then((tr) => {
+    return this.db.getInstance().then((db) => {
+      const tr = db.transaction(this.name, 'readwrite')
       const store = tr.objectStore(this.name)
-      return request(this.key ? store.add(val) : store.add(val, key), this.tr ? null : tr)
+      return request(this.key ? store.add(val) : store.add(val, key), tr)
     })
   }
 
@@ -83,8 +83,8 @@ export default class Store {
    */
 
   get(key) {
-    return this._tr('read').then((tr) => {
-      return request(tr.objectStore(this.name).get(key))
+    return this.db.getInstance().then((db) => {
+      return request(db.transaction(this.name, 'readonly').objectStore(this.name).get(key))
     })
   }
 
@@ -96,8 +96,9 @@ export default class Store {
    */
 
   del(key) {
-    return this._tr('write').then((tr) => {
-      return request(tr.objectStore(this.name).delete(key), this.tr ? null : tr)
+    return this.db.getInstance().then((db) => {
+      const tr = db.transaction(this.name, 'readwrite')
+      return request(tr.objectStore(this.name).delete(key), tr)
     })
   }
 
@@ -122,8 +123,9 @@ export default class Store {
    */
 
   clear() {
-    return this._tr('write').then((tr) => {
-      return request(tr.objectStore(this.name).clear(), this.tr ? null : tr)
+    return this.db.getInstance().then((db) => {
+      const tr = db.transaction(this.name, 'readwrite')
+      return request(tr.objectStore(this.name).clear(), tr)
     })
   }
 
@@ -144,21 +146,19 @@ export default class Store {
   batch(ops) {
     const keys = Object.keys(ops)
 
-    return this._tr('write').then((tr) => {
+    return this.db.getInstance().then((db) => {
       return new Promise((resolve, reject) => {
+        const tr = db.transaction(this.name, 'readwrite')
         const store = tr.objectStore(this.name)
         const that = this
         let current = 0
 
         tr.onerror = tr.onabort = reject
-        if (!this.tr) tr.oncomplete = () => resolve()
+        tr.oncomplete = () => resolve()
         next()
 
         function next() {
-          if (current >= keys.length) {
-            if (this.tr) resolve()
-            return
-          }
+          if (current >= keys.length) return
           const currentKey = keys[current]
           const currentVal = ops[currentKey]
           let req
@@ -210,21 +210,10 @@ export default class Store {
 
   cursor({ iterator, range, direction }) {
     if (typeof iterator !== 'function') throw new TypeError('iterator is required')
-    return this._tr('read').then((tr) => {
-      const store = tr.objectStore(this.name)
+    return this.db.getInstance().then((db) => {
+      const store = db.transaction(this.name, 'readonly').objectStore(this.name)
       const req = store.openCursor(parseRange(range), direction || 'next')
       return requestCursor(req, iterator)
     })
-  }
-
-  /**
-   * Shortcut to create or reuse transaction.
-   *
-   * @param {String} mode
-   * @return {Transaction}
-   */
-
-  _tr(mode) {
-    return (this.tr || this.db.transaction([this.name], mode)).getInstance()
   }
 }

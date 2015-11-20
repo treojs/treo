@@ -26,8 +26,8 @@ export default class Index {
    */
 
   get(key) {
-    return this.store._tr('read').then((tr) => {
-      const index = tr.objectStore(this.store.name).index(this.name)
+    return this.store.db.getInstance().then((db) => {
+      const index = db.transaction(this.store.name, 'readonly').objectStore(this.store.name).index(this.name)
       return request(index.get(key))
     })
   }
@@ -76,26 +76,21 @@ export default class Index {
 
   cursor({ iterator, range, direction }) {
     if (typeof iterator !== 'function') throw new TypeError('iterator is required')
-    if (direction === 'prevunique' && !this.multi) {
-      return this.store._tr('read').then((tr) => {
-        const index = tr.objectStore(this.store.name).index(this.name)
+    return this.store.db.getInstance().then((db) => {
+      const index = db.transaction(this.store.name, 'readonly').objectStore(this.store.name).index(this.name)
+      if (direction === 'prevunique' && !this.multi) {
         const req = index.openCursor(parseRange(range), 'prev')
         const keys = {} // count unique keys
 
-        return requestCursor(req, customIterator)
-
-        function customIterator(cursor) {
+        return requestCursor(req, (cursor) => {
           if (!keys[cursor.key]) {
             keys[cursor.key] = true
             iterator(cursor)
           } else {
             cursor.continue()
           }
-        }
-      })
-    }
-    return this.store._tr('read').then((tr) => {
-      const index = tr.objectStore(this.store.name).index(this.name)
+        })
+      }
       const req = index.openCursor(parseRange(range), direction || 'next')
       return requestCursor(req, iterator)
     })

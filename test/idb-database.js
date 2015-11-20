@@ -13,12 +13,9 @@ describe('Database', () => {
     return db.del()
   })
 
-  it('exposes core classes', () => {
-    expect(treo).a('function')
-    expect(treo).keys(['Database', 'Index', 'Schema', 'Store', 'Transaction', 'range', 'schema'])
-  })
-
   it('has properties', () => {
+    expect(treo).a('function')
+    expect(treo).keys(['Database', 'Index', 'Schema', 'Store', 'schema'])
     expect(db.name).equal('treo.database')
     expect(db.version).equal(4)
     expect(db.stores).length(3)
@@ -28,12 +25,14 @@ describe('Database', () => {
     const books = db.store('books')
     const magazines = db.store('magazines')
 
+    // parallel write
     return Promise.all([
       books.batch({ 1: { name: 'book 1' }, 2: { id: 2, name: 'book 2' } }),
       books.put(3, { id: 3, name: 'book 3' }),
       magazines.del(5),
       magazines.put({ id: 4, message: 'hey' }),
     ]).then(() => {
+      // parallel read
       return Promise.all([
         books.getAll().then((records) => expect(records).length(3)),
         magazines.count().then((count) => expect(count).equal(1)),
@@ -84,16 +83,6 @@ describe('Database', () => {
         expect(db.status).equal('close')
         expect(isCalled).equal(true)
       })
-    })
-  })
-
-  it.skip('#on "abort"', (done) => {
-    const tr = db.transaction(['books'], 'write')
-    tr.store('books').put({ isbn: 'id1', title: 'Quarry Memories', author: 'Fred' })
-    tr.abort()
-    db.on('abort', () => {
-      expect(tr.status).equal('aborted')
-      done()
     })
   })
 })
