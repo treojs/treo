@@ -26,11 +26,7 @@ With treo, we want to save this time for other developers, and help to focus on 
 
 ## Installation
 
-```
-$ npm install treo --save
-$ bower install treo
-$ component install treojs/treo
-```
+    npm install treo --save
 
 Standalone build available as [dist/treo.js](./dist/treo.js) or [dist/treo.min.js](./dist/treo.min.js).
 
