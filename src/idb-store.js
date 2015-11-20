@@ -104,15 +104,15 @@ export default class Store {
   /**
    * Count.
    *
+   * Support range as an argument:
+   * https://github.com/axemclion/IndexedDBShim/issues/202
+   *
    * @param {Any} [range]
    * @return {Promise}
    */
 
   count(range) {
-    return this._tr('read').then((tr) => {
-      const store = tr.objectStore(this.name)
-      return request(range ? store.count(parseRange(range)) : store.count())
-    })
+    return this.getAll(range).then((all) => all.length)
   }
 
   /**

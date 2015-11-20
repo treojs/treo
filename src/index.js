@@ -1,3 +1,5 @@
+import 'indexeddbshim'
+import './vendor/idb-iegap'
 import Schema from 'idb-schema'
 import parseRange from 'idb-range'
 import Database from './idb-database'

@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import schema from './support/schema'
-import treo from './support/treo'
+import treo from '../src'
 
 describe('Database', () => {
   let db

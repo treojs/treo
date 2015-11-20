@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import data from './support/npm-data.json'
-import treo from './support/treo'
+import treo from '../src'
 
 describe('Integration test', function treoIntegration() {
   this.timeout(10000)

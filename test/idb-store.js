@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import pluck from 'lodash.pluck'
 import schema from './support/schema'
-import treo from './support/treo'
+import treo from '../src'
 
 describe('Store', () => {
   let db

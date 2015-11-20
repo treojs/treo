@@ -1,20 +1,7 @@
+// Copied from https://github.com/dfahlander/idb-iegap
+/* eslint-disable */
 
-/**
- * Prevent double initialization.
- */
-
-var isUsed = false;
-
-/**
- * Add support for IE.
- */
-
-module.exports = function(treo) {
-  if (isUsed) return;
-  isUsed = true;
-
-  // code from https://github.com/dfahlander/idb-iegap
-  if (navigator.userAgent.indexOf("Trident/") !== -1) (function (idb, undefined) {
+if (navigator.userAgent.indexOf("Trident/") !== -1) (function (idb, undefined) {
     /* IndexedDB IE Gap polyfill (idb-iegap.js)
      *
      * VERSION: $Format:%d$
@@ -1173,6 +1160,6 @@ module.exports = function(treo) {
             }
         });
     }
+
     Constructor();
-  })(treo.idb);
-}
+})(window.indexedDB || window.msIndexedDB);

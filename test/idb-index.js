@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import pluck from 'lodash.pluck'
 import schema from './support/schema'
-import treo from './support/treo'
+import treo from '../src'
 
 describe('Index', () => {
   let db
@@ -113,6 +113,14 @@ describe('Index', () => {
       }).then(() => {
         expect(pluck(results[4], 'name')).eql(['M2'])
       }),
+
+      magazines.index('byKeywords').cursor({
+        range: 'political',
+        direction: 'prevunique',
+        iterator: iterator(5),
+      }).then(() => {
+        expect(pluck(results[5], 'name')).eql(['M1'])
+      }),
     ])
 
     function iterator(index) {
@@ -121,24 +129,6 @@ describe('Index', () => {
         results[index].push(cursor.value)
         cursor.continue()
       }
-    }
-  })
-
-  it.skip('#cursor direction=prevunique multiEntry=true', () => {
-    const magazines = db.store('magazines')
-    const results = []
-
-    return magazines.index('byKeywords').cursor({
-      range: 'political',
-      direction: 'prevunique',
-      iterator: iterator,
-    }).then(() => {
-      expect(pluck(results, 'name')).eql(['M1'])
-    })
-
-    function iterator(cursor) {
-      results.push(cursor.value)
-      cursor.continue()
     }
   })
 })
