@@ -26,7 +26,7 @@
     "component-emitter": "^1.2.0",
     "es6-promise": "^3.0.2",
     "idb-range": "^3.1.2",
-    "idb-request": "^1.1.2",
+    "idb-request": "^2.0.0",
     "idb-schema": "^3.1.1",
     "indexeddbshim": "^2.2.1",
     "storage-emitter": "^1.0.0"
