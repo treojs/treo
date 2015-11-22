@@ -4,6 +4,8 @@
 [![](https://img.shields.io/travis/treojs/treo.svg)](https://travis-ci.org/treojs/treo)
 [![](http://img.shields.io/npm/dm/treo.svg)](https://npmjs.org/package/treo)
 
+[![](https://saucelabs.com/browser-matrix/treo.svg)](https://saucelabs.com/u/treo)
+
 Treo is a wrapper around [IndexedDB](http://www.w3.org/TR/IndexedDB/) to make browser storage more enjoyable to use.
 Think about it as jQuery for IndexedDB. It does not add new abstractions, but simplifies the API, eliminates browsers inconsistency, and increases code reliability.
 

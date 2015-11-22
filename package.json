@@ -17,7 +17,7 @@
   "scripts": {
     "prepublish": "babel src --out-dir lib",
     "build": "browserify -t babelify src/index.js -s treo -o dist/treo.js && uglifyjs dist/treo.js -m > dist/treo.min.js",
-    "test": "eslint src/ test/ && browserify-test -t babelify",
+    "test": "eslint src/ test/ && browserify-test -t babelify && SAUCE_USERNAME=treo zuul --no-coverage -- test/*.js",
     "development": "browserify-test -t babelify -w"
   },
   "dependencies": {
