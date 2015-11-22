@@ -25,6 +25,13 @@ export default class Database extends Emitter {
     this.name = name
     this.version = schema.version()
     this.stores = this.opts.map((store) => store.name)
+
+    this.stores.forEach((storeName) => {
+      if (typeof this[storeName] !== 'undefined') return
+      Object.defineProperty(this, storeName, {
+        get() { return this.store(storeName) },
+      })
+    })
   }
 
   /**

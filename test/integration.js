@@ -4,10 +4,10 @@ import treo from '../src'
 
 describe('Integration test', function treoIntegration() {
   this.timeout(10000)
-  let db, modules, schema
+  let db
 
   before(() => {
-    schema = treo.schema()
+    const schema = treo.schema()
     .addStore('modules', { keyPath: 'name' })
     .addIndex('byKeywords', 'keywords', { multiEntry: true })
     .addIndex('byAuthor', 'author')
@@ -15,8 +15,7 @@ describe('Integration test', function treoIntegration() {
     .addIndex('byMaintainers', 'maintainers', { multi: true })
 
     db = treo('npm', schema)
-    modules = db.store('modules')
-    return modules.batch(data)
+    return db.modules.batch(data)
   })
 
   after(() => {
@@ -24,28 +23,22 @@ describe('Integration test', function treoIntegration() {
   })
 
   it('get module', () => {
-    return modules.get('browserify').then((mod) => {
+    return db.modules.get('browserify').then((mod) => {
       expect(mod.author).equal('James Halliday')
     })
   })
 
   it('count all modules', () => {
-    return modules.count().then((count) => {
+    return db.modules.count().then((count) => {
       expect(count).equal(473)
     })
   })
 
   it('count by index', () => {
     return Promise.all([
-      modules.index('byStars').count({ gte: 100 }).then((count) => {
-        expect(count).equal(12)
-      }),
-      modules.index('byKeywords').count('grunt').then((count) => {
-        expect(count).equal(9)
-      }),
-      modules.index('byMaintainers').count('tjholowaychuk').then((count) => {
-        expect(count).equal(36)
-      }),
+      db.modules.byStars.count({ gte: 100 }).then((c) => expect(c).equal(12)),
+      db.modules.byKeywords.count('grunt').then((c) => expect(c).equal(9)),
+      db.modules.byMaintainers.count('tjholowaychuk').then((c) => expect(c).equal(36)),
     ])
   })
 })

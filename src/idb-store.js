@@ -18,6 +18,13 @@ export default class Store {
     this.key = opts.keyPath
     this.increment = opts.autoIncrement
     this.indexes = opts.indexes.map((index) => index.name)
+
+    this.indexes.forEach((indexName) => {
+      if (typeof this[indexName] !== 'undefined') return
+      Object.defineProperty(this, indexName, {
+        get() { return this.index(indexName) },
+      })
+    })
   }
 
   /**

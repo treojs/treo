@@ -18,7 +18,12 @@ describe('Database', () => {
     expect(treo).keys(['Database', 'Index', 'Schema', 'Store', 'schema'])
     expect(db.name).equal('treo.database')
     expect(db.version).equal(4)
-    expect(db.stores).length(3)
+
+    expect(db.stores.sort()).eql(['books', 'magazines', 'storage'])
+    expect(db.books instanceof treo.Store).equal(true)
+    expect(db.magazines instanceof treo.Store).equal(true)
+    expect(db.storage instanceof treo.Store).equal(true)
+    expect(typeof db.something === 'undefined').equal(true)
   })
 
   it('supports parallel write & read', () => {
