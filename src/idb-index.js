@@ -52,23 +52,20 @@ export default class Index {
   /**
    * Count records in `range`.
    *
-   * Support range as an argument:
-   * https://github.com/axemclion/IndexedDBShim/issues/202
-   *
    * @param {Any} range
    * @return {Promise}
    */
 
   count(range) {
-    return this.getAll(range).then((all) => all.length)
+    return this.store.db.getInstance().then((db) => {
+      const index = db.transaction(this.store.name, 'readonly').objectStore(this.store.name).index(this.name)
+      return request(range ? index.count(parseRange(range)) : index.count())
+    })
   }
 
   /**
    * Create read cursor for specific `range`,
    * and pass IDBCursor to `iterator` function.
-   *
-   * Support direction=prevunique for non-multi indexes
-   * https://github.com/axemclion/IndexedDBShim/issues/204
    *
    * @param {Object} opts { [range], [direction], iterator }
    * @return {Promise}
@@ -77,20 +74,7 @@ export default class Index {
   cursor({ iterator, range, direction }) {
     if (typeof iterator !== 'function') throw new TypeError('iterator is required')
     return this.store.db.getInstance().then((db) => {
-      const index = db.transaction(this.store.name, 'readonly').objectStore(this.store.name).index(this.name)
-      if (direction === 'prevunique' && !this.multi) {
-        const req = index.openCursor(parseRange(range), 'prev')
-        const keys = {} // count unique keys
-
-        return request(req, (cursor) => {
-          if (!keys[cursor.key]) {
-            keys[cursor.key] = true
-            iterator(cursor)
-          } else {
-            cursor.continue()
-          }
-        })
-      }
+      const index = db.transaction(this.name, 'readonly').objectStore(this.store.name).index(this.name)
       const req = index.openCursor(parseRange(range), direction || 'next')
       return requestCursor(req, iterator)
     })

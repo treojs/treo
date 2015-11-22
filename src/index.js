@@ -1,7 +1,20 @@
-import 'indexeddbshim'
-import './vendor/idb-iegap'
-import Promise from 'es6-promise'
-import treo from './treo'
+import Schema from 'idb-schema'
+import Database from './idb-database'
+import Store from './idb-store'
+import Index from './idb-index'
 
-Promise.polyfill()
-export default treo
+/**
+ * Expose API.
+ */
+
+exports = module.exports = (name, schema) => new Database(name, schema)
+exports.schema = () => new Schema()
+
+/**
+ * Expose core classes.
+ */
+
+exports.Schema = Schema
+exports.Database = Database
+exports.Store = Store
+exports.Index = Index

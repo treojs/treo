@@ -1,8 +1,11 @@
 import treo from '../../src'
+import treoPolyfill from '../../../treo-polyfill/src'
 
 /**
- * Polyfill promise.
+ * Polyfill.
  */
+
+treoPolyfill(treo)
 
 /**
  * Shared schema.
