@@ -1,5 +1,5 @@
 import treo from '../../src'
-import treoPolyfill from '../../../treo-polyfill/src'
+import treoPolyfill from '../../packages/treo-polyfill/src'
 
 /**
  * Polyfill.
