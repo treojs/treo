@@ -1,7 +1,7 @@
 import Emitter from 'component-emitter'
 import Schema from 'idb-schema'
 import Store from './idb-store'
-import { request } from 'idb-request'
+import { open, del } from './idb-factory'
 
 export default class Database extends Emitter {
 
@@ -34,18 +34,6 @@ export default class Database extends Emitter {
   }
 
   /**
-   * Link to `indexedDB`.
-   */
-
-  static get idb() {
-    return global.indexedDB
-    || global.webkitIndexedDB
-    || global.mozIndexedDB
-    || global.msIndexedDB
-    || global.shimIndexedDB
-  }
-
-  /**
    * Close connection && delete database.
    * After close it waits a little to avoid exception in Safari.
    *
@@ -53,8 +41,7 @@ export default class Database extends Emitter {
    */
 
   del() {
-    this.close()
-    return request(Database.idb.deleteDatabase(this.name))
+    return del(this)
   }
 
   /**
@@ -94,24 +81,24 @@ export default class Database extends Emitter {
     if (this.status === 'error') return Promise.reject(new Error('database error'))
     if (this.status === 'opening') return this.promise
 
-    const req = Database.idb.open(this.name, this.version)
-    req.onupgradeneeded = this.schema.callback()
-
     this.status = 'opening'
-    this.promise = request(req).then((db) => {
+    this.promise = open(this.name, this.version, this.schema.callback())
+    .then((db) => {
       delete this.promise
       this.status = 'open'
       this.origin = db
+
       db.onerror = (err) => this.emit('error', err)
       db.onversionchange = () => {
         this.close()
         this.emit('versionchange')
       }
+
       return db
     }).catch((err) => {
       delete this.promise
       this.status = 'error'
-      return err
+      throw err
     })
 
     return this.promise
