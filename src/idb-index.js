@@ -74,7 +74,7 @@ export default class Index {
   cursor({ iterator, range, direction }) {
     if (typeof iterator !== 'function') throw new TypeError('iterator is required')
     return this.store.db.getInstance().then((db) => {
-      const index = db.transaction(this.name, 'readonly').objectStore(this.store.name).index(this.name)
+      const index = db.transaction(this.store.name, 'readonly').objectStore(this.store.name).index(this.name)
       const req = index.openCursor(parseRange(range), direction || 'next')
       return requestCursor(req, iterator)
     })

@@ -56,8 +56,8 @@ export default class Store {
     }
     return this.db.getInstance().then((db) => {
       const tr = db.transaction(this.name, 'readwrite')
-      const store = tr.objectStore(self.name)
-      return request(self.key ? store.put(val) : store.put(val, key), tr)
+      const store = tr.objectStore(this.name)
+      return request(this.key ? store.put(val) : store.put(val, key), tr)
     })
   }
 
@@ -77,8 +77,8 @@ export default class Store {
     }
     return this.db.getInstance().then((db) => {
       const tr = db.transaction(this.name, 'readwrite')
-      const store = tr.objectStore(self.name)
-      return request(self.key ? store.add(val) : store.add(val, key), tr)
+      const store = tr.objectStore(this.name)
+      return request(this.key ? store.add(val) : store.add(val, key), tr)
     })
   }
 
