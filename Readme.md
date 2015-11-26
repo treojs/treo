@@ -30,11 +30,11 @@ With treo, we want to save this time for other developers, and help to focus on 
 
     npm install treo --save
 
-Standalone build available as [dist/treo.js](./dist/treo.js) or [dist/treo.min.js](./dist/treo.min.js).
+Standalone build available as [dist/treo.js](./dist/treo.js).
 
 ```html
-<script src="treo.min.js"></script>
-<script>var db = window.treo('library')</script>
+<script src="treo.js"></script>
+<script>db = window.treo('library')</script>
 ```
 
 ## Example
@@ -42,10 +42,10 @@ Standalone build available as [dist/treo.js](./dist/treo.js) or [dist/treo.min.j
 Let's rewrite the official [w3c example](http://www.w3.org/TR/IndexedDB/#introduction) with treo:
 
 ```js
-var treo = require('treo') // or window.treo
+import treo from 'treo' // or window.treo
 
 // define db schema
-var schema = treo.schema()
+const schema = treo.schema()
 .version(1)
   .addStore('books', { key: 'isbn' })
   .addIndex('byTitle', 'title', { unique: true })
@@ -59,25 +59,25 @@ var schema = treo.schema()
   .addIndex('byFrequency', 'frequency')
 
 // open db synchronously
-var db = treo('library', schema)
+const db = treo('library', schema)
 db.version // 3
 
 // put some data in one transaction
-var books = db.store('books')
+const books = db.store('books')
 books.batch([
   { isbn: 123456, title: 'Quarry Memories', author: 'Fred', year: 2012 },
   { isbn: 234567, title: 'Water Buffaloes', author: 'Fred', year: 2012 },
   { isbn: 345678, title: 'Bedrock Nights', author: 'Barney', year: 2013 },
-]).then(function() {
+]).then(() => {
   // Before this point, all actions were synchronous, and you don't need to wait
   // for db.open, initialize onupgradeneeded event, create readwrite transaction,
   // and handle all possible errors, and blocks.
 
   // get a single book by title using an index
-  books.index('byTitle').get('Bedrock Nights').then(function(book) {})
+  books.byTitle.get('Bedrock Nights').then(function(book) {})
 
   // get all books filtered by author
-  books.index('byAuthor').getAll('Fred').then(function(all) {}) // all.length == 2
+  books.byAuthor.getAll('Fred').then(function(all) {}) // all.length == 2
 })
 
 // If any error happen, you get it as an `err`.
@@ -85,48 +85,30 @@ books.batch([
 db.on('error', function(err) {})
 ```
 
-Check out more [./examples](./examples):
-
-* [use ES6 generators to improve async workflow](./examples/es6-generators.js)
-* [simple key/value storage](./examples/key-value-storage.js)
-* [plugin example](./examples/find-in-plugin.js)
-
-## Plugins
-
-* [treo-websql](https://github.com/treojs/treo-websql) enables fallback to WebSQL in legacy browsers.
-* [treo-callback](https://github.com/treojs/treo-callback) use callbacks instead of promises.
-
 ## Documentation
 
 Short version of API is:
 
 ```js
-var treo = require('treo') // alternative to window.indexedDB
+const treo = require('treo') // alternative to window.indexedDB
 treo.schema() // create idb-schema
 treo.Database
-treo.Transaction
 treo.Store
 treo.Index
-treo.Promise = require('es6-promise') // change Promise library
 treo.Schema // reference to using idb-schema
-treo.request // reference to using idb-request
-treo.range // reference to using idb-range
-treo.idb // link to available window.indexedDB
 
 // Database represents connection to a database.
-var db = treo('name', schema)
+const db = treo('name', schema)
 db.on('error', 'abort', 'versionchange')
-db.transaction([name, name], mode) // create transaction
 async db.close() // database might be in opening state
 async db.del() // close && deleteDatabase (avoid onversionchange)
 db.name
 db.version
 db.stores // array of stores
-db.use(fn) // use plugin fn(db, treo)
 db.store(name) // create store with automatic transactions
 
 // Store is the primary mechanism for storing data.
-var store = db.store('books')
+const store = db.store('books')
 async store.get(key) // returns undefined when record does not exists
 async store.getAll([range]) // array
 async store.put(key, val) // out-of-line keys
@@ -142,7 +124,7 @@ store.key
 store.indexes // array of indexes
 
 // Index allows to looking up records in a store using properties of the values.
-var index = store.index('byAuthor')
+const index = store.index('byAuthor')
 async index.get(key) // undefined if record does not exist
 async index.getAll([range])
 async index.count([range])
@@ -151,14 +133,6 @@ index.name
 index.key
 index.unique
 index.multi
-
-// Transaction represents atomic operation on data (uses internally).
-var tr = db.transaction(['books', 'magazines'], 'write')
-tr.on('error', 'abort', 'complete')
-tr.store(name) // new Store() - use store in current transaction
-tr.mode
-async tr.abort() // database might be in opening state
-async tr // thenable
 ```
 
 ## License
