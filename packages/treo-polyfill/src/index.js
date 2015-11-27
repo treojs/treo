@@ -2,7 +2,7 @@ import parseRange from 'idb-range'
 import sEmitter from 'storage-emitter'
 import ES6Promise from 'es6-promise'
 import { request, requestCursor } from 'idb-request'
-import { del, open } from '../../../src/idb-factory'
+import { del, open } from 'idb-factory'
 
 /**
  * Detect env.
@@ -27,7 +27,7 @@ export default function treoPolyfill(treo) {
   if (isSafari && getSafariVersion() < 9) {
     console.log(`treo-polyfill: force Safari ${getSafariVersion()} to use indexeddbshim`)
     global.IDBKeyRange = global.shimIndexedDB.modules.IDBKeyRange
-    global.forceIndexedDB = global.shimIndexedDB
+    global.realIndexedDB = global.shimIndexedDB
   }
 
   if (treo && (isSafari || noIndexedDB)) {

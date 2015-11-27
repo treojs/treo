@@ -1,7 +1,7 @@
 import Emitter from 'component-emitter'
 import Schema from 'idb-schema'
 import Store from './idb-store'
-import { open, del } from './idb-factory'
+import { open, del } from 'idb-factory'
 
 export default class Database extends Emitter {
 
