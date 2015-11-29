@@ -1,6 +1,7 @@
 import parseRange from 'idb-range'
 import { request, requestCursor } from 'idb-request'
 import Index from './idb-index'
+import batch from './idb-batch'
 
 export default class Store {
 
@@ -41,6 +42,20 @@ export default class Store {
   }
 
   /**
+   * Add `value` to `key`.
+   *
+   * @param {Any} [key] is optional when store.key exists.
+   * @param {Any} val
+   * @return {Promise}
+   */
+
+  add(key, val) {
+    return this.db.getInstance().then((db) => {
+      return batch(db, this.name, [{ key, val, type: 'add' }]).then(([res]) => res)
+    })
+  }
+
+  /**
    * Put (create or replace) `val` to `key`.
    *
    * @param {Any} [key] is optional when store.key exists.
@@ -49,36 +64,45 @@ export default class Store {
    */
 
   put(key, val) {
-    if (this.key && typeof val !== 'undefined') {
-      val[this.key] = key
-    } else if (this.key) {
-      val = key
-    }
     return this.db.getInstance().then((db) => {
-      const tr = db.transaction(this.name, 'readwrite')
-      const store = tr.objectStore(this.name)
-      return request(this.key ? store.put(val) : store.put(val, key), tr)
+      return batch(db, this.name, [{ key, val, type: 'put' }]).then(([res]) => res)
     })
   }
 
   /**
-   * Add `val` to `key`.
+   * Del value by `key`.
    *
-   * @param {Any} [key] is optional when store.key exists.
-   * @param {Any} val
+   * @param {String} key
    * @return {Promise}
    */
 
-  add(key, val) {
-    if (this.key && typeof val !== 'undefined') {
-      val[this.key] = key
-    } else if (this.key) {
-      val = key
-    }
+  del(key) {
+    return this.db.getInstance().then((db) => {
+      return batch(db, this.name, [{ key, type: 'del' }]).then(([res]) => res)
+    })
+  }
+
+  /**
+   * Proxy to idb-batch.
+   *
+   * @param {Object|Array} ops
+   * @return {Promise}
+   */
+
+  batch(ops) {
+    return this.db.getInstance().then((db) => batch(db, this.name, ops))
+  }
+
+  /**
+   * Clear.
+   *
+   * @return {Promise}
+   */
+
+  clear() {
     return this.db.getInstance().then((db) => {
       const tr = db.transaction(this.name, 'readwrite')
-      const store = tr.objectStore(this.name)
-      return request(this.key ? store.add(val) : store.add(val, key), tr)
+      return request(tr.objectStore(this.name).clear(), tr)
     })
   }
 
@@ -96,20 +120,6 @@ export default class Store {
   }
 
   /**
-   * Del value by `key`.
-   *
-   * @param {String} key
-   * @return {Promise}
-   */
-
-  del(key) {
-    return this.db.getInstance().then((db) => {
-      const tr = db.transaction(this.name, 'readwrite')
-      return request(tr.objectStore(this.name).delete(key), tr)
-    })
-  }
-
-  /**
    * Count.
    *
    * @param {Any} [range]
@@ -118,72 +128,13 @@ export default class Store {
 
   count(range) {
     return this.db.getInstance().then((db) => {
-      const store = db.transaction(this.name, 'readonly').objectStore(this.name)
-      return request(range ? store.count(parseRange(range)) : store.count())
-    })
-  }
-
-  /**
-   * Clear.
-   *
-   * @return {Promise}
-   */
-
-  clear() {
-    return this.db.getInstance().then((db) => {
-      const tr = db.transaction(this.name, 'readwrite')
-      return request(tr.objectStore(this.name).clear(), tr)
-    })
-  }
-
-  /**
-   * Perform batch operation using `ops`.
-   * It uses raw callback API to avoid issues with transaction reuse.
-   *
-   * {
-   * 	 key1: 'val1', // put val1 to key1
-   * 	 key2: 'val2', // put val2 to key2
-   * 	 key3: null,   // delete key
-   * }
-   *
-   * @param {Object} ops
-   * @return {Promise}
-   */
-
-  batch(ops) {
-    const keys = Object.keys(ops)
-
-    return this.db.getInstance().then((db) => {
-      return new Promise((resolve, reject) => {
-        const tr = db.transaction(this.name, 'readwrite')
-        const store = tr.objectStore(this.name)
-        const that = this
-        let current = 0
-
-        tr.onerror = tr.onabort = reject
-        tr.oncomplete = () => resolve()
-        next()
-
-        function next() {
-          if (current >= keys.length) return
-          const currentKey = keys[current]
-          const currentVal = ops[currentKey]
-          let req
-
-          if (currentVal === null) {
-            req = store.delete(currentKey)
-          } else if (that.key) {
-            if (!currentVal[that.key]) currentVal[that.key] = currentKey
-            req = store.put(currentVal)
-          } else {
-            req = store.put(currentVal, currentKey)
-          }
-
-          req.onerror = reject
-          req.onsuccess = next
-          current += 1
-        }
-      })
+      try {
+        const store = db.transaction(this.name, 'readonly').objectStore(this.name)
+        return request(range ? store.count(parseRange(range)) : store.count())
+      } catch (_) {
+        // fix https://github.com/axemclion/IndexedDBShim/issues/202
+        return this.getAll(range).then((all) => all.length)
+      }
     })
   }
 
