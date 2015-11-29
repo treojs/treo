@@ -1,4 +1,5 @@
 import { expect } from 'chai'
+import { del } from 'idb-factory'
 import schema from './support/schema'
 import treo from '../src'
 
@@ -9,9 +10,8 @@ describe('Database', () => {
     db = treo('treo.database', schema)
   })
 
-  afterEach(() => {
-    return db.del()
-  })
+  before(() => del('treo.database'))
+  afterEach(() => db.del())
 
   it('has properties', () => {
     expect(treo).a('function')

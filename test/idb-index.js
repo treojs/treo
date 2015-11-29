@@ -1,4 +1,5 @@
 import { expect } from 'chai'
+import { del } from 'idb-factory'
 import pluck from 'lodash.pluck'
 import schema from './support/schema'
 import treo from '../src'
@@ -19,9 +20,8 @@ describe('Index', () => {
     ])
   })
 
-  afterEach(() => {
-    return db.del()
-  })
+  before(() => del('treo.index'))
+  afterEach(() => db.del())
 
   it('has properties', () => {
     const byTitle = db.store('books').index('byTitle')

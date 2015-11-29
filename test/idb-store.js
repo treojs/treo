@@ -1,4 +1,5 @@
 import { expect } from 'chai'
+import { del } from 'idb-factory'
 import pluck from 'lodash.pluck'
 import schema from './support/schema'
 import treo from '../src'
@@ -17,9 +18,8 @@ describe('Store', () => {
     ])
   })
 
-  afterEach(() => {
-    return db.del()
-  })
+  before(() => del('treo.store'))
+  afterEach(() => db.del())
 
   it('has properties', () => {
     const books = db.store('books')
