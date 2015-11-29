@@ -37,7 +37,7 @@ describe('Store', () => {
   it('#put', () => {
     const books = db.store('books')
     const magazines = db.store('magazines')
-    const storage = db.store('storage')
+    const storage = db.store('storage1')
 
     return Promise.all([
       books.put('id1', { title: 'Quarry Memories', author: 'Fred' }).then((key) => {
@@ -104,7 +104,7 @@ describe('Store', () => {
 
   it('#batch', () => {
     const magazines = db.store('magazines')
-    const storage = db.store('storage')
+    const storage = db.store('storage1')
 
     return Promise.all([
       magazines.batch({
@@ -190,6 +190,26 @@ describe('Store', () => {
             done()
           })
         })
+      })
+    })
+
+  it('allows the same keys in different stores', () => {
+    const storage1 = db.store('storage1')
+    const storage2 = db.store('storage2')
+    const books = db.store('books')
+
+    return Promise.all([
+      storage1.put('1', 'val11'),
+      storage1.put(1, 'val12'),
+      storage1.put([1], 'val13'),
+      storage2.put('1', 'val21'),
+      storage2.put(1, 'val22'),
+      books.put(1, { name: 'My book' }),
+    ]).then(() => {
+      return Promise.all([ storage1.count(), storage2.count(), books.count() ]).then(([c1, c2, c3]) => {
+        expect(c1).equal(3)
+        expect(c2).equal(2)
+        expect(c3).equal(1)
       })
     })
   })

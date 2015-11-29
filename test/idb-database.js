@@ -19,10 +19,10 @@ describe('Database', () => {
     expect(db.name).equal('treo.database')
     expect(db.version).equal(4)
 
-    expect(db.stores.sort()).eql(['books', 'magazines', 'storage'])
+    expect(db.stores.sort()).eql(['books', 'magazines', 'storage1', 'storage2'])
     expect(db.books instanceof treo.Store).equal(true)
     expect(db.magazines instanceof treo.Store).equal(true)
-    expect(db.storage instanceof treo.Store).equal(true)
+    expect(db.books.byTitle instanceof treo.Index).equal(true)
     expect(typeof db.something === 'undefined').equal(true)
   })
 
@@ -77,7 +77,7 @@ describe('Database', () => {
       const newDb = treo('treo.database', newSchema)
 
       expect(newDb.version).equal(5)
-      expect(newDb.stores.sort()).eql(['books', 'magazines', 'storage', 'users'])
+      expect(newDb.stores.sort()).eql(['books', 'magazines', 'storage1', 'storage2', 'users'])
 
       return Promise.all([
         newDb.store('users').put(1, { name: 'John' }).then((key) => {

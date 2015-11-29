@@ -26,4 +26,5 @@ export default treo.schema()
   .addIndex('byNameAndFrequency', ['name', 'frequency'], { unique: true })
   .addIndex('byKeywords', 'keywords', { multi: true })
 .version(4)
-  .addStore('storage') // key-value
+  .addStore('storage1') // key-value
+  .addStore('storage2')
