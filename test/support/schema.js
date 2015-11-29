@@ -1,10 +1,12 @@
+import ES6Promise from 'es6-promise'
 import treo from '../../src'
-import treoWebsql from './treo-websql'
+import treoWebsql from 'treo-websql'
 
 /**
  * Polyfill.
  */
 
+ES6Promise.polyfill()
 treoWebsql()
 
 /**

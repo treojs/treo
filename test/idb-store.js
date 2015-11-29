@@ -180,18 +180,33 @@ describe('Store', () => {
 
     // simple index
     books.put(1, { title: 'book' }).then(() => {
-      books.put(2, { title: 'book' }).catch((err) => {
-        expect(!!err).equal(true)
+      books.put(2, { title: 'book' }).then(notSupported('simple index'), (err1) => {
+        expect(!!err1).equal(true)
 
         // compound index
         magazines.add({ name: 'magazine', frequency: 1 }).then(() => {
-          magazines.add({ name: 'magazine', frequency: 1 }).catch((err2) => {
+          magazines.add({ name: 'magazine', frequency: 1 }).then(notSupported('compound index'), (err2) => {
             expect(!!err2).equal(true)
-            done()
+
+            // batch
+            books.batch({
+              5: { title: 'book', author: 'Petr' },
+              6: { title: 'book', author: 'John' },
+            }).then(notSupported('batch'), (err3) => {
+              expect(!!err3).equal(true)
+              done()
+            })
           })
         })
       })
     })
+
+    function notSupported(testName) {
+      return () => {
+        done(`expected unique index error for "${testName}"`)
+      }
+    }
+  })
 
   it('allows the same keys in different stores', () => {
     const storage1 = db.store('storage1')

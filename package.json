@@ -27,6 +27,7 @@
     "idb-request": "^3.0.0",
     "idb-schema": "^3.2.0",
     "is-plain-obj": "^1.1.0",
+    "storage-emitter": "^1.0.0"
   },
   "devDependencies": {
     "babel-cli": "6.1.18",
@@ -38,9 +39,11 @@
     "browserify": "^12.0.1",
     "browserify-test": "^2.1.2",
     "chai": "^3.4.1",
+    "es6-promise": "^3.0.2",
     "eslint": "^1.10.2",
     "eslint-config-airbnb": "^1.0.2",
     "lodash.pluck": "^3.1.2",
+    "treo-websql": "^3.0.0",
     "uglify-js": "^2.4.23",
     "zuul": "^3.7.3"
   }
