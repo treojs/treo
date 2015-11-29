@@ -32,6 +32,10 @@ export default class Database extends Emitter {
         get() { return this.store(storeName) },
       })
     })
+
+    if (this.opts.some((store) => store.indexes.some((index) => index.multiEntry))) {
+      console.warn('MultiEntry index is not supported completely, because it does not work in IE. But it should work in remaining browsers.') // eslint-disable-line
+    }
   }
 
   /**
