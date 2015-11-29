@@ -1,7 +1,8 @@
 import Emitter from 'component-emitter'
+import sEmitter from 'storage-emitter'
 import Schema from 'idb-schema'
+import { open, del } from '../../idb-factory/src'
 import Store from './idb-store'
-import { open, del } from 'idb-factory'
 
 export default class Database extends Emitter {
 
@@ -41,6 +42,7 @@ export default class Database extends Emitter {
    */
 
   del() {
+    sEmitter.emit('versionchange', { name: this.name, isDelete: true })
     return del(this)
   }
 
@@ -81,6 +83,7 @@ export default class Database extends Emitter {
     if (this.status === 'error') return Promise.reject(new Error('database error'))
     if (this.status === 'opening') return this.promise
 
+    sEmitter.emit('versionchange', { name: this.name, version: this.version })
     this.status = 'opening'
     this.promise = open(this.name, this.version, this.schema.callback())
     .then((db) => {
@@ -93,6 +96,12 @@ export default class Database extends Emitter {
         this.close()
         this.emit('versionchange')
       }
+      sEmitter.once('versionchange', ({ name, version, isDelete }) => {
+        if (this.status !== 'close' && name === this.name && (version > this.version || isDelete)) {
+          this.close()
+          this.emit('versionchange')
+        }
+      })
 
       return db
     }).catch((err) => {

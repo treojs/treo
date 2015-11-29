@@ -58,8 +58,13 @@ export default class Index {
 
   count(range) {
     return this.store.db.getInstance().then((db) => {
-      const index = db.transaction(this.store.name, 'readonly').objectStore(this.store.name).index(this.name)
-      return request(range ? index.count(parseRange(range)) : index.count())
+      try {
+        const index = db.transaction(this.store.name, 'readonly').objectStore(this.store.name).index(this.name)
+        return request(range ? index.count(parseRange(range)) : index.count())
+      } catch (_) {
+        // fix https://github.com/axemclion/IndexedDBShim/issues/202
+        return this.getAll(range).then((all) => all.length)
+      }
     })
   }
 
@@ -74,6 +79,21 @@ export default class Index {
   cursor({ iterator, range, direction }) {
     if (typeof iterator !== 'function') throw new TypeError('iterator is required')
     return this.store.db.getInstance().then((db) => {
+      // fix: https://github.com/axemclion/IndexedDBShim/issues/204
+      if (direction === 'prevunique' && !this.multi) {
+        const method = iterator
+        const keys = {} // count unique keys
+        direction = 'prev'
+        iterator = (cursor) => {
+          if (!keys[cursor.key]) {
+            keys[cursor.key] = true
+            method(cursor)
+          } else {
+            cursor.continue()
+          }
+        }
+      }
+
       const index = db.transaction(this.store.name, 'readonly').objectStore(this.store.name).index(this.name)
       const req = index.openCursor(parseRange(range), direction || 'next')
       return requestCursor(req, iterator)
