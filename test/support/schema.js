@@ -1,11 +1,11 @@
 import treo from '../../src'
-import treoPolyfill from '../../packages/treo-polyfill/src'
+import treoWebsql from './treo-websql'
 
 /**
  * Polyfill.
  */
 
-treoPolyfill(treo)
+treoWebsql()
 
 /**
  * Shared schema.
