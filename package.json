@@ -24,8 +24,8 @@
     "component-emitter": "^1.2.0",
     "idb-factory": "^1.0.0",
     "idb-range": "^3.1.2",
-    "idb-request": "^2.0.0",
-    "idb-schema": "^3.1.1"
+    "idb-request": "^3.0.0",
+    "idb-schema": "^3.2.0"
   },
   "devDependencies": {
     "babel-cli": "6.1.18",
