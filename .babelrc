@@ -3,6 +3,7 @@
     "es2015"
   ],
   "plugins": [
+    "transform-async-to-generator",
     "add-module-exports"
   ]
 }

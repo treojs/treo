@@ -1,5 +1,7 @@
+import 'polyfill-function-prototype-bind'
+import 'regenerator/runtime'
 import ES6Promise from 'es6-promise'
-import treo from '../../src'
+import Schema from 'idb-schema'
 import treoWebsql from 'treo-websql'
 
 /**
@@ -13,7 +15,7 @@ treoWebsql()
  * Shared schema.
  */
 
-export default treo.schema()
+export default new Schema()
 .version(1)
   .addStore('books', { key: 'isbn' })
   .addIndex('byTitle', 'title', { unique: true })

@@ -7,15 +7,14 @@ import treo from '../src'
 describe('Store', () => {
   let db
 
-  beforeEach(() => {
-    db = treo('treo.store', schema)
-    const magazines = db.store('magazines')
-    return Promise.all([
-      magazines.put({ id: 'id1', title: 'Quarry Memories', publisher: 'Bob' }),
-      magazines.put({ id: 'id2', title: 'Water Buffaloes', publisher: 'Bob' }),
-      magazines.put({ id: 'id3', title: 'Bedrocky Nights', publisher: 'Tim' }),
-      magazines.put({ id: 'id4', title: 'Waving Wings', publisher: 'Ken' }),
-    ])
+  beforeEach(async () => {
+    db = await treo('treo.store', schema.version(), schema.callback())
+    await [
+      db.magazines.put({ id: 'id1', title: 'Quarry Memories', publisher: 'Bob' }),
+      db.magazines.put({ id: 'id2', title: 'Water Buffaloes', publisher: 'Bob' }),
+      db.magazines.put({ id: 'id3', title: 'Bedrocky Nights', publisher: 'Tim' }),
+      db.magazines.put({ id: 'id4', title: 'Waving Wings', publisher: 'Ken' }),
+    ]
   })
 
   before(() => del('treo.store'))
@@ -34,60 +33,43 @@ describe('Store', () => {
     expect(magazines.indexes).length(4)
   })
 
-  it('#put', () => {
-    const books = db.store('books')
-    const magazines = db.store('magazines')
-    const storage = db.store('storage1')
+  it('#put', async () => {
+    await db.books.put('id1', { title: 'Quarry Memories', author: 'Fred' }).then((key) => {
+      expect(key).equal('id1')
+      return db.books.get('id1').then((book) => {
+        expect(book).eql({ title: 'Quarry Memories', author: 'Fred', isbn: 'id1' })
+      })
+    })
 
-    return Promise.all([
-      books.put('id1', { title: 'Quarry Memories', author: 'Fred' }).then((key) => {
-        expect(key).equal('id1')
-        return books.get('id1').then((book) => {
-          expect(book).eql({ title: 'Quarry Memories', author: 'Fred', isbn: 'id1' })
-        })
-      }),
-      magazines.put({ name: 'new magazine' }).then((key) => {
-        return magazines.get(key).then((magazine) => {
-          expect(magazine.id).equal(key)
-          expect(magazine.name).equal('new magazine')
-        })
-      }),
-      storage.put('key', 'value').then(() => {
-        return storage.get('key').then((val) => {
-          expect(val).equal('value')
-        })
-      }),
-    ])
-  })
+    await db.magazines.put({ name: 'new magazine' }).then((key) => {
+      return db.magazines.get(key).then((magazine) => {
+        expect(magazine.id).equal(key)
+        expect(magazine.name).equal('new magazine')
+      })
+    })
 
-  it('#del', () => {
-    const magazines = db.store('magazines')
-    return magazines.del('id1').then(() => {
-      return Promise.all([
-        magazines.get('id1').then((val) => expect(val).equal(undefined)),
-        magazines.count().then((count) => expect(count).equal(3)),
-      ])
+    await db.storage1.put('key', 'value').then(() => {
+      return db.storage1.get('key').then((val) => {
+        expect(val).equal('value')
+      })
     })
   })
 
-  it('#count', () => {
-    const magazines = db.store('magazines')
-    return Promise.all([
-      magazines.count(),
-      magazines.count('id3'),
-      magazines.count({ gte: 'id2' }),
-    ]).then((results) => {
-      expect(results[0]).equal(4)
-      expect(results[1]).equal(1)
-      expect(results[2]).equal(3)
-    })
+  it('#del', async () => {
+    await db.magazines.del('id1')
+    expect(await db.magazines.get('id1')).equal(undefined)
+    expect(await db.magazines.count()).equal(3)
   })
 
-  it('#clear', () => {
-    const magazines = db.store('magazines')
-    return magazines.clear().then(() => {
-      return magazines.count().then((count) => expect(count).equal(0))
-    })
+  it('#count', async () => {
+    expect(await db.magazines.count()).equal(4)
+    expect(await db.magazines.count('id3')).equal(1)
+    expect(await db.magazines.count({ gte: 'id2' })).equal(3)
+  })
+
+  it('#clear', async () => {
+    await db.magazines.clear()
+    expect(await db.magazines.count()).equal(0)
   })
 
   it('#getAll', () => {

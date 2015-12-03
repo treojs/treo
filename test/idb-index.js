@@ -16,18 +16,17 @@ describe('Index', () => {
     }
   }
 
-  beforeEach(() => {
-    db = treo('treo.index', schema)
+  beforeEach(async () => {
+    db = await treo('treo.index', schema.version(), schema.callback())
     results = {}
-    const magazines = db.store('magazines')
 
-    return Promise.all([
-      magazines.put({ name: 'M1', frequency: 12, keywords: ['political'] }),
-      magazines.put({ name: 'M2', frequency: 6, keywords: ['gaming'] }),
-      magazines.put({ name: 'M3', frequency: 52, keywords: ['political', 'news'] }),
-      magazines.put({ name: 'M4', frequency: 24, keywords: ['gadgets', 'gaming', 'computers'] }),
-      magazines.put({ name: 'M5', frequency: 52, keywords: ['computers', 'gaming'] }),
-    ])
+    await [
+      db.magazines.put({ name: 'M1', frequency: 12, keywords: ['political'] }),
+      db.magazines.put({ name: 'M2', frequency: 6, keywords: ['gaming'] }),
+      db.magazines.put({ name: 'M3', frequency: 52, keywords: ['political', 'news'] }),
+      db.magazines.put({ name: 'M4', frequency: 24, keywords: ['gadgets', 'gaming', 'computers'] }),
+      db.magazines.put({ name: 'M5', frequency: 52, keywords: ['computers', 'gaming'] }),
+    ]
   })
 
   before(() => del('treo.index'))
@@ -36,108 +35,86 @@ describe('Index', () => {
   it('has properties', () => {
     const byTitle = db.store('books').index('byTitle')
     expect(byTitle.name).equal('byTitle')
-    expect(byTitle.field).equal('title')
+    expect(byTitle.key).equal('title')
     expect(byTitle.unique).equal(true)
     expect(byTitle.multi).equal(false)
   })
 
-  it('#get', () => {
-    const magazines = db.store('magazines')
-    return Promise.all([
-      magazines.index('byName').get('M2'),
-      magazines.index('byFrequency').get(52),
-    ]).then(([byName, byFrequency]) => {
-      expect(byName.name).equal('M2')
-      expect(byFrequency.name).equal('M3')
+  it('#get', async () => {
+    const record1 = await db.magazines.byName.get('M2')
+    expect(record1.name).equal('M2')
+
+    const record2 = await db.magazines.byFrequency.get(52)
+    expect(record2.name).equal('M3')
+  })
+
+  it('#getAll', async () => {
+    const records1 = await db.magazines.byName.getAll('M4')
+    expect(pluck(records1, 'name')).eql(['M4'])
+
+    const records2 = await db.magazines.byFrequency.getAll({ gte: 30 })
+    expect(pluck(records2, 'name')).eql(['M3', 'M5'])
+  })
+
+  it('#count', async () => {
+    const count1 = await db.magazines.byName.count({ gte: 'M3' })
+    expect(count1).equal(3)
+
+    const count2 = await db.magazines.byFrequency.count({ lt: 12 })
+    expect(count2).equal(1)
+  })
+
+  it('#cursor', async () => {
+    await db.magazines.byName.cursor({
+      iterator: iterator(1),
     })
-  })
+    expect(pluck(results[1], 'name')).eql(['M1', 'M2', 'M3', 'M4', 'M5'])
 
-  it('#getAll', () => {
-    const magazines = db.store('magazines')
-    return Promise.all([
-      magazines.index('byName').getAll('M4'),
-      magazines.index('byFrequency').getAll({ gte: 30 }),
-    ]).then(([byName, byFrequency]) => {
-      expect(pluck(byName, 'name')).eql(['M4'])
-      expect(pluck(byFrequency, 'name')).eql(['M3', 'M5'])
+    await db.magazines.byFrequency.cursor({
+      direction: 'prevunique',
+      iterator: iterator(2),
     })
-  })
+    expect(pluck(results[2], 'frequency')).eql([52, 24, 12, 6])
 
-  it('#count', () => {
-    const magazines = db.store('magazines')
-    return Promise.all([
-      magazines.index('byName').count({ gte: 'M3' }),
-      magazines.index('byFrequency').count({ lt: 12 }),
-    ]).then(([byName, byFrequency]) => {
-      expect(byName).equal(3)
-      expect(byFrequency).equal(1)
+    await db.magazines.byFrequency.cursor({
+      range: { gte: 20 },
+      direction: 'prev',
+      iterator: iterator(3),
     })
+    expect(pluck(results[3], 'frequency')).eql([52, 52, 24])
   })
 
-  it('#cursor', () => {
-    const magazines = db.store('magazines')
-
-    return Promise.all([
-      magazines.index('byName').cursor({
-        iterator: iterator(1),
-      }).then(() => {
-        expect(pluck(results[1], 'name')).eql(['M1', 'M2', 'M3', 'M4', 'M5'])
-      }),
-
-      magazines.index('byFrequency').cursor({
-        direction: 'prevunique',
-        iterator: iterator(2),
-      }).then(() => {
-        expect(pluck(results[2], 'frequency')).eql([52, 24, 12, 6])
-      }),
-
-      magazines.index('byFrequency').cursor({
-        range: { gte: 20 },
-        direction: 'prev',
-        iterator: iterator(3),
-      }).then(() => {
-        expect(pluck(results[3], 'frequency')).eql([52, 52, 24])
-      }),
-    ])
-  })
-
-  it.skip('multiEntry', () => {
+  it.skip('multi entry', async () => {
     const byKeywords = db.store('magazines').index('byKeywords')
     expect(byKeywords.name).equal('byKeywords')
-    expect(byKeywords.field).equal('keywords')
+    expect(byKeywords.key).equal('keywords')
     expect(byKeywords.unique).equal(false)
     expect(byKeywords.multi).equal(true)
 
-    return Promise.all([
-      byKeywords.get('political').then((result) => {
-        expect(result.name).equal('M1')
-      }),
+    const result1 = await byKeywords.get('political')
+    expect(result1.name).equal('M1')
 
-      byKeywords.getAll('gaming').then((result) => {
-        expect(pluck(result, 'name')).eql(['M2', 'M4', 'M5'])
-      }),
-      byKeywords.getAll({ gte: 'c', lte: 'c\uffff' }).then((result) => {
-        expect(pluck(result, 'name')).eql(['M4', 'M5'])
-      }),
+    const result2 = await byKeywords.getAll('gaming')
+    expect(pluck(result2, 'name')).eql(['M2', 'M4', 'M5'])
 
-      byKeywords.count('political').then((result) => {
-        expect(result).equal(2)
-      }),
+    const result3 = await byKeywords.getAll({ gte: 'c', lte: 'c\uffff' })
+    expect(pluck(result3, 'name')).eql(['M4', 'M5'])
 
-      byKeywords.cursor({
-        range: 'gaming',
-        direction: 'nextunique',
-        iterator: iterator(1),
-      }).then(() => {
-        expect(pluck(results[1], 'name')).eql(['M2'])
-      }),
-      byKeywords.cursor({
-        range: 'political',
-        direction: 'prevunique',
-        iterator: iterator(2),
-      }).then(() => {
-        expect(pluck(results[2], 'name')).eql(['M1'])
-      }),
-    ])
+    const result4 = await byKeywords.count('political')
+    expect(result4).equal(2)
+
+    await byKeywords.cursor({
+      range: 'gaming',
+      direction: 'nextunique',
+      iterator: iterator(1),
+    })
+    expect(pluck(results[1], 'name')).eql(['M2'])
+
+    await byKeywords.cursor({
+      range: 'political',
+      direction: 'prevunique',
+      iterator: iterator(2),
+    })
+    expect(pluck(results[2], 'name')).eql(['M1'])
   })
 })

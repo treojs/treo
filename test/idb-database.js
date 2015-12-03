@@ -3,7 +3,7 @@ import { del } from 'idb-factory'
 import schema from './support/schema'
 import treo from '../src'
 
-describe('Database', () => {
+describe.skip('Database', () => {
   let db
 
   beforeEach(() => {
