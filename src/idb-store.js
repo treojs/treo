@@ -1,25 +1,22 @@
 import parseRange from 'idb-range'
 import { request, requestCursor } from 'idb-request'
-import Index from './idb-index'
+import { storeDescriptor } from './idb-descriptor'
 import batch from './idb-batch'
+import Index from './idb-index'
 
 export default class Store {
 
   /**
    * Initialize new `Store`.
    *
-   * @param {Database} db
-   * @param {Object} opts { name, keyPath, autoIncrement, indexes }
+   * @param {IDBDatabase} db
+   * @param {String} storeName
    */
 
-  constructor(db, opts) {
+  constructor(db, storeName) {
+    if (typeof storeName !== 'string') throw new TypeError('"storeName" is required')
     this.db = db
-    this.opts = opts.indexes
-    this.name = opts.name
-    this.key = opts.keyPath
-    this.increment = opts.autoIncrement
-    this.indexes = opts.indexes.map((index) => index.name)
-
+    this.props = storeDescriptor(db, storeName)
     this.indexes.forEach((indexName) => {
       if (typeof this[indexName] !== 'undefined') return
       Object.defineProperty(this, indexName, {
@@ -29,6 +26,15 @@ export default class Store {
   }
 
   /**
+   * Property getters.
+   */
+
+  get name() { return this.props.name }
+  get key() { return this.props.keyPath }
+  get increment() { return this.props.autoIncrement }
+  get indexes() { return Object.keys(this.props.indexes) }
+
+  /**
    * Get index by `name`.
    *
    * @param {String} name
@@ -36,9 +42,8 @@ export default class Store {
    */
 
   index(name) {
-    const i = this.indexes.indexOf(name)
-    if (i === -1) throw new TypeError('invalid index name')
-    return new Index(this, this.opts[i])
+    if (this.indexes.indexOf(name) === -1) throw new TypeError(`"${name}" index does not exist`)
+    return new Index(this.db, this.name, name)
   }
 
   /**
@@ -50,9 +55,7 @@ export default class Store {
    */
 
   add(key, val) {
-    return this.db.getInstance().then((db) => {
-      return batch(db, this.name, [{ key, val, type: 'add' }]).then(([res]) => res)
-    })
+    return batch(this.db, this.name, [{ key, val, type: 'add' }]).then(([res]) => res)
   }
 
   /**
@@ -64,9 +67,7 @@ export default class Store {
    */
 
   put(key, val) {
-    return this.db.getInstance().then((db) => {
-      return batch(db, this.name, [{ key, val, type: 'put' }]).then(([res]) => res)
-    })
+    return batch(this.db, this.name, [{ key, val, type: 'put' }]).then(([res]) => res)
   }
 
   /**
@@ -77,9 +78,7 @@ export default class Store {
    */
 
   del(key) {
-    return this.db.getInstance().then((db) => {
-      return batch(db, this.name, [{ key, type: 'del' }]).then(([res]) => res)
-    })
+    return batch(this.db, this.name, [{ key, type: 'del' }]).then(([res]) => res)
   }
 
   /**
@@ -90,7 +89,7 @@ export default class Store {
    */
 
   batch(ops) {
-    return this.db.getInstance().then((db) => batch(db, this.name, ops))
+    return batch(this.db, this.name, ops)
   }
 
   /**
@@ -100,10 +99,8 @@ export default class Store {
    */
 
   clear() {
-    return this.db.getInstance().then((db) => {
-      const tr = db.transaction(this.name, 'readwrite')
-      return request(tr.objectStore(this.name).clear(), tr)
-    })
+    const tr = this.db.transaction(this.name, 'readwrite')
+    return request(tr.objectStore(this.name).clear(), tr)
   }
 
   /**
@@ -114,9 +111,8 @@ export default class Store {
    */
 
   get(key) {
-    return this.db.getInstance().then((db) => {
-      return request(db.transaction(this.name, 'readonly').objectStore(this.name).get(key))
-    })
+    const store = this.db.transaction(this.name, 'readonly').objectStore(this.name)
+    return request(store.get(key))
   }
 
   /**
@@ -127,15 +123,13 @@ export default class Store {
    */
 
   count(range) {
-    return this.db.getInstance().then((db) => {
-      try {
-        const store = db.transaction(this.name, 'readonly').objectStore(this.name)
-        return request(range ? store.count(parseRange(range)) : store.count())
-      } catch (_) {
-        // fix https://github.com/axemclion/IndexedDBShim/issues/202
-        return this.getAll(range).then((all) => all.length)
-      }
-    })
+    try {
+      const store = this.db.transaction(this.name, 'readonly').objectStore(this.name)
+      return request(range ? store.count(parseRange(range)) : store.count())
+    } catch (_) {
+      // fix https://github.com/axemclion/IndexedDBShim/issues/202
+      return this.getAll(range).then((all) => all.length)
+    }
   }
 
   /**
@@ -168,10 +162,8 @@ export default class Store {
 
   cursor({ iterator, range, direction }) {
     if (typeof iterator !== 'function') throw new TypeError('iterator is required')
-    return this.db.getInstance().then((db) => {
-      const store = db.transaction(this.name, 'readonly').objectStore(this.name)
-      const req = store.openCursor(parseRange(range), direction || 'next')
-      return requestCursor(req, iterator)
-    })
+    const store = this.db.transaction(this.name, 'readonly').objectStore(this.name)
+    const req = store.openCursor(parseRange(range), direction || 'next')
+    return requestCursor(req, iterator)
   }
 }

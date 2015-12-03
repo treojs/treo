@@ -72,8 +72,20 @@ export default function batch(db, storeName, ops) {
   })
 }
 
+/**
+ * Validate unique index manually.
+ *
+ * Fixing:
+ * - https://bugs.webkit.org/show_bug.cgi?id=149107
+ * - https://github.com/axemclion/IndexedDBShim/issues/56
+ *
+ * @param {IDBStore} store
+ * @param {Any} val
+ * @param {Function} cb(err, uniqueRecordsCounter)
+ */
+
 function countUniqueIndexes(store, val, cb) {
-  // rely on native support
+  // try to rely on native support
   if (!isSafari && global.indexedDB !== global.shimIndexedDB) return cb()
 
   const indexes = slice.call(store.indexNames).map((indexName) => {
@@ -103,9 +115,23 @@ function countUniqueIndexes(store, val, cb) {
   })
 }
 
+/**
+ * Check if `index` is compound
+ *
+ * @param {IDBIndex} index
+ * @return {Boolean}
+ */
+
 function isCompound(index) {
   return typeof index.keyPath !== 'string'
 }
+
+/**
+ * Create error handler.
+ *
+ * @param {Function} cb
+ * @return {Function}
+ */
 
 function handleError(cb) {
   return (e) => {

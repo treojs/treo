@@ -1,20 +1,13 @@
-import Schema from 'idb-schema'
+import sEmitter from 'storage-emitter'
+import { open } from 'idb-factory'
 import Database from './idb-database'
-import Store from './idb-store'
-import Index from './idb-index'
 
-/**
- * Expose API.
- */
+export default function treo(name, version, upgradeCallback) {
+  if (typeof name !== 'string') throw new TypeError('"name" is required')
+  if (typeof version !== 'undefined') sEmitter.emit('versionchange', { name, version })
+  return open(name, version, upgradeCallback).then((db) => new Database(db))
+}
 
-exports = module.exports = (name, schema) => new Database(name, schema)
-exports.schema = () => new Schema()
-
-/**
- * Expose core classes.
- */
-
-exports.Schema = Schema
-exports.Database = Database
-exports.Store = Store
-exports.Index = Index
+export { default as Database } from './idb-database'
+export { default as Store } from './idb-store'
+export { default as Index } from './idb-index'
