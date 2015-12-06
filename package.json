@@ -22,11 +22,11 @@
   },
   "dependencies": {
     "component-emitter": "^1.2.0",
+    "idb-batch": "^1.0.0",
     "idb-factory": "^1.0.0",
     "idb-range": "^3.1.2",
     "idb-request": "^3.0.0",
     "idb-schema": "^3.2.1",
-    "is-plain-obj": "^1.1.0",
     "storage-emitter": "^1.0.0"
   },
   "devDependencies": {

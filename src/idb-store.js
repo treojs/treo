@@ -1,7 +1,7 @@
 import parseRange from 'idb-range'
 import { request, requestCursor } from 'idb-request'
 import { storeDescriptor } from './idb-descriptor'
-import batch from './idb-batch'
+import batch from 'idb-batch'
 import Index from './idb-index'
 
 export default class Store {
@@ -55,6 +55,10 @@ export default class Store {
    */
 
   add(key, val) {
+    if (typeof val === 'undefined') {
+      val = key
+      key = undefined
+    }
     return batch(this.db, this.name, [{ key, val, type: 'add' }]).then(([res]) => res)
   }
 
@@ -67,6 +71,10 @@ export default class Store {
    */
 
   put(key, val) {
+    if (typeof val === 'undefined') {
+      val = key
+      key = undefined
+    }
     return batch(this.db, this.name, [{ key, val, type: 'put' }]).then(([res]) => res)
   }
 
