@@ -1,6 +1,13 @@
 import parseRange from 'idb-range'
-import { request, requestCursor } from 'idb-request'
-import { indexDescriptor } from './idb-descriptor'
+import { request } from 'idb-request'
+import { take } from './packages/idb-take'
+import { indexDescriptor } from './packages/idb-descriptor'
+
+/**
+ * Show multiEntry warning only once.
+ */
+
+let showWarning = true
 
 export default class Index {
 
@@ -19,7 +26,8 @@ export default class Index {
     this.storeName = storeName
     this.props = indexDescriptor(db, storeName, indexName)
 
-    if (this.multi) {
+    if (this.multi && showWarning) {
+      showWarning = false
       console.warn('multiEntry index is not supported completely, because it does not work in IE. But it should work in remaining browsers.') // eslint-disable-line
     }
   }
@@ -34,32 +42,29 @@ export default class Index {
   get unique() { return this.props.unique }
 
   /**
-   * Get value by `key`.
+   * Get a value by `key`.
    *
    * @param {Any} key
    * @return {Promise}
    */
 
   get(key) {
-    const index = this.db.transaction(this.storeName, 'readonly').objectStore(this.storeName).index(this.name)
+    const index = this.db.transaction(this.storeName, 'readonly')
+    .objectStore(this.storeName).index(this.name)
     return request(index.get(key))
   }
 
   /**
-   * Get all values matching `range`.
+   * Get all values in `range`,
+   * `opts` passes to idb-take.
    *
    * @param {Any} [range]
+   * @param {Object} [opts]
    * @return {Promise}
    */
 
-  getAll(range) {
-    const result = []
-    return this.cursor({ range, iterator }).then(() => result)
-
-    function iterator(cursor) {
-      result.push(cursor.value)
-      cursor.continue()
-    }
+  getAll(range, opts = {}) {
+    return take(this, range, opts)
   }
 
   /**
@@ -71,8 +76,9 @@ export default class Index {
 
   count(range) {
     try {
-      const index = this.db.transaction(this.storeName, 'readonly').objectStore(this.storeName).index(this.name)
-      return request(range ? index.count(parseRange(range)) : index.count())
+      const index = this.db.transaction(this.storeName, 'readonly')
+      .objectStore(this.storeName).index(this.name)
+      return request(index.count(parseRange(range)))
     } catch (_) {
       // fix https://github.com/axemclion/IndexedDBShim/issues/202
       return this.getAll(range).then((all) => all.length)
@@ -80,32 +86,16 @@ export default class Index {
   }
 
   /**
-   * Create read cursor for specific `range`,
-   * and pass IDBCursor to `iterator` function.
+   * Low-level proxy method to open read cursor.
    *
-   * @param {Object} opts { [range], [direction], iterator }
-   * @return {Promise}
+   * @param {Any} range
+   * @param {String} [direction]
+   * @return {IDBRequest}
    */
 
-  cursor({ iterator, range, direction }) {
-    if (typeof iterator !== 'function') throw new TypeError('iterator is required')
-    // fix: https://github.com/axemclion/IndexedDBShim/issues/204
-    if (direction === 'prevunique' && !this.multi) {
-      const method = iterator
-      const keys = {} // count unique keys
-      direction = 'prev'
-      iterator = (cursor) => {
-        if (!keys[cursor.key]) {
-          keys[cursor.key] = true
-          method(cursor)
-        } else {
-          cursor.continue()
-        }
-      }
-    }
-
-    const index = this.db.transaction(this.storeName, 'readonly').objectStore(this.storeName).index(this.name)
-    const req = index.openCursor(parseRange(range), direction || 'next')
-    return requestCursor(req, iterator)
+  openCursor(range, direction = 'next') {
+    const index = this.db.transaction(this.storeName, 'readonly')
+    .objectStore(this.storeName).index(this.name)
+    return index.openCursor(parseRange(range), direction)
   }
 }

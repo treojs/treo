@@ -1,7 +1,8 @@
 import parseRange from 'idb-range'
-import { request, requestCursor } from 'idb-request'
-import { storeDescriptor } from './idb-descriptor'
+import { request } from 'idb-request'
 import batch from 'idb-batch'
+import { storeDescriptor } from './packages/idb-descriptor'
+import { take } from './packages/idb-take'
 import Index from './idb-index'
 
 export default class Store {
@@ -112,7 +113,7 @@ export default class Store {
   }
 
   /**
-   * Get one value by `key`.
+   * Get a value by `key`.
    *
    * @param {Any} key
    * @return {Promise}
@@ -121,6 +122,19 @@ export default class Store {
   get(key) {
     const store = this.db.transaction(this.name, 'readonly').objectStore(this.name)
     return request(store.get(key))
+  }
+
+  /**
+   * Get all values in `range`,
+   * `opts` passes to idb-take.
+   *
+   * @param {Any} [range]
+   * @param {Object} [opts]
+   * @return {Promise}
+   */
+
+  getAll(range = null, opts = {}) {
+    return take(this, range, opts)
   }
 
   /**
@@ -133,7 +147,7 @@ export default class Store {
   count(range) {
     try {
       const store = this.db.transaction(this.name, 'readonly').objectStore(this.name)
-      return request(range ? store.count(parseRange(range)) : store.count())
+      return request(store.count(range))
     } catch (_) {
       // fix https://github.com/axemclion/IndexedDBShim/issues/202
       return this.getAll(range).then((all) => all.length)
@@ -141,37 +155,15 @@ export default class Store {
   }
 
   /**
-   * Get all.
+   * Low-level proxy method to open read cursor.
    *
-   * @param {Any} [range]
-   * @return {Promise}
+   * @param {Any} range
+   * @param {String} [direction]
+   * @return {IDBRequest}
    */
 
-  getAll(range) {
-    const result = []
-    return this.cursor({ iterator, range }).then(() => result)
-
-    function iterator(cursor) {
-      result.push(cursor.value)
-      cursor.continue()
-    }
-  }
-
-  /**
-   * Create read cursor for specific `range`,
-   * and pass IDBCursor to `iterator` function.
-   *
-   * @param {Object} opts:
-   *   {Any} [range] - passes to .openCursor()
-   *   {String} [direction] - "prev", "prevunique", "next", "nextunique"
-   *   {Function} iterator - function to call with IDBCursor
-   * @return {Promise}
-   */
-
-  cursor({ iterator, range, direction }) {
-    if (typeof iterator !== 'function') throw new TypeError('iterator is required')
+  openCursor(range, direction = 'next') {
     const store = this.db.transaction(this.name, 'readonly').objectStore(this.name)
-    const req = store.openCursor(parseRange(range), direction || 'next')
-    return requestCursor(req, iterator)
+    return store.openCursor(parseRange(range), direction)
   }
 }

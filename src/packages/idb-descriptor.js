@@ -1,9 +1,16 @@
 
 /**
- * Cache stores descriptors.
+ * Link to array prototype method.
  */
 
-const cache = Object.create(null)
+const slice = [].slice
+
+/**
+ * Cache stores descriptors using [db][version] notation.
+ * Since database structure does not change between versions.
+ */
+
+const cache = {}
 
 /**
  * Get store descriptor.
@@ -14,12 +21,12 @@ const cache = Object.create(null)
  */
 
 export function storeDescriptor(db, storeName) {
-  if (!cache[db.name]) cache[db.name] = Object.create(null)
-  if (!cache[db.name][db.version]) cache[db.name][db.version] = Object.create(null)
+  if (!cache[db.name]) cache[db.name] = {}
+  if (!cache[db.name][db.version]) cache[db.name][db.version] = {}
   if (!cache[db.name][db.version][storeName]) {
     const store = db.transaction(storeName, 'readonly').objectStore(storeName)
     const indexes = {}
-    toArray(store.indexNames).map((indexName) => {
+    slice.call(store.indexNames).forEach((indexName) => {
       const index = store.index(indexName)
       indexes[indexName] = {
         name: indexName,
@@ -35,6 +42,7 @@ export function storeDescriptor(db, storeName) {
       indexes,
     }
   }
+  // clone data to avoid external cache modification
   return clone(cache[db.name][db.version][storeName])
 }
 
@@ -51,10 +59,13 @@ export function indexDescriptor(db, storeName, indexName) {
   return storeDescriptor(db, storeName).indexes[indexName]
 }
 
+/**
+ * Naive clone implementaion.
+ *
+ * @param {Object} obj
+ * @return {Object}
+ */
+
 function clone(obj) {
   return JSON.parse(JSON.stringify(obj))
-}
-
-function toArray(arrayLike) {
-  return [].slice.call(arrayLike)
 }
