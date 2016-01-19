@@ -32,13 +32,13 @@ export function storeDescriptor(db, storeName) {
         name: indexName,
         keyPath: index.keyPath,
         unique: index.unique,
-        multiEntry: index.multiEntry,
+        multiEntry: index.multiEntry || false,
       }
     })
     cache[db.name][db.version][storeName] = {
       name: storeName,
       keyPath: store.keyPath,
-      autoIncrement: store.autoIncrement,
+      autoIncrement: store.autoIncrement || false,
       indexes,
     }
   }

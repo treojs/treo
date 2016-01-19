@@ -33,8 +33,8 @@ export function take(store, range, opts = {}) {
 
   return mapCursor(req, (cursor, result) => {
     if (offsetCounter === 0) {
-      result.push(cursor.value)
-      if (limit > result.length) cursor.continue()
+      if (limit > result.length) result.push(cursor.value) // FIXME: exit earlier
+      cursor.continue()
     } else {
       offsetCounter -= 1
       cursor.continue()

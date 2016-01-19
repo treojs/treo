@@ -49,8 +49,7 @@ export default class Index {
    */
 
   get(key) {
-    const index = this.db.transaction(this.storeName, 'readonly')
-    .objectStore(this.storeName).index(this.name)
+    const index = this.db.transaction(this.storeName, 'readonly').objectStore(this.storeName).index(this.name)
     return request(index.get(key))
   }
 
@@ -76,8 +75,7 @@ export default class Index {
 
   count(range) {
     try {
-      const index = this.db.transaction(this.storeName, 'readonly')
-      .objectStore(this.storeName).index(this.name)
+      const index = this.db.transaction(this.storeName, 'readonly').objectStore(this.storeName).index(this.name)
       return request(index.count(parseRange(range)))
     } catch (_) {
       // fix https://github.com/axemclion/IndexedDBShim/issues/202
@@ -94,8 +92,7 @@ export default class Index {
    */
 
   openCursor(range, direction = 'next') {
-    const index = this.db.transaction(this.storeName, 'readonly')
-    .objectStore(this.storeName).index(this.name)
+    const index = this.db.transaction(this.storeName, 'readonly').objectStore(this.storeName).index(this.name)
     return index.openCursor(parseRange(range), direction)
   }
 }
