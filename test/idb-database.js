@@ -3,17 +3,18 @@ import { del } from 'idb-factory'
 import schema from './support/schema'
 import treo from '../src'
 
-describe.skip('Database', () => {
+describe('Database', () => {
+  const dbName = 'treo.database'
   let db
 
-  beforeEach(() => {
-    db = treo('treo.database', schema)
+  beforeEach(async () => {
+    db = await treo(dbName, schema.version(), schema.callback())
   })
 
-  before(() => del('treo.database'))
-  afterEach(() => db.del())
+  before(() => del(dbName))
+  afterEach(() => del(db || dbName))
 
-  it('has properties', () => {
+  it.skip('has properties', () => {
     expect(treo).a('function')
     expect(treo).keys(['Database', 'Index', 'Schema', 'Store', 'schema'])
     expect(db.name).equal('treo.database')
@@ -26,7 +27,7 @@ describe.skip('Database', () => {
     expect(typeof db.something === 'undefined').equal(true)
   })
 
-  it('supports parallel write & read', () => {
+  it.skip('supports parallel write & read', () => {
     const books = db.store('books')
     const magazines = db.store('magazines')
 
@@ -45,20 +46,9 @@ describe.skip('Database', () => {
     })
   })
 
-  it('#close', () => {
-    return db.getInstance().then(() => {
-      expect(db.status).equal('open')
-      db.close()
-      expect(db.status).equal('close')
-      expect(db.origin).equal(null)
-    })
-  })
-
-  it('#on "error"', (done) => {
-    const magazines = db.store('magazines')
-
-    magazines.put({ publisher: 'Leanpub' }).then((val) => {
-      magazines.add(val, { publisher: 'Leanpub' }).then(() => {
+  it.skip('#on "error"', (done) => {
+    db.magazines.put({ publisher: 'Leanpub' }).then((val) => {
+      db.magazines.add(val, { publisher: 'Leanpub' }).then(() => {
         done('should be an error')
       })
       db.on('error', (err) => {
@@ -68,7 +58,7 @@ describe.skip('Database', () => {
     })
   })
 
-  it('#on "versionchange" automatically', () => {
+  it.skip('#on "versionchange" automatically', () => {
     let isCalled = false
     db.on('versionchange', () => { isCalled = true })
 

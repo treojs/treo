@@ -30,24 +30,24 @@
     "storage-emitter": "^1.0.0"
   },
   "devDependencies": {
-    "babel-cli": "6.1.18",
-    "babel-core": "6.1.18",
-    "babel-eslint": "^5.0.0-beta4",
-    "babel-plugin-add-module-exports": "^0.1.1",
-    "babel-plugin-transform-async-to-generator": "^6.3.0",
-    "babel-preset-es2015": "^6.1.18",
+    "babel-cli": "^6.4.0",
+    "babel-core": "^6.4.0",
+    "babel-eslint": "^5.0.0-beta6",
+    "babel-plugin-add-module-exports": "^0.1.2",
+    "babel-plugin-transform-async-to-generator": "^6.4.0",
+    "babel-preset-es2015": "^6.3.13",
     "babelify": "^7.2.0",
-    "browserify": "^12.0.1",
+    "browserify": "^13.0.0",
     "browserify-test": "^2.1.2",
     "chai": "^3.4.1",
     "es6-promise": "^3.0.2",
     "eslint": "^1.10.2",
-    "lodash.pluck": "^3.1.2",
     "eslint-config-airbnb": "^3.1.0",
+    "lodash.map": "^4.0.0",
     "polyfill-function-prototype-bind": "0.0.1",
     "regenerator": "^0.8.42",
     "treo-websql": "^3.0.0",
     "uglify-js": "^2.4.23",
-    "zuul": "^3.7.3"
+    "zuul": "^3.9.0"
   }
 }
