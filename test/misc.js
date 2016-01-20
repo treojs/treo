@@ -72,4 +72,23 @@ describe('Misc', () => {
     expect(c2).equal(2)
     expect(c3).equal(1)
   })
+
+  it('supports parallel read/write', async () => {
+    db = await treo(dbName, schema.version(), schema.callback())
+    const { books, magazines } = db
+
+    // parallel write
+    await Promise.all([
+      books.batch({ 1: { name: 'book 1' }, 2: { id: 2, name: 'book 2' } }),
+      books.put(3, { id: 3, name: 'book 3' }),
+      magazines.del(5),
+      magazines.put({ id: 4, message: 'hey' }),
+    ])
+
+    // parallel read
+    await Promise.all([
+      books.getAll().then((records) => expect(records).length(3)),
+      magazines.count().then((count) => expect(count).equal(1)),
+    ])
+  })
 })

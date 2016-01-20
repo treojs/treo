@@ -3,7 +3,7 @@ import { del } from 'idb-factory'
 import schema from './support/schema'
 import treo from '../src'
 
-describe.skip('Database', () => {
+describe('Database', () => {
   const dbName = 'treo.database'
   let db
 
@@ -14,74 +14,48 @@ describe.skip('Database', () => {
   before(() => del(dbName))
   afterEach(() => del(db || dbName))
 
-  it.skip('has properties', () => {
-    expect(treo).a('function')
-    expect(treo).keys(['Database', 'Index', 'Schema', 'Store', 'schema'])
+  it('#getters - "name", "version", "stores"', () => {
     expect(db.name).equal('treo.database')
     expect(db.version).equal(4)
-
     expect(db.stores.sort()).eql(['books', 'magazines', 'storage1', 'storage2'])
-    expect(db.books instanceof treo.Store).equal(true)
-    expect(db.magazines instanceof treo.Store).equal(true)
-    expect(db.books.byTitle instanceof treo.Index).equal(true)
-    expect(typeof db.something === 'undefined').equal(true)
   })
 
-  it.skip('supports parallel write & read', () => {
-    const books = db.store('books')
-    const magazines = db.store('magazines')
+  it('#del() - delete database and emits "versionchange"', (done) => {
+    let isCalled = false
+    db.on('versionchange', () => isCalled = true)
 
-    // parallel write
-    return Promise.all([
-      books.batch({ 1: { name: 'book 1' }, 2: { id: 2, name: 'book 2' } }),
-      books.put(3, { id: 3, name: 'book 3' }),
-      magazines.del(5),
-      magazines.put({ id: 4, message: 'hey' }),
-    ]).then(() => {
-      // parallel read
-      return Promise.all([
-        books.getAll().then((records) => expect(records).length(3)),
-        magazines.count().then((count) => expect(count).equal(1)),
-      ])
+    db.del().then(() => {
+      expect(isCalled).equal(true)
+      done()
     })
   })
 
-  it.skip('#on "error"', (done) => {
-    db.magazines.put({ publisher: 'Leanpub' }).then((val) => {
-      db.magazines.add(val, { publisher: 'Leanpub' }).then(() => {
+  it('#close() - close connection and emits "close"', (done) => {
+    db.on('close', done)
+    db.close()
+  })
+
+  it('#on("error") - for every error', (done) => {
+    db.on('error', () => done())
+    db.magazines.add({ publisher: 'Leanpub' }).then((key) => {
+      db.magazines.add(key, { publisher: 'Leanpub' }).then(() => {
         done('should be an error')
       })
-      db.on('error', (err) => {
-        expect(!!err).equal(true)
-        done()
-      })
     })
   })
 
-  it.skip('#on "versionchange" automatically', () => {
+  it('#on("versionchange") - handles automatically', async () => {
     let isCalled = false
-    db.on('versionchange', () => { isCalled = true })
+    db.on('versionchange', () => isCalled = true)
 
-    return db.store('magazines').put({ id: 4, words: ['hey'] }).then(() => {
-      const newSchema = schema.clone().version(5).addStore('users')
-      const newDb = treo('treo.database', newSchema)
+    await db.magazines.put({ id: 4, words: ['hey'] })
 
-      expect(newDb.version).equal(5)
-      expect(newDb.stores.sort()).eql(['books', 'magazines', 'storage1', 'storage2', 'users'])
+    const newSchema = schema.clone().version(5).addStore('users')
+    const newDb = await treo(dbName, newSchema.version(), newSchema.callback())
 
-      return Promise.all([
-        newDb.store('users').put(1, { name: 'John' }).then((key) => {
-          expect(key).equal(1)
-        }),
-        newDb.store('magazines').get(4, (err, obj) => {
-          expect(obj).eql({ id: 4, words: ['hey'] })
-        }),
-      ]).then(() => {
-        expect(db.status).equal('close')
-        expect(isCalled).equal(true)
-        expect(newDb.status).equal('open')
-        newDb.close()
-      })
-    })
+    expect(newDb.version).equal(5)
+    expect(newDb.stores.sort()).eql(['books', 'magazines', 'storage1', 'storage2', 'users'])
+    expect(isCalled).equal(true)
+    newDb.close()
   })
 })

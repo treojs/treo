@@ -36,33 +36,23 @@ export default class Database extends Emitter {
   }
 
   /**
-   * Get name.
-   *
-   * @return {String}
+   * Getters.
    */
 
-  get name() {
-    return this.db.name
-  }
+  get name() { return this.db.name }
+  get version() { return this.db.version }
+  get stores() { return [].slice.call(this.db.objectStoreNames) }
 
   /**
-   * Get version.
+   * Get store by `name`.
    *
-   * @return {Number}
+   * @param {String} name
+   * @return {Store}
    */
 
-  get version() {
-    return this.db.version
-  }
-
-  /**
-   * Get stores names.
-   *
-   * @return {Array}
-   */
-
-  get stores() {
-    return [].slice.call(this.db.objectStoreNames)
+  store(name) {
+    if (this.stores.indexOf(name) === -1) throw new TypeError(`"${name}" store does not exist`)
+    return new Store(this.db, name)
   }
 
   /**
@@ -82,17 +72,6 @@ export default class Database extends Emitter {
 
   close() {
     this.db.close()
-  }
-
-  /**
-   * Get store by `name`.
-   *
-   * @param {String} name
-   * @return {Store}
-   */
-
-  store(name) {
-    if (this.stores.indexOf(name) === -1) throw new TypeError(`"${name}" store does not exist`)
-    return new Store(this.db, name)
+    this.emit('close')
   }
 }
