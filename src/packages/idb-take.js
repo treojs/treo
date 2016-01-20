@@ -25,7 +25,7 @@ const defaultOpts = {
  * @return {Promise}
  */
 
-export function take(store, range, opts = {}) {
+export function take(store, range = null, opts = {}) {
   const { offset, limit, unique, reverse } = assign({}, defaultOpts, opts)
   const direction = (reverse ? 'prev' : 'next') + (unique ? 'unique' : '')
   const req = store.openCursor(parseRange(range), direction)

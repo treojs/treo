@@ -62,7 +62,7 @@ export default class Index {
    * @return {Promise}
    */
 
-  getAll(range, opts = {}) {
+  getAll(range, opts) {
     return take(this, range, opts)
   }
 

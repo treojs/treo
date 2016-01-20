@@ -1,6 +1,8 @@
 import sEmitter from 'storage-emitter'
 import { open } from 'idb-factory'
 import Database from './idb-database'
+import Store from './idb-store'
+import Index from './idb-index'
 
 export default function treo(name, version, upgradeCallback) {
   if (typeof name !== 'string') throw new TypeError('"name" is required')
@@ -8,6 +10,4 @@ export default function treo(name, version, upgradeCallback) {
   return open(name, version, upgradeCallback).then((db) => new Database(db))
 }
 
-export { default as Database } from './idb-database'
-export { default as Store } from './idb-store'
-export { default as Index } from './idb-index'
+export { Database, Store, Index }

@@ -21,7 +21,7 @@ describe('Index', () => {
   })
 
   before(() => del(dbName))
-  afterEach(() => db.del())
+  afterEach(() => del(db || dbName))
 
   it('#getters - "name", "key", "unique", "multi"', () => {
     const byAuthor = db.store('books').index('byAuthor')

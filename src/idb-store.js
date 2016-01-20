@@ -133,7 +133,7 @@ export default class Store {
    * @return {Promise}
    */
 
-  getAll(range = null, opts = {}) {
+  getAll(range, opts) {
     return take(this, range, opts)
   }
 
