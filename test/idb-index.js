@@ -69,11 +69,11 @@ describe('Index', () => {
   })
 
   it('#openCursor(range, [direction]) - proxy to native openCursor', async () => {
-    const req = db.magazines.byFrequency.openCursor({ gte: 10 }, 'prevunique')
+    const req = db.magazines.byFrequency.openCursor({ gte: 10, lt: 30 }, 'prevunique')
     const result = await mapCursor(req, (cursor, memo) => {
       memo.push(cursor.value)
       cursor.continue()
     })
-    expect(map(result, 'name')).eql(['M3', 'M4', 'M1'])
+    expect(map(result, 'name')).eql(['M4', 'M1'])
   })
 })

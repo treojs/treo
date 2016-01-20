@@ -32,7 +32,6 @@ export default class Store {
 
   get name() { return this.props.name }
   get key() { return this.props.keyPath }
-  get increment() { return this.props.autoIncrement }
   get indexes() { return Object.keys(this.props.indexes) }
 
   /**

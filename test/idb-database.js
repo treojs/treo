@@ -31,7 +31,7 @@ describe('Database', () => {
   })
 
   it('#close() - close connection and emits "close"', (done) => {
-    db.on('close', done)
+    db.once('close', done)
     db.close()
   })
 

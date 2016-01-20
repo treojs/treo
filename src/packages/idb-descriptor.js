@@ -30,9 +30,7 @@ export function storeDescriptor(db, storeName) {
       const index = store.index(indexName)
       indexes[indexName] = {
         name: indexName,
-        keyPath: index.keyPath instanceof global.DOMStringList
-          ? [].slice.call(index.keyPath)
-          : index.keyPath,
+        keyPath: getKeyPath(index.keyPath),
         unique: index.unique,
         multiEntry: index.multiEntry || false,
       }
@@ -40,7 +38,7 @@ export function storeDescriptor(db, storeName) {
     cache[db.name][db.version][storeName] = {
       name: storeName,
       keyPath: store.keyPath,
-      autoIncrement: store.autoIncrement || false,
+      autoIncrement: store.autoIncrement, // does not work in IE
       indexes,
     }
   }
@@ -70,4 +68,37 @@ export function indexDescriptor(db, storeName, indexName) {
 
 function clone(obj) {
   return JSON.parse(JSON.stringify(obj))
+}
+
+/**
+ * Compound keys in IE.
+ */
+
+const compoundKeysPropertyName = '__$$compoundKey'
+const keySeparator = '$_$'
+const propertySeparatorRegExp = /\$\$/g
+
+function decodeCompoundKeyPath(keyPath) {
+  // Remove the "__$$compoundKey." prefix
+  keyPath = keyPath.substr(compoundKeysPropertyName.length + 1)
+
+  // Split the properties into an array
+  // "name$$first$_$name$$last" ==> ["name$$first", "name$$last"]
+  keyPath = keyPath.split(keySeparator)
+
+  // Decode dotted properties
+  // ["name$$first", "name$$last"] ==> ["name.first", "name.last"]
+  for (let i = 0; i < keyPath.length; i++) {
+    keyPath[i] = keyPath[i].replace(propertySeparatorRegExp, '.')
+  }
+  return keyPath
+}
+
+function getKeyPath(keyPath) {
+  if (keyPath instanceof global.DOMStringList) { // Safari
+    return [].slice.call(keyPath)
+  } else if (keyPath.indexOf(compoundKeysPropertyName) !== -1) { // Shim
+    return decodeCompoundKeyPath(keyPath)
+  }
+  return keyPath
 }

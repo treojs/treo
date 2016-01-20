@@ -22,17 +22,15 @@ describe('Store', () => {
   before(() => del(dbName))
   afterEach(() => del(db || dbName))
 
-  it('#getters - "name", "key", "increment", "indexes"', () => {
+  it('#getters - "name", "key", "indexes"', () => {
     const books = db.store('books')
     expect(books.key).equal('isbn')
     expect(books.name).equal('books')
-    expect(books.increment).equal(false)
     expect(books.indexes).length(3)
 
     const magazines = db.store('magazines')
     expect(magazines.key).equal('id')
     expect(magazines.name).equal('magazines')
-    expect(magazines.increment).equal(true)
     expect(magazines.indexes).length(4)
   })
 
