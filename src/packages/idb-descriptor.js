@@ -30,7 +30,9 @@ export function storeDescriptor(db, storeName) {
       const index = store.index(indexName)
       indexes[indexName] = {
         name: indexName,
-        keyPath: index.keyPath,
+        keyPath: index.keyPath instanceof global.DOMStringList
+          ? [].slice.call(index.keyPath)
+          : index.keyPath,
         unique: index.unique,
         multiEntry: index.multiEntry || false,
       }

@@ -50,7 +50,7 @@ export default class Index {
 
   get(key) {
     const index = this.db.transaction(this.storeName, 'readonly').objectStore(this.storeName).index(this.name)
-    return request(index.get(key))
+    return request(index.get(key)).then((val) => val !== null ? val : undefined)
   }
 
   /**
