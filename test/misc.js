@@ -2,11 +2,12 @@ import { expect } from 'chai'
 import { del, open } from 'idb-factory'
 import Schema from 'idb-schema'
 import npmData from './support/npm-data.json'
+import schema from './support/schema'
 import treo, { Database, Store, Index } from '../src'
 
 describe('Misc', () => {
   const dbName = 'treo.integration'
-  const schema = new Schema()
+  const npmSchema = new Schema()
   .addStore('modules', { keyPath: 'name' })
   .addIndex('byAuthor', 'author')
   .addIndex('byStars', 'stars')
@@ -21,7 +22,7 @@ describe('Misc', () => {
   it('works with large data', async function largeDataTest() {
     this.timeout(10000)
 
-    db = await treo(dbName, schema.version(), schema.callback())
+    db = await treo(dbName, npmSchema.version(), npmSchema.callback())
     await db.modules.batch(allModules)
 
     expect(await db.modules.count()).equal(473)
@@ -30,11 +31,11 @@ describe('Misc', () => {
   })
 
   it('works with standalone classes', async () => {
-    db = await open(dbName, schema.version(), schema.callback())
+    db = await open(dbName, npmSchema.version(), npmSchema.callback())
 
     const wrappedDb = new Database(db)
     expect(wrappedDb.stores).eql(['modules'])
-    expect(wrappedDb.version).equal(schema.version())
+    expect(wrappedDb.version).equal(npmSchema.version())
 
     const store = new Store(db, 'modules')
     expect(store.indexes).eql(['byAuthor', 'byStars'])
@@ -43,5 +44,32 @@ describe('Misc', () => {
 
     const index = new Index(db, 'modules', 'byStars')
     expect(await index.count({ gte: 50 })).equal(4)
+  })
+
+  it('allows the same keys in different stores', async () => {
+    db = await treo(dbName, schema.version(), schema.callback())
+
+    const storage1 = db.store('storage1')
+    const storage2 = db.store('storage2')
+    const books = db.store('books')
+
+    await Promise.all([
+      storage1.put('1', 'val11'),
+      storage1.put(1, 'val12'),
+      storage1.put([1], 'val13'),
+      storage2.put('1', 'val21'),
+      storage2.put(1, 'val22'),
+      books.put(1, { name: 'My book' }),
+    ])
+
+    const [c1, c2, c3] = await Promise.all([
+      storage1.count(),
+      storage2.count(),
+      books.count(),
+    ])
+
+    expect(c1).equal(3)
+    expect(c2).equal(2)
+    expect(c3).equal(1)
   })
 })

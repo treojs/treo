@@ -1,183 +1,135 @@
 import { expect } from 'chai'
 import { del } from 'idb-factory'
+import { mapCursor } from 'idb-request'
 import map from 'lodash.map'
 import schema from './support/schema'
 import treo from '../src'
 
 describe('Store', () => {
+  const dbName = 'treo.store'
+  const data = {
+    id1: { title: 'Quarry Memories', publisher: 'Bob' },
+    id2: { title: 'Water Buffaloes', publisher: 'Bob' },
+    id3: { title: 'Bedrocky Nights', publisher: 'Tim' },
+    id4: { title: 'Waving Wings', publisher: 'Ken' },
+  }
   let db
 
   beforeEach(async () => {
-    db = await treo('treo.store', schema.version(), schema.callback())
-    await [
-      db.magazines.put({ id: 'id1', title: 'Quarry Memories', publisher: 'Bob' }),
-      db.magazines.put({ id: 'id2', title: 'Water Buffaloes', publisher: 'Bob' }),
-      db.magazines.put({ id: 'id3', title: 'Bedrocky Nights', publisher: 'Tim' }),
-      db.magazines.put({ id: 'id4', title: 'Waving Wings', publisher: 'Ken' }),
-    ]
+    db = await treo(dbName, schema.version(), schema.callback())
   })
 
-  before(() => del('treo.store'))
-  afterEach(() => db.del())
+  before(() => del(dbName))
+  afterEach(() => del(db || dbName))
 
-  it('has properties', () => {
+  it('#getters - "name", "key", "increment", "indexes"', () => {
     const books = db.store('books')
-    const magazines = db.store('magazines')
-
     expect(books.key).equal('isbn')
     expect(books.name).equal('books')
+    expect(books.increment).equal(false)
     expect(books.indexes).length(3)
 
+    const magazines = db.store('magazines')
     expect(magazines.key).equal('id')
     expect(magazines.name).equal('magazines')
+    expect(magazines.increment).equal(true)
     expect(magazines.indexes).length(4)
   })
 
-  it('#put', async () => {
-    await db.books.put('id1', { title: 'Quarry Memories', author: 'Fred' }).then((key) => {
-      expect(key).equal('id1')
-      return db.books.get('id1').then((book) => {
-        expect(book).eql({ title: 'Quarry Memories', author: 'Fred', isbn: 'id1' })
-      })
-    })
+  it('#add([key], val) - add value by key', async () => {
+    const key1 = await db.magazines.add({ title: 'Quarry Memories', publisher: 'Bob' })
+    const key2 = await db.magazines.add({ title: 'Water Buffaloes', publisher: 'Bob' })
 
-    await db.magazines.put({ name: 'new magazine' }).then((key) => {
-      return db.magazines.get(key).then((magazine) => {
-        expect(magazine.id).equal(key)
-        expect(magazine.name).equal('new magazine')
-      })
-    })
-
-    await db.storage1.put('key', 'value').then(() => {
-      return db.storage1.get('key').then((val) => {
-        expect(val).equal('value')
-      })
-    })
+    expect(key1).equal(1)
+    expect(key2).equal(2)
   })
 
-  it('#del', async () => {
+  it('#put([key], val) - add or update value by key', async () => {
+    const key1 = await db.books.put('id1', { title: 'Quarry Memories', author: 'Fred' })
+    expect(key1).equal('id1')
+    const book = await db.books.get('id1')
+    expect(book.title).equal('Quarry Memories')
+    expect(book.author).equal('Fred')
+
+    const key2 = await db.magazines.put({ name: 'new magazine' })
+    const magazine = await db.magazines.get(key2)
+    expect(magazine.id).equal(key2)
+    expect(magazine.name).equal('new magazine')
+
+    const key3 = await db.storage1.put('key', 'value')
+    expect(key3).equal('key')
+    const val = await db.storage1.get('key')
+    expect(val).equal('value')
+  })
+
+  it('#del(key) - delete value by key', async () => {
+    await db.magazines.batch(data)
     await db.magazines.del('id1')
+
     expect(await db.magazines.get('id1')).equal(undefined)
     expect(await db.magazines.count()).equal(3)
   })
 
-  it('#count', async () => {
+  it('#clear() - clear store', async () => {
+    await db.magazines.batch(data)
+    expect(await db.magazines.count()).equal(4)
+    await db.magazines.clear()
+    expect(await db.magazines.count()).equal(0)
+  })
+
+  it('#batch(opts)', async () => {
+    await db.magazines.batch({
+      id1: null,
+      id3: { title: 'Bedrocky Nights', publisher: 'Bob' },
+      id4: { title: 'Heavy Weighting', publisher: 'Bob' },
+      id2: null,
+    })
+    expect(await db.magazines.count()).equal(2)
+    expect((await db.magazines.get('id3')).publisher).equal('Bob')
+
+    await db.storage1.batch([
+      { type: 'add', key: 'foo', value: 'val 1' },
+      { type: 'add', key: 'bar', value: 'val 2' },
+      { type: 'add', key: 'baz', value: 'val 3' },
+    ])
+    expect(await db.storage1.get('bar')).equal('val 2')
+    expect(await db.storage1.get('fake')).equal(undefined)
+    expect(await db.storage1.count()).equal(3)
+  })
+
+  it('#get(key) - returns one record', async () => {
+    await db.magazines.batch(data)
+    expect((await db.magazines.get('id3')).title).equal('Bedrocky Nights')
+    expect(await db.magazines.get('id5')).equal(undefined)
+  })
+
+  it('#getAll([range], [opts]) - return multiple records with simple conditions', async () => {
+    await db.magazines.batch(data)
+
+    const result1 = await db.magazines.getAll()
+    expect(map(result1, 'id')).eql(['id1', 'id2', 'id3', 'id4'])
+
+    const result2 = await db.magazines.getAll({ lte: 'id2' }, { reverse: true })
+    expect(map(result2, 'id')).eql(['id2', 'id1'])
+
+    const result3 = await db.magazines.getAll(null, { limit: 2, offset: 1 })
+    expect(map(result3, 'id')).eql(['id2', 'id3'])
+  })
+
+  it('#count([range]) - count values in range', async () => {
+    await db.magazines.batch(data)
     expect(await db.magazines.count()).equal(4)
     expect(await db.magazines.count('id3')).equal(1)
     expect(await db.magazines.count({ gte: 'id2' })).equal(3)
   })
 
-  it('#clear', async () => {
-    await db.magazines.clear()
-    expect(await db.magazines.count()).equal(0)
-  })
-
-  it('#getAll', () => {
-    const magazines = db.store('magazines')
-    return Promise.all([
-      magazines.getAll().then((result) => {
-        expect(map(result, 'id')).eql(['id1', 'id2', 'id3', 'id4'])
-      }),
-      magazines.getAll({ gt: 'id2' }).then((result) => {
-        expect(map(result, 'id')).eql(['id3', 'id4'])
-      }),
-    ])
-  })
-
-  it('#batch', () => {
-    const magazines = db.store('magazines')
-    const storage = db.store('storage1')
-
-    return Promise.all([
-      magazines.batch({
-        id1: null,
-        id3: { title: 'Bedrocky Nights', publisher: 'Bob' },
-        id4: { title: 'Heavy Weighting', publisher: 'Bob' },
-        id2: null,
-      }).then(() => {
-        return Promise.all([
-          magazines.count().then((count) => expect(count).equal(2)),
-          magazines.get('id3').then((val) => expect(val.publisher).equal('Bob')),
-        ])
-      }),
-
-      storage.batch({
-        foo: 'val 1',
-        bar: 'val 2',
-        baz: 'val 3',
-      }, () => {
-        return Promise.all([
-          storage.get('bar').then((val) => expect(val).equal('val 2')),
-          storage.get('fake').then((val) => expect(val).not.exist),
-          storage.count().then((count) => expect(count).equal(3)),
-        ])
-      }),
-    ])
-  })
-
-  it.skip('#cursor', () => {
-    const magazines = db.store('magazines')
-    const results = {}
-
-    return Promise.all([
-      magazines.cursor({ iterator: iterator(1) }).then(() => {
-        expect(map(results[1], 'id')).eql(['id1', 'id2', 'id3', 'id4'])
-      }),
-
-      magazines.cursor({
-        direction: 'prev',
-        iterator: iterator(2),
-      }).then(() => {
-        expect(map(results[2], 'id')).eql(['id4', 'id3', 'id2', 'id1'])
-      }),
-
-      magazines.cursor({
-        range: { lte: 'id2' },
-        iterator: iterator(3),
-      }).then(() => {
-        expect(map(results[3], 'id')).eql(['id1', 'id2'])
-      }),
-
-      magazines.cursor({
-        range: { lte: 'id3' },
-        direction: 'prev',
-        iterator: iterator(4),
-      }).then(() => {
-        expect(map(results[4], 'id')).eql(['id3', 'id2', 'id1'])
-      }),
-    ])
-
-    function iterator(index) {
-      results[index] = []
-      return (cursor) => {
-        results[index].push(cursor.value)
-        cursor.continue()
-      }
-    }
-  })
-
-  it('allows the same keys in different stores', () => {
-    const storage1 = db.store('storage1')
-    const storage2 = db.store('storage2')
-    const books = db.store('books')
-
-    return Promise.all([
-      storage1.put('1', 'val11'),
-      storage1.put(1, 'val12'),
-      storage1.put([1], 'val13'),
-      storage2.put('1', 'val21'),
-      storage2.put(1, 'val22'),
-      books.put(1, { name: 'My book' }),
-    ]).then(() => {
-      return Promise.all([
-        storage1.count(),
-        storage2.count(),
-        books.count(),
-      ]).then(([c1, c2, c3]) => {
-        expect(c1).equal(3)
-        expect(c2).equal(2)
-        expect(c3).equal(1)
-      })
+  it('#openCursor(range, [direction]) - proxy to native openCursor', async () => {
+    await db.magazines.batch(data)
+    const req = db.magazines.openCursor({ lte: 'id3' }, 'prevunique')
+    const result = await mapCursor(req, (cursor, memo) => {
+      memo.push(cursor.value)
+      cursor.continue()
     })
+    expect(map(result, 'id')).eql(['id3', 'id2', 'id1'])
   })
 })

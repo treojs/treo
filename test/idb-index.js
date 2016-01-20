@@ -42,6 +42,7 @@ describe('Index', () => {
 
     expect((await byName.get('M2')).name).equal('M2')
     expect((await byFrequency.get(52)).name).equal('M3')
+    expect(await byFrequency.get(100)).equal(undefined)
   })
 
   it('#getAll([range], [opts]) - returns many recors', async () => {
