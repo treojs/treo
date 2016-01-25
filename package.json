@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "prepublish": "babel src --out-dir lib",
-    "build": "browserify -t babelify src/index.js -s treo -o dist/treo.js && uglifyjs dist/treo.js -m > dist/treo.min.js",
+    "build": "browserify -t babelify src/index.js -s treo > dist/treo.js && uglifyjs dist/treo.js -m > dist/treo.min.js",
     "test": "eslint src/ test/ && browserify-test -t babelify && SAUCE_USERNAME=treo zuul --no-coverage --tunnel-host http://treojs.com -- test/*.js",
     "development": "browserify-test -t babelify -w"
   },
@@ -30,11 +30,11 @@
     "storage-emitter": "^1.0.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.4.0",
-    "babel-core": "^6.4.0",
+    "babel-cli": "^6.4.5",
+    "babel-core": "^6.4.5",
     "babel-eslint": "^5.0.0-beta6",
     "babel-plugin-add-module-exports": "^0.1.2",
-    "babel-plugin-transform-async-to-generator": "^6.4.0",
+    "babel-plugin-transform-async-to-generator": "^6.4.6",
     "babel-preset-es2015": "^6.3.13",
     "babelify": "^7.2.0",
     "browserify": "^13.0.0",

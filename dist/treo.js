@@ -1,682 +1,4 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.treo = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-(function (global){
-var Emitter = require('component-emitter')
-var type = require('component-type')
-var Schema = require('idb-schema')
-var request = require('idb-request')
-var Transaction = require('./idb-transaction')
-var Store = require('./idb-store')
-
-/**
- * Expose `Database`.
- */
-
-module.exports = Database
-
-/**
- * Initialize new `Database` instance.
- *
- * @param {String} name
- * @param {Schema} schema
- */
-
-function Database(name, schema) {
-  if (!(this instanceof Database)) return new Database(name, schema)
-  if (type(name) != 'string') throw new TypeError('`name` required')
-  if (!(schema instanceof Schema)) throw new TypeError('not valid schema')
-
-  this.status = 'close'
-  this.origin = null
-  this.schema = schema
-  this.opts = schema.stores()
-  this.name = name
-  this.version = schema.version()
-  this.stores = this.opts.map(function(store) { return store.name })
-}
-
-/**
- * Inherit from `Emitter`.
- */
-
-Emitter(Database.prototype)
-
-/**
- * Use plugin `fn`.
- *
- * @param {Function} fn
- * @return {Database}
- */
-
-Database.prototype.use = function(fn) {
-  fn(this, require('./index')) // cycle reference
-  return this
-}
-
-/**
- * Close connection && delete database.
- * After close it waits a little to avoid exception in Safari.
- *
- * @return {Promise}
- */
-
-Database.prototype.del = function() {
-  var idb = global.indexedDB || global.webkitIndexedDB
-  var self = this
-  return this.close().then(function() {
-    return new request.Promise(function(resolve) {
-      setTimeout(resolve, 50)
-    }).then(function() {
-      return request(idb.deleteDatabase(self.name))
-    })
-  })
-}
-
-/**
- * Close database.
- *
- * @return {Promise}
- */
-
-Database.prototype.close = function() {
-  if (this.status == 'close') return request.Promise.resolve()
-  var self = this
-  return this.getInstance().then(function(db) {
-    db.close()
-    self.removeAllListeners()
-    self.origin = null
-    self.status = 'close'
-  })
-}
-
-/**
- * Get store by `name`.
- *
- * @param {String} name
- * @param {Transaction} [tr]
- * @return {Store}
- */
-
-Database.prototype.store = function(name, tr) {
-  var i = this.stores.indexOf(name)
-  if (i == -1) throw new TypeError('invalid store name')
-  return new Store(this, tr, this.opts[i])
-}
-
-/**
- * Create new transaction for selected `scope`.
- *
- * @param {Array} scope - follow indexeddb semantic
- * @param {String} [mode] - readonly|readwrite or read|write
- * @return {Transaction}
- */
-
-Database.prototype.transaction = function(scope, mode) {
-  if (!mode) mode = 'readonly'
-  else if (mode == 'read') mode = 'readonly'
-  else if (mode == 'write') mode = 'readwrite'
-  return new Transaction(this, scope, mode)
-}
-
-/**
- * Get raw db instance.
- * It initiates opening transaction only once,
- * another requests will be fired on "open" event.
- *
- * @return {Promise} (IDBDatabase)
- */
-
-Database.prototype.getInstance = function() {
-  if (this.status == 'open') return request.Promise.resolve(this.origin)
-  if (this.status == 'error') return new Error('database error')
-  if (this.status == 'opening') return this.promise
-  var self = this
-
-  this.status = 'opening'
-  this.promise = new request.Promise(function(resolve, reject) {
-    var idb = global.indexedDB || global.webkitIndexedDB
-    var req = idb.open(self.name, self.version)
-
-    req.onupgradeneeded = self.schema.callback()
-    req.onerror = req.onblocked = function(e) {
-      delete self.promise
-      self.status = 'error'
-      reject(e)
-    }
-    req.onsuccess = function(e) {
-      var db = e.target.result
-      delete self.promise
-      self.status = 'open'
-      self.origin = db
-      db.onerror = function(e) { self.emit('error', e) }
-      db.onabort = function() { self.emit('abort') }
-      db.onclose = function() { self.emit('close') }
-      db.onversionchange = function(e) {
-        self.emit('versionchange', e)
-        self.close().catch(function(e) { self.emit('error', e) }) // default handler
-      }
-      resolve(db)
-    }
-  })
-
-  return this.promise
-}
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./idb-store":3,"./idb-transaction":4,"./index":5,"component-emitter":6,"component-type":7,"idb-request":9,"idb-schema":10}],2:[function(require,module,exports){
-var parseRange = require('idb-range')
-var request = require('idb-request')
-var type = require('component-type')
-
-/**
- * Expose `Index`.
- */
-
-module.exports = Index
-
-/**
- * Initialize new `Index`.
- *
- * @param {Store} store
- * @param {Object} opts { name, field, unique, multi }
- */
-
-function Index(store, opts) {
-  this.store = store
-  this.name = opts.name
-  this.field = opts.field
-  this.multi = opts.multiEntry
-  this.unique = opts.unique
-}
-
-/**
- * Get value by `key`.
- *
- * @param {Any} key
- * @return {Promise}
- */
-
-Index.prototype.get = function(key) {
-  var self = this
-  return this.store._tr('read').then(function(tr) {
-    var index = tr.objectStore(self.store.name).index(self.name)
-    return request(index.get(key))
-  })
-}
-
-/**
- * Get all values matching `range`.
- *
- * @param {Any} [range]
- * @return {Promise}
- */
-
-Index.prototype.getAll = function(range) {
-  var result = []
-
-  return this.cursor({ range: range, iterator: iterator }).then(function() {
-    return result
-  })
-
-  function iterator(cursor) {
-    result.push(cursor.value)
-    cursor.continue()
-  }
-}
-
-/**
- * Count records in `range`.
- *
- * @param {Any} range
- * @return {Promise}
- */
-
-Index.prototype.count = function(range) {
-  var self = this
-  return this.store._tr('read').then(function(tr) {
-    var index = tr.objectStore(self.store.name).index(self.name)
-    return request(index.count(parseRange(range)))
-  })
-}
-
-/**
- * Create read cursor for specific `range`,
- * and pass IDBCursor to `iterator` function.
- *
- * @param {Object} opts { [range], [direction], iterator }
- * @return {Promise}
- */
-
-Index.prototype.cursor = function(opts) {
-  if (type(opts.iterator) != 'function') throw new TypeError('opts.iterator required')
-  var self = this
-  return this.store._tr('read').then(function(tr) {
-    var index = tr.objectStore(self.store.name).index(self.name)
-    var req = index.openCursor(parseRange(opts.range), opts.direction || 'next')
-    return request(req, opts.iterator)
-  })
-}
-
-},{"component-type":7,"idb-range":8,"idb-request":9}],3:[function(require,module,exports){
-var type = require('component-type')
-var parseRange = require('idb-range')
-var request = require('idb-request')
-var Index = require('./idb-index')
-
-/**
- * Expose `Store`.
- */
-
-module.exports = Store
-
-/**
- * Initialize new `Store`.
- *
- * @param {Database} db
- * @param {Transaction} tr
- * @param {Object} opts { name, keyPath, autoIncrement, indexes }
- */
-
-function Store(db, tr, opts) {
-  this.db = db
-  this.tr = tr
-  this.opts = opts.indexes
-  this.name = opts.name
-  this.key = opts.keyPath
-  this.increment = opts.autoIncrement
-  this.indexes = opts.indexes.map(function(index) { return index.name })
-}
-
-/**
- * Get index by `name`.
- *
- * @param {String} name
- * @return {Index}
- */
-
-Store.prototype.index = function(name) {
-  var i = this.indexes.indexOf(name)
-  if (i == -1) throw new TypeError('invalid index name')
-  return new Index(this, this.opts[i])
-}
-
-/**
- * Put (create or replace) `val` to `key`.
- *
- * @param {Any} [key] is optional when store.key exists.
- * @param {Any} val
- * @return {Promise}
- */
-
-Store.prototype.put = function(key, val) {
-  var self = this
-  if (this.key && type(val) != 'undefined') {
-    val[this.key] = key
-  } else if (this.key) {
-    val = key
-  }
-  return this._tr('write').then(function(tr) {
-    var store = tr.objectStore(self.name)
-    return request(self.key ? store.put(val) : store.put(val, key), tr)
-  })
-}
-
-/**
- * Add `val` to `key`.
- *
- * @param {Any} [key] is optional when store.key exists.
- * @param {Any} val
- * @return {Promise}
- */
-
-Store.prototype.add = function(key, val) {
-  var self = this
-  if (this.key && type(val) != 'undefined') {
-    val[this.key] = key
-  } else if (this.key) {
-    val = key
-  }
-  return this._tr('write').then(function(tr) {
-    var store = tr.objectStore(self.name)
-    return request(self.key ? store.add(val) : store.add(val, key), tr)
-  })
-}
-
-/**
- * Get one value by `key`.
- *
- * @param {Any} key
- * @return {Promise}
- */
-
-Store.prototype.get = function(key) {
-  var self = this
-  return this._tr('read').then(function(tr) {
-    return request(tr.objectStore(self.name).get(key))
-  })
-}
-
-/**
- * Del value by `key`.
- *
- * @param {String} key
- * @return {Promise}
- */
-
-Store.prototype.del = function(key) {
-  var self = this
-  return this._tr('write').then(function(tr) {
-    return request(tr.objectStore(self.name).delete(key))
-  })
-}
-
-/**
- * Count.
- *
- * @param {Any} [range]
- * @return {Promise}
- */
-
-Store.prototype.count = function(range) {
-  var self = this
-  return this._tr('read').then(function(tr) {
-    return request(tr.objectStore(self.name).count(parseRange(range)))
-  })
-}
-
-/**
- * Clear.
- *
- * @return {Promise}
- */
-
-Store.prototype.clear = function() {
-  var self = this
-  return this._tr('write').then(function(tr) {
-    return request(tr.objectStore(self.name).clear())
-  })
-}
-
-/**
- * Perform batch operation using `ops`.
- * It uses raw callback API to avoid issues with transaction reuse.
- *
- * {
- * 	 key1: 'val1', // put val1 to key1
- * 	 key2: 'val2', // put val2 to key2
- * 	 key3: null,   // delete key
- * }
- *
- * @param {Object} ops
- * @return {Promise}
- */
-
-Store.prototype.batch = function(ops) {
-  var self = this
-  var keys = Object.keys(ops)
-
-  return this._tr('write').then(function(tr) {
-    return new request.Promise(function(resolve, reject) {
-      var store = tr.objectStore(self.name)
-      var current = 0
-
-      tr.onerror = tr.onabort = reject
-      tr.oncomplete = function() { resolve() }
-      next()
-
-      function next() {
-        if (current >= keys.length) return
-        var currentKey = keys[current]
-        var currentVal = ops[currentKey]
-        var req
-
-        if (currentVal === null) {
-          req = store.delete(currentKey)
-        } else if (self.key) {
-          if (!currentVal[self.key]) currentVal[self.key] = currentKey
-          req = store.put(currentVal)
-        } else {
-          req = store.put(currentVal, currentKey)
-        }
-
-        req.onerror = reject
-        req.onsuccess = next
-        current += 1
-      }
-    })
-  })
-}
-
-/**
- * Get all.
- *
- * @param {Any} [range]
- * @return {Promise}
- */
-
-Store.prototype.getAll = function(range) {
-  var result = []
-
-  return this.cursor({ iterator: iterator, range: range }).then(function() {
-    return result
-  })
-
-  function iterator(cursor) {
-    result.push(cursor.value)
-    cursor.continue()
-  }
-}
-
-/**
- * Create read cursor for specific `range`,
- * and pass IDBCursor to `iterator` function.
- *
- * @param {Object} opts:
- *   {Any} [range] - passes to .openCursor()
- *   {String} [direction] - "prev", "prevunique", "next", "nextunique"
- *   {Function} iterator - function to call with IDBCursor
- * @return {Promise}
- */
-
-Store.prototype.cursor = function(opts) {
-  if (type(opts.iterator) != 'function') throw new TypeError('iterator required')
-  var self = this
-  return this._tr('read').then(function(tr) {
-    var store = tr.objectStore(self.name)
-    var req = store.openCursor(parseRange(opts.range), opts.direction || 'next')
-    return request(req, opts.iterator)
-  })
-}
-
-/**
- * Shortcut to create or reuse transaction.
- *
- * @param {String} mode
- * @return {Transaction}
- * @api private
- */
-
-Store.prototype._tr = function(mode) {
-  return (this.tr || this.db.transaction([this.name], mode)).getInstance()
-}
-
-},{"./idb-index":2,"component-type":7,"idb-range":8,"idb-request":9}],4:[function(require,module,exports){
-var Emitter = require('component-emitter')
-var request = require('idb-request')
-
-/**
- * Expose `Transaction`.
- */
-
-module.exports = Transaction
-
-/**
- * Initialize new `Transaction`.
- *
- * @param {Database} db
- * @param {Array} scope
- * @param {String} mode
- */
-
-function Transaction(db, scope, mode) {
-  var self = this
-  this.db = db
-  this.origin = null
-  this.status = 'close'
-  this.scope = scope
-  this.mode = mode
-  this.promise = new request.Promise(function(resolve, reject) {
-    self.on('complete', resolve)
-    self.on('error', reject)
-    self.on('abort', reject)
-  })
-}
-
-/**
- * Inherit from `Emitter`.
- */
-
-Emitter(Transaction.prototype)
-
-/**
- * Create new `Store` in the scope of current transaction.
- *
- * @param {String} name
- * @return {Store}
- */
-
-Transaction.prototype.store = function(name) {
-  if (this.scope.indexOf(name) == -1) throw new TypeError('name out of scope')
-  return this.db.store(name, this)
-}
-
-/**
- * Abort current transaction.
- *
- * @return {Promise}
- */
-
-Transaction.prototype.abort = function() {
-  var self = this
-  return this.getInstance().then(function(tr) {
-    self.removeAllListeners()
-    tr.abort()
-  })
-}
-
-/**
- * Make transaction thenable.
- *
- * @param {Function} onResolve
- * @param {Function} onReject
- * @return {Promise}
- */
-
-Transaction.prototype.then = function(onResolve, onReject) {
-  return this.promise.then(onResolve, onReject)
-}
-
-/**
- * Catch transaction error.
- *
- * @param {Function} onReject
- * @return {Promise}
- */
-
-Transaction.prototype.catch = function(onReject) {
-  return this.promise.then(null, onReject)
-}
-
-/**
- * Get raw transaction instance.
- * Logic is identical to db.getInstance().
- *
- * @return {Promise}
- */
-
-Transaction.prototype.getInstance = function() {
-  if (this.status == 'ready') return request.Promise.resolve(this.origin)
-  if (this.status == 'initializing') return this.dbPromise
-  if (this.status == 'error') throw new Error('transaction error')
-  var self = this
-
-  this.status = 'initializing'
-  this.dbPromise = new request.Promise(function(resolve, reject) {
-    self.db.getInstance().then(function(db) {
-      var tr = db.transaction(self.scope, self.mode)
-      tr.onerror = function(e) { self.onerror(e) }
-      tr.onabort = function() { self.emit('abort') }
-      tr.oncomplete = function() { self.emit('complete') }
-      self.origin = tr
-      self.status = 'ready'
-      delete self.dbPromise
-      resolve(tr)
-    }).catch(function(err) {
-      self.status = 'error'
-      delete self.dbPromise
-      reject(err)
-    })
-  })
-
-  return this.dbPromise
-}
-
-/**
- * Error hook.
- *
- * @param {Error} err
- */
-
-Transaction.prototype.onerror = function(err) {
-  this.emit('error', err)
-}
-
-},{"component-emitter":6,"idb-request":9}],5:[function(require,module,exports){
-(function (global){
-var request = require('idb-request')
-var parseRange = require('idb-range')
-var Schema = require('idb-schema')
-var Database = require('./idb-database')
-var Transaction = require('./idb-transaction')
-var Store = require('./idb-store')
-var Index = require('./idb-index')
-
-/**
- * Expose `Database`.
- */
-
-exports = module.exports = Database
-
-/**
- * Expose core classes.
- */
-
-exports.schema = Schema
-exports.Database = Database
-exports.Transaction = Transaction
-exports.Store = Store
-exports.Index = Index
-exports.request = request
-exports.range = parseRange
-
-/**
- * Get/Set `Promise` property.
- */
-
-Object.defineProperty(exports, 'Promise', {
-  get: function() { return request.Promise },
-  set: function(Promise) { request.Promise = Promise },
-})
-
-/**
- * Check IndexedDB availability.
- */
-
-Object.defineProperty(exports, 'supported', {
-  get: function() { return !!(global.indexedDB || global.webkitIndexedDB) }
-})
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./idb-database":1,"./idb-index":2,"./idb-store":3,"./idb-transaction":4,"idb-range":8,"idb-request":9,"idb-schema":10}],6:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -839,44 +161,332 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],7:[function(require,module,exports){
-/**
- * toString ref.
- */
-
-var toString = Object.prototype.toString;
-
-/**
- * Return the type of `val`.
- *
- * @param {Mixed} val
- * @return {String}
- * @api public
- */
-
-module.exports = function(val){
-  switch (toString.call(val)) {
-    case '[object Date]': return 'date';
-    case '[object RegExp]': return 'regexp';
-    case '[object Arguments]': return 'arguments';
-    case '[object Array]': return 'array';
-    case '[object Error]': return 'error';
-  }
-
-  if (val === null) return 'null';
-  if (val === undefined) return 'undefined';
-  if (val !== val) return 'nan';
-  if (val && val.nodeType === 1) return 'element';
-
-  val = val.valueOf
-    ? val.valueOf()
-    : Object.prototype.valueOf.apply(val)
-
-  return typeof val;
-};
-
-},{}],8:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 (function (global){
+'use strict';
+
+var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = batch;
+
+var _isPlainObj = require('is-plain-obj');
+
+var _isPlainObj2 = _interopRequireDefault(_isPlainObj);
+
+var _isSafari = require('is-safari');
+
+var _isSafari2 = _interopRequireDefault(_isSafari);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Links to array prototype methods.
+ */
+
+var slice = [].slice;
+var map = [].map;
+
+/**
+ * Perform batch operation using `ops`.
+ *
+ * Array syntax:
+ *
+ * [
+ *   { type: 'add', key: 'key1', val: 'val1' },
+ *   { type: 'put', key: 'key2', val: 'val2' },
+ *   { type: 'del', key: 'key3' },
+ * ]
+ *
+ * Object syntax:
+ *
+ * {
+ * 	 key1: 'val1', // put val1 to key1
+ * 	 key2: 'val2', // put val2 to key2
+ * 	 key3: null,   // delete key
+ * }
+ *
+ * @param {Array|Object} ops
+ * @return {Promise}
+ */
+
+function batch(db, storeName, ops) {
+  if (arguments.length !== 3) throw new TypeError('invalid arguments length');
+  if (typeof storeName !== 'string') throw new TypeError('invalid "storeName"');
+  if (!Array.isArray(ops) && !(0, _isPlainObj2.default)(ops)) throw new TypeError('invalid "ops"');
+  if ((0, _isPlainObj2.default)(ops)) {
+    ops = Object.keys(ops).map(function (key) {
+      return { key: key, value: ops[key], type: ops[key] === null ? 'del' : 'put' };
+    });
+  }
+  ops.forEach(function (op) {
+    if (!(0, _isPlainObj2.default)(op)) throw new TypeError('invalid op');
+    if (['add', 'put', 'del'].indexOf(op.type) === -1) throw new TypeError('invalid type "' + op.type + '"');
+  });
+
+  return new Promise(function (resolve, reject) {
+    var tr = db.transaction(storeName, 'readwrite');
+    var store = tr.objectStore(storeName);
+    var results = [];
+    var currentIndex = 0;
+
+    tr.onerror = handleError(reject);
+    tr.oncomplete = function () {
+      return resolve(results);
+    };
+    next();
+
+    function next() {
+      var _ops$currentIndex = ops[currentIndex];
+      var type = _ops$currentIndex.type;
+      var key = _ops$currentIndex.key;
+
+      if (type === 'del') return request(store.delete(key));
+
+      var val = ops[currentIndex].val || ops[currentIndex].value;
+      if (key && store.keyPath) val[store.keyPath] = key;
+
+      countUniqueIndexes(store, key, val, function (err, uniqueRecordsCounter) {
+        if (err) return reject(err);
+
+        // we don't abort transaction here, and just stops execution
+        // browsers implementation also don't abort, and just throw an error
+        if (uniqueRecordsCounter) return reject(new Error('Unique index ConstraintError'));
+        request(store.keyPath ? store[type](val) : store[type](val, key));
+      });
+    }
+
+    function request(req) {
+      currentIndex += 1;
+
+      req.onerror = handleError(reject);
+      req.onsuccess = function (e) {
+        results.push(e.target.result);
+        if (currentIndex < ops.length) next();
+      };
+    }
+  });
+}
+
+/**
+ * Validate unique index manually.
+ *
+ * Fixing:
+ * - https://bugs.webkit.org/show_bug.cgi?id=149107
+ * - https://github.com/axemclion/IndexedDBShim/issues/56
+ *
+ * @param {IDBStore} store
+ * @param {Any} val
+ * @param {Function} cb(err, uniqueRecordsCounter)
+ */
+
+function countUniqueIndexes(store, key, val, cb) {
+  // rely on native support
+  if (!_isSafari2.default && global.indexedDB !== global.shimIndexedDB) return cb();
+
+  var indexes = slice.call(store.indexNames).map(function (indexName) {
+    var index = store.index(indexName);
+    var indexVal = isCompound(index) ? map.call(index.keyPath, function (indexKey) {
+      return val[indexKey];
+    }).filter(function (v) {
+      return Boolean(v);
+    }) : val[index.keyPath];
+
+    return [index, indexVal];
+  }).filter(function (_ref) {
+    var _ref2 = _slicedToArray(_ref, 2);
+
+    var index = _ref2[0];
+    var indexVal = _ref2[1];
+
+    return index.unique && (isCompound(index) ? indexVal.length : indexVal);
+  });
+
+  if (!indexes.length) return cb();
+
+  var totalRequestsCounter = indexes.length;
+  var uniqueRecordsCounter = 0;
+
+  indexes.forEach(function (_ref3) {
+    var _ref4 = _slicedToArray(_ref3, 2);
+
+    var index = _ref4[0];
+    var indexVal = _ref4[1];
+
+    var req = index.getKey(indexVal); // get primaryKey to compare with updating value
+    req.onerror = handleError(cb);
+    req.onsuccess = function (e) {
+      if (e.target.result && e.target.result !== key) uniqueRecordsCounter += 1;
+      totalRequestsCounter -= 1;
+      if (totalRequestsCounter === 0) cb(null, uniqueRecordsCounter);
+    };
+  });
+}
+
+/**
+ * Check if `index` is compound
+ *
+ * @param {IDBIndex} index
+ * @return {Boolean}
+ */
+
+function isCompound(index) {
+  return typeof index.keyPath !== 'string';
+}
+
+/**
+ * Create error handler.
+ *
+ * @param {Function} cb
+ * @return {Function}
+ */
+
+function handleError(cb) {
+  return function (e) {
+    // prevent global error throw https://bugzilla.mozilla.org/show_bug.cgi?id=872873
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    cb(e.target.error);
+  };
+}
+module.exports = exports['default'];
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"is-plain-obj":6,"is-safari":7}],3:[function(require,module,exports){
+(function (global){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.open = open;
+exports.del = del;
+exports.cmp = cmp;
+
+/**
+ * Open IndexedDB database with `name`.
+ * Retry logic allows to avoid issues in tests env,
+ * when db with the same name delete/open repeatedly and can be blocked.
+ *
+ * @param {String} dbName
+ * @param {Number} [version]
+ * @param {Function} [upgradeCallback]
+ * @return {Promise}
+ */
+
+function open(dbName, version, upgradeCallback) {
+  return new Promise(function (resolve, reject) {
+    var isFirst = true;
+    var openDb = function openDb() {
+      // don't call open with 2 arguments, when version is not set
+      var req = version ? idb().open(dbName, version) : idb().open(dbName);
+      req.onblocked = function () {
+        if (isFirst) {
+          isFirst = false;
+          setTimeout(openDb, 100);
+        } else {
+          reject(new Error('database is blocked'));
+        }
+      };
+      if (typeof upgradeCallback === 'function') req.onupgradeneeded = upgradeCallback;
+      req.onerror = function (e) {
+        return reject(e.target.error);
+      };
+      req.onsuccess = function (e) {
+        return resolve(e.target.result);
+      };
+    };
+    openDb();
+  });
+}
+
+/**
+ * Delete `db` properly:
+ * - close it and wait 100ms to disk flush (Safari, older Chrome, Firefox)
+ * - if database is locked, due to inconsistent exectution of `versionchange`,
+ *   try again in 100ms
+ *
+ * @param {IDBDatabase|String} db
+ * @return {Promise}
+ */
+
+function del(db) {
+  var dbName = typeof db !== 'string' ? db.name : db;
+
+  return new Promise(function (resolve, reject) {
+    var isFirst = true;
+    var delDb = function delDb() {
+      var req = idb().deleteDatabase(dbName);
+      req.onblocked = function () {
+        if (isFirst) {
+          isFirst = false;
+          setTimeout(delDb, 100);
+        } else {
+          reject(new Error('database is blocked'));
+        }
+      };
+      req.onerror = function (e) {
+        return reject(e.target.error);
+      };
+      req.onsuccess = function () {
+        return resolve();
+      };
+    };
+
+    if (typeof db !== 'string') {
+      db.close();
+      setTimeout(delDb, 100);
+    } else {
+      delDb();
+    }
+  });
+}
+
+/**
+ * Compare `first` and `second`.
+ * Added for consistency with official API.
+ *
+ * @param {Any} first
+ * @param {Any} second
+ * @return {Number} -1|0|1
+ */
+
+function cmp(first, second) {
+  return idb().cmp(first, second);
+}
+
+/**
+ * Get globally available IDBFactory instance.
+ * - it uses `global`, so it can work in any env.
+ * - it tries to use `global.forceIndexedDB` first,
+ *   so you can rewrite `global.indexedDB` with polyfill
+ *   https://bugs.webkit.org/show_bug.cgi?id=137034
+ * - it fallbacks to all possibly available implementations
+ *   https://github.com/axemclion/IndexedDBShim#ios
+ * - function allows to have dynamic link,
+ *   which can be changed after module's initial exectution
+ *
+ * @return {IDBFactory}
+ */
+
+function idb() {
+  return global.forceIndexedDB || global.indexedDB || global.webkitIndexedDB || global.mozIndexedDB || global.msIndexedDB || global.shimIndexedDB;
+}
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],4:[function(require,module,exports){
+(function (global){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = range;
+
+var _isPlainObj = require('is-plain-obj');
+
+var _isPlainObj2 = _interopRequireDefault(_isPlainObj);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Parse `opts` to valid IDBKeyRange.
@@ -886,418 +496,1105 @@ module.exports = function(val){
  * @return {IDBKeyRange}
  */
 
-module.exports = function range(opts) {
-  var IDBKeyRange = global.IDBKeyRange || global.webkitIDBKeyRange
-  if (typeof opts === 'undefined') return global.shimIndexedDB ? undefined : null
-  if (opts instanceof IDBKeyRange) return opts
-  if (!isObject(opts)) return IDBKeyRange.only(opts)
-  var keys = Object.keys(opts).sort()
+function range(opts) {
+  var IDBKeyRange = global.IDBKeyRange || global.webkitIDBKeyRange;
+  if (opts instanceof IDBKeyRange) return opts;
+  if (typeof opts === 'undefined' || opts === null) return null;
+  if (!(0, _isPlainObj2.default)(opts)) return IDBKeyRange.only(opts);
+  var keys = Object.keys(opts).sort();
 
-  if (keys.length == 1) {
-    var key = keys[0]
-    var val = opts[key]
-    switch (keys[0]) {
-      case 'eq': return IDBKeyRange.only(val)
-      case 'gt': return IDBKeyRange.lowerBound(val, true)
-      case 'lt': return IDBKeyRange.upperBound(val, true)
-      case 'gte': return IDBKeyRange.lowerBound(val)
-      case 'lte': return IDBKeyRange.upperBound(val)
-      default: throw new TypeError('`' + key + '` is not valid key')
+  if (keys.length === 1) {
+    var key = keys[0];
+    var val = opts[key];
+
+    switch (key) {
+      case 'eq':
+        return IDBKeyRange.only(val);
+      case 'gt':
+        return IDBKeyRange.lowerBound(val, true);
+      case 'lt':
+        return IDBKeyRange.upperBound(val, true);
+      case 'gte':
+        return IDBKeyRange.lowerBound(val);
+      case 'lte':
+        return IDBKeyRange.upperBound(val);
+      default:
+        throw new TypeError('"' + key + '" is not valid key');
     }
   } else {
-    var x = opts[keys[0]]
-    var y = opts[keys[1]]
-    var pattern = keys.join('-')
+    var x = opts[keys[0]];
+    var y = opts[keys[1]];
+    var pattern = keys.join('-');
 
     switch (pattern) {
-      case 'gt-lt': return IDBKeyRange.bound(x, y, true, true)
-      case 'gt-lte': return IDBKeyRange.bound(x, y, true, false)
-      case 'gte-lt': return IDBKeyRange.bound(x, y, false, true)
-      case 'gte-lte': return IDBKeyRange.bound(x, y, false, false)
-      default: throw new TypeError('`' + pattern +'` are conflicted keys')
+      case 'gt-lt':
+        return IDBKeyRange.bound(x, y, true, true);
+      case 'gt-lte':
+        return IDBKeyRange.bound(x, y, true, false);
+      case 'gte-lt':
+        return IDBKeyRange.bound(x, y, false, true);
+      case 'gte-lte':
+        return IDBKeyRange.bound(x, y, false, false);
+      default:
+        throw new TypeError('"' + pattern + '" are conflicted keys');
     }
   }
 }
-
-/**
- * Check if `obj` is an object (an even not an array).
- *
- * @param {Object} obj
- * @return {Boolean}
- */
-
-function isObject(obj) {
-  return Object.prototype.toString.call(obj) == '[object Object]'
-}
-
+module.exports = exports['default'];
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],9:[function(require,module,exports){
-(function (global){
+},{"is-plain-obj":6}],5:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.request = request;
+exports.requestTransaction = requestTransaction;
+exports.requestCursor = requestCursor;
+exports.mapCursor = mapCursor;
 
 /**
- * Expose `request()`.
- */
-
-exports = module.exports = request
-
-/**
- * Expose link to `Promise`,
- * to enable replacement with different implementations.
- */
-
-exports.Promise = global.Promise
-
-/**
- * Transform IndexedDB request-like object to `Promise`.
+ * Transform IDBRequest to `Promise`,
+ * which resolves on `success` or on `complete` when `tr` passed.
  *
- * - request(req)
- * - request(tr) - wait for transaction complete
- * - request(req, tr) - handle request + wait for transaction complete
- * - request(req, iterator) - call iterator function
- *
- * @param {IDBRequest|IDBTransaction} req
- * @param {Function|IDBTransaction} [iterator]
+ * @param {IDBRequest|IDBOpenDBRequest} req
+ * @param {IDBTransaction} [tr]
  * @return {Promise}
  */
 
-function request(req, iterator) {
-  return new exports.Promise(function(resolve, reject) {
-    req.onerror = function onerror(e) {
-      // prevent global error throw
-      // https://bugzilla.mozilla.org/show_bug.cgi?id=872873
-      if (e.preventDefault) e.preventDefault()
-      reject(e.target.error)
-    }
+function request(req) {
+  var tr = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
 
-    // open/deleteDatabase requests, can be locked, and it's an error
-    if (req.onblocked === null) {
-      req.onblocked = function onblocked(e) {
-        if (e.preventDefault) e.preventDefault()
-        reject(e.target.error)
-      }
-    }
+  var result = undefined;
+  return new Promise(function (resolve, reject) {
+    req.onerror = handleError(reject);
+    req.onsuccess = function (e) {
+      result = e.target.result;
+      if (!tr) resolve(e.target.result);
+    };
+    if (tr) tr.oncomplete = function () {
+      return resolve(result);
+    };
+  });
+}
 
-    if (req.onsuccess === null) { // request
-      if (iterator && iterator.oncomplete === null) { // second argument is transaction
-        var result
-        req.onsuccess = function onsuccess(e) { result = e.target.result }
-        iterator.oncomplete = function oncomplete() { resolve(result) }
+/**
+ * Transform `tr` to `Promise`.
+ *
+ * @param {IDBTransaction} tr
+ * @return {Promise}
+ */
+
+function requestTransaction(tr) {
+  return new Promise(function (resolve, reject) {
+    tr.onerror = handleError(reject);
+    tr.oncomplete = function () {
+      return resolve();
+    };
+  });
+}
+
+/**
+ * Call `iterator` for each `onsuccess` event.
+ *
+ * @param {IDBRequest} req
+ * @param {Function} iterator
+ * @return {Promise}
+ */
+
+function requestCursor(req, iterator) {
+  // patch iterator to fix:
+  // https://github.com/axemclion/IndexedDBShim/issues/204
+
+  var keys = {}; // count unique keys
+  var patchedIterator = function patchedIterator(cursor) {
+    if ((cursor.direction === 'prevunique' || cursor.direction === 'nextunique') && !cursor.source.multiEntry) {
+      if (!keys[cursor.key]) {
+        keys[cursor.key] = true;
+        iterator(cursor);
       } else {
-        req.onsuccess = function onsuccess(e) {
-          var res = e.target.result
-          if (res && typeof iterator == 'function') { // check cursor
-            iterator(res)
-          } else {
-            resolve(res) // resolve
-          }
-        }
+        cursor.continue();
       }
-    } else { // transaction
-      req.oncomplete = function oncomplete() { resolve() }
+    } else {
+      iterator(cursor);
     }
-  })
-}
+  };
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],10:[function(require,module,exports){
-var type = require('component-type')
-var clone = require('component-clone')
-var values = require('object-values')
-var MAX_VERSION = Math.pow(2, 32) - 1
-
-/**
- * Expose `Schema`.
- */
-
-module.exports = Schema
-
-/**
- * Initialize new `Schema`.
- */
-
-function Schema() {
-  if (!(this instanceof Schema)) return new Schema()
-  this._stores = {}
-  this._current = {}
-  this._versions = {}
-  this.version(1)
+  return new Promise(function (resolve, reject) {
+    req.onerror = handleError(reject);
+    req.onsuccess = function (e) {
+      var cursor = e.target.result;
+      if (cursor) {
+        patchedIterator(cursor);
+      } else {
+        resolve();
+      }
+    };
+  });
 }
 
 /**
- * Get/Set new version.
+ * Special helper to map values over cursor.
  *
- * @param {Number} [version]
- * @return {Schema|Number}
+ * @param {IDBRequest} req
+ * @param {Function} iterator
+ * @return {Promise}
  */
 
-Schema.prototype.version = function(version) {
-  if (!arguments.length) return this._current.version
-  if (type(version) != 'number' || version < 1 || version < this.version())
-    throw new TypeError('not valid version')
-
-  this._current = { version: version, store: null }
-  this._versions[version] = {
-    stores: [],      // db.createObjectStore
-    dropStores: [],  // db.deleteObjectStore
-    indexes: [],     // store.createIndex
-    dropIndexes: [], // store.deleteIndex
-    version: version // version
-  }
-
-  return this
+function mapCursor(req, iterator) {
+  var result = [];
+  return requestCursor(req, function (cursor) {
+    return iterator(cursor, result);
+  }).then(function () {
+    return result;
+  });
 }
 
 /**
- * Add store.
+ * Helper to handle errors and call `reject`.
  *
- * @param {String} name
- * @param {Object} [opts] { key: null, increment: false }
- * @return {Schema}
- */
-
-Schema.prototype.addStore = function(name, opts) {
-  if (type(name) != 'string') throw new TypeError('`name` is required')
-  if (this._stores[name]) throw new TypeError('store is already defined')
-  if (!opts) opts = {}
-
-  var store = {
-    name: name,
-    indexes: {},
-    keyPath: opts.key || opts.keyPath || null,
-    autoIncrement: opts.increment || opts.autoIncrement || false
-  }
-  this._stores[name] = store
-  this._versions[this.version()].stores.push(store)
-  this._current.store = store
-
-  return this
-}
-
-/**
- * Delete store.
- *
- * @param {String} name
- * @return {Schema}
- */
-
-Schema.prototype.delStore = function(name) {
-  if (type(name) != 'string') throw new TypeError('`name` is required')
-  var store = this._stores[name]
-  if (!store) throw new TypeError('store is not defined')
-  delete this._stores[name]
-  this._versions[this.version()].dropStores.push(store)
-  this._current.store = null
-  return this
-}
-
-/**
- * Change current store.
- *
- * @param {String} name
- * @return {Schema}
- */
-
-Schema.prototype.getStore = function(name) {
-  if (type(name) != 'string') throw new TypeError('`name` is required')
-  if (!this._stores[name]) throw new TypeError('store is not defined')
-  this._current.store = this._stores[name]
-  return this
-}
-
-/**
- * Add index.
- *
- * @param {String} name
- * @param {String|Array} field
- * @param {Object} [opts] { unique: false, multi: false }
- * @return {Schema}
- */
-
-Schema.prototype.addIndex = function(name, field, opts) {
-  if (type(name) != 'string') throw new TypeError('`name` is required')
-  if (type(field) != 'string' && type(field) != 'array') throw new TypeError('`field` is required')
-  if (!opts) opts = {}
-  var store = this._current.store
-  if (store.indexes[name]) throw new TypeError('index is already defined')
-
-  var index = {
-    name: name,
-    field: field,
-    storeName: store.name,
-    multiEntry: opts.multi || opts.multiEntry || false,
-    unique: opts.unique || false
-  }
-  store.indexes[name] = index
-  this._versions[this.version()].indexes.push(index)
-
-  return this
-}
-
-/**
- * Delete index.
- *
- * @param {String} name
- * @return {Schema}
- */
-
-Schema.prototype.delIndex = function(name) {
-  if (type(name) != 'string') throw new TypeError('`name` is required')
-  var index = this._current.store.indexes[name]
-  if (!index) throw new TypeError('index is not defined')
-  delete this._current.store.indexes[name]
-  this._versions[this.version()].dropIndexes.push(index)
-  return this
-}
-
-/**
- * Generate onupgradeneeded callback.
- *
+ * @param {Function} reject - from Promise constructor
  * @return {Function}
  */
 
-Schema.prototype.callback = function() {
-  var versions = values(clone(this._versions))
-    .sort(function(a, b) { return a.version - b.version })
-
-  return function onupgradeneeded(e) {
-    var oldVersion = e.oldVersion > MAX_VERSION ? 0 : e.oldVersion // Safari bug
-    var db = e.target.result
-    var tr = e.target.transaction
-
-    versions.forEach(function(versionSchema) {
-      if (oldVersion >= versionSchema.version) return
-
-      versionSchema.stores.forEach(function(s) {
-        db.createObjectStore(s.name, {
-          keyPath: s.keyPath,
-          autoIncrement: s.autoIncrement
-        })
-      })
-
-      versionSchema.dropStores.forEach(function(s) {
-        db.deleteObjectStore(s.name)
-      })
-
-      versionSchema.indexes.forEach(function(i) {
-        var store = tr.objectStore(i.storeName)
-        store.createIndex(i.name, i.field, {
-          unique: i.unique,
-          multiEntry: i.multiEntry
-        })
-      })
-
-      versionSchema.dropIndexes.forEach(function(i) {
-        var store = tr.objectStore(i.storeName)
-        store.deleteIndex(i.name)
-      })
-    })
-  }
+function handleError(reject) {
+  return function (e) {
+    // prevent global error throw https://bugzilla.mozilla.org/show_bug.cgi?id=872873
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    reject(e.target.error);
+  };
 }
-
-/**
- * Get a description of the stores.
- * It creates a deep clone of `this._stores` object
- * and transform it to an array.
- *
- * @return {Array}
- */
-
-Schema.prototype.stores = function() {
-  return values(clone(this._stores)).map(function(store) {
-    store.indexes = values(store.indexes).map(function(index) {
-      delete index.storeName
-      return index
-    })
-    return store
-  })
-}
-
-/**
- * Clone `this` to new schema object.
- *
- * @return {Schema} - new object
- */
-
-Schema.prototype.clone = function() {
-  var schema = new Schema()
-  var self = this
-  Object.keys(this).forEach(function(key) {
-    schema[key] = clone(self[key])
-  })
-  return schema
-}
-
-},{"component-clone":11,"component-type":7,"object-values":12}],11:[function(require,module,exports){
-/**
- * Module dependencies.
- */
-
-var type;
-try {
-  type = require('component-type');
-} catch (_) {
-  type = require('type');
-}
-
-/**
- * Module exports.
- */
-
-module.exports = clone;
-
-/**
- * Clones objects.
- *
- * @param {Mixed} any object
- * @api public
- */
-
-function clone(obj){
-  switch (type(obj)) {
-    case 'object':
-      var copy = {};
-      for (var key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          copy[key] = clone(obj[key]);
-        }
-      }
-      return copy;
-
-    case 'array':
-      var copy = new Array(obj.length);
-      for (var i = 0, l = obj.length; i < l; i++) {
-        copy[i] = clone(obj[i]);
-      }
-      return copy;
-
-    case 'regexp':
-      // from millermedeiros/amd-utils - MIT
-      var flags = '';
-      flags += obj.multiline ? 'm' : '';
-      flags += obj.global ? 'g' : '';
-      flags += obj.ignoreCase ? 'i' : '';
-      return new RegExp(obj.source, flags);
-
-    case 'date':
-      return new Date(obj.getTime());
-
-    default: // string, number, boolean, …
-      return obj;
-  }
-}
-
-},{"component-type":7,"type":7}],12:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 'use strict';
-module.exports = function (obj) {
-	var keys = Object.keys(obj);
-	var ret = [];
+var toString = Object.prototype.toString;
 
-	for (var i = 0; i < keys.length; i++) {
-		ret.push(obj[keys[i]]);
-	}
-
-	return ret;
+module.exports = function (x) {
+	var prototype;
+	return toString.call(x) === '[object Object]' && (prototype = Object.getPrototypeOf(x), prototype === null || prototype === Object.getPrototypeOf({}));
 };
 
-},{}]},{},[5])(5)
+},{}],7:[function(require,module,exports){
+'use strict';
+module.exports = typeof navigator !== 'undefined' && /Version\/[\d\.]+.*Safari/.test(navigator.userAgent);
+
+},{}],8:[function(require,module,exports){
+/* eslint-disable no-unused-vars */
+'use strict';
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+var propIsEnumerable = Object.prototype.propertyIsEnumerable;
+
+function toObject(val) {
+	if (val === null || val === undefined) {
+		throw new TypeError('Object.assign cannot be called with null or undefined');
+	}
+
+	return Object(val);
+}
+
+module.exports = Object.assign || function (target, source) {
+	var from;
+	var to = toObject(target);
+	var symbols;
+
+	for (var s = 1; s < arguments.length; s++) {
+		from = Object(arguments[s]);
+
+		for (var key in from) {
+			if (hasOwnProperty.call(from, key)) {
+				to[key] = from[key];
+			}
+		}
+
+		if (Object.getOwnPropertySymbols) {
+			symbols = Object.getOwnPropertySymbols(from);
+			for (var i = 0; i < symbols.length; i++) {
+				if (propIsEnumerable.call(from, symbols[i])) {
+					to[symbols[i]] = from[symbols[i]];
+				}
+			}
+		}
+	}
+
+	return to;
+};
+
+},{}],9:[function(require,module,exports){
+(function (global){
+var Emitter = require('component-emitter')
+var emit = Emitter.prototype.emit
+
+/**
+ * Use communication `KEY` to ignore other localStorage changes.
+ */
+
+var KEY = '!!storage-emitter-key'
+
+/**
+ * Initialize an `Emitter` instance.
+ */
+
+var sEmitter = new Emitter()
+
+/**
+* Register `storage` event listener to DefaultView<window> target.
+* https://developer.mozilla.org/en-US/docs/Web/Events/storage
+*
+* @param {StorageEvent} e { key, newValue }
+*/
+
+global.addEventListener('storage', function onStorage(e) {
+  if (e.key != KEY) return // ignore other keys
+  if (!e.newValue) return // removeItem
+  try {
+    var cmd = JSON.parse(e.newValue)
+    sEmitter.listeners(cmd.event).forEach(function(callback) {
+      callback.call(sEmitter, cmd.args)
+    })
+  } catch(err) {
+    console.error('unexpected value: ' + err.newValue)
+  }
+}, false)
+
+/**
+ * Emit `event` with the given args.
+ *
+ * @param {String} event
+ * @param {Mixed} args
+ * @return {StorageEmitter}
+ */
+
+sEmitter.emit = function(event, args) {
+  var cmd = JSON.stringify({ event: event, args: args })
+  localStorage.setItem(KEY, cmd)
+  localStorage.removeItem(KEY)
+  return emit.apply(this, arguments)
+}
+
+/**
+ * Expose `sEmitter`.
+ */
+
+module.exports = sEmitter
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"component-emitter":1}],10:[function(require,module,exports){
+'use strict';
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _componentEmitter = require('component-emitter');
+
+var _componentEmitter2 = _interopRequireDefault(_componentEmitter);
+
+var _idbFactory = require('idb-factory');
+
+var _storageEmitter = require('storage-emitter');
+
+var _storageEmitter2 = _interopRequireDefault(_storageEmitter);
+
+var _idbStore = require('./idb-store');
+
+var _idbStore2 = _interopRequireDefault(_idbStore);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var Database = function (_Emitter) {
+  _inherits(Database, _Emitter);
+
+  /**
+   * Initialize new `Database` instance.
+   *
+   * @param {IDBDatabase} db
+   */
+
+  function Database(db) {
+    _classCallCheck(this, Database);
+
+    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Database).call(this));
+
+    _this.db = db;
+    _this.db.onerror = function (e) {
+      _this.emit('error', e.target.error);
+    };
+    _this.db.onversionchange = function () {
+      _this.close();
+      _this.emit('versionchange');
+    };
+    _storageEmitter2.default.once('versionchange', function (_ref) {
+      var name = _ref.name;
+      var version = _ref.version;
+      var isDelete = _ref.isDelete;
+
+      if (name === _this.name && (version > _this.version || isDelete)) {
+        _this.close();
+        _this.emit('versionchange');
+      }
+    });
+    _this.stores.forEach(function (storeName) {
+      if (typeof _this[storeName] !== 'undefined') return;
+      Object.defineProperty(_this, storeName, {
+        get: function get() {
+          return this.store(storeName);
+        }
+      });
+    });
+    return _this;
+  }
+
+  /**
+   * Getters.
+   */
+
+  _createClass(Database, [{
+    key: 'store',
+
+    /**
+     * Get store by `name`.
+     *
+     * @param {String} name
+     * @return {Store}
+     */
+
+    value: function store(name) {
+      if (this.stores.indexOf(name) === -1) throw new TypeError('"' + name + '" store does not exist');
+      return new _idbStore2.default(this.db, name);
+    }
+
+    /**
+     * Delete database.
+     *
+     * @return {Promise}
+     */
+
+  }, {
+    key: 'del',
+    value: function del() {
+      _storageEmitter2.default.emit('versionchange', { name: this.name, isDelete: true });
+      return (0, _idbFactory.del)(this.db);
+    }
+
+    /**
+     * Close database.
+     */
+
+  }, {
+    key: 'close',
+    value: function close() {
+      this.db.close();
+      this.emit('close');
+    }
+  }, {
+    key: 'name',
+    get: function get() {
+      return this.db.name;
+    }
+  }, {
+    key: 'version',
+    get: function get() {
+      return this.db.version;
+    }
+  }, {
+    key: 'stores',
+    get: function get() {
+      return [].slice.call(this.db.objectStoreNames);
+    }
+  }]);
+
+  return Database;
+}(_componentEmitter2.default);
+
+exports.default = Database;
+module.exports = exports['default'];
+
+},{"./idb-store":13,"component-emitter":1,"idb-factory":3,"storage-emitter":9}],11:[function(require,module,exports){
+(function (global){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.storeDescriptor = storeDescriptor;
+exports.indexDescriptor = indexDescriptor;
+
+/**
+ * Link to array prototype method.
+ */
+
+var slice = [].slice;
+
+/**
+ * Cache stores descriptors using [db][version] notation.
+ * Since database structure does not change between versions.
+ */
+
+var cache = {};
+
+/**
+ * Get store descriptor.
+ *
+ * @param {IDBDatabase} db
+ * @param {String} storeName
+ * @return {Object}
+ */
+
+function storeDescriptor(db, storeName) {
+  if (!cache[db.name]) cache[db.name] = {};
+  if (!cache[db.name][db.version]) cache[db.name][db.version] = {};
+  if (!cache[db.name][db.version][storeName]) {
+    (function () {
+      var store = db.transaction(storeName, 'readonly').objectStore(storeName);
+      var indexes = {};
+      slice.call(store.indexNames).forEach(function (indexName) {
+        var index = store.index(indexName);
+        indexes[indexName] = {
+          name: indexName,
+          keyPath: getKeyPath(index.keyPath),
+          unique: index.unique,
+          multiEntry: index.multiEntry || false
+        };
+      });
+      cache[db.name][db.version][storeName] = {
+        name: storeName,
+        keyPath: store.keyPath,
+        autoIncrement: store.autoIncrement, // does not work in IE
+        indexes: indexes
+      };
+    })();
+  }
+  // clone data to avoid external cache modification
+  return clone(cache[db.name][db.version][storeName]);
+}
+
+/**
+ * Get index descriptor.
+ *
+ * @param {IDBDatabase} db
+ * @param {String} storeName
+ * @param {String} indexName
+ * @return {Object}
+ */
+
+function indexDescriptor(db, storeName, indexName) {
+  return storeDescriptor(db, storeName).indexes[indexName];
+}
+
+/**
+ * Naive clone implementaion.
+ *
+ * @param {Object} obj
+ * @return {Object}
+ */
+
+function clone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+/**
+ * Compound keys in IE.
+ */
+
+var compoundKeysPropertyName = '__$$compoundKey';
+var keySeparator = '$_$';
+var propertySeparatorRegExp = /\$\$/g;
+
+function decodeCompoundKeyPath(keyPath) {
+  // Remove the "__$$compoundKey." prefix
+  keyPath = keyPath.substr(compoundKeysPropertyName.length + 1);
+
+  // Split the properties into an array
+  // "name$$first$_$name$$last" ==> ["name$$first", "name$$last"]
+  keyPath = keyPath.split(keySeparator);
+
+  // Decode dotted properties
+  // ["name$$first", "name$$last"] ==> ["name.first", "name.last"]
+  for (var i = 0; i < keyPath.length; i++) {
+    keyPath[i] = keyPath[i].replace(propertySeparatorRegExp, '.');
+  }
+  return keyPath;
+}
+
+function getKeyPath(keyPath) {
+  if (keyPath instanceof global.DOMStringList) {
+    // Safari
+    return [].slice.call(keyPath);
+  } else if (keyPath.indexOf(compoundKeysPropertyName) !== -1) {
+    // Shim
+    return decodeCompoundKeyPath(keyPath);
+  }
+  return keyPath;
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],12:[function(require,module,exports){
+'use strict';
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _idbRange = require('idb-range');
+
+var _idbRange2 = _interopRequireDefault(_idbRange);
+
+var _idbRequest = require('idb-request');
+
+var _idbTake = require('./idb-take');
+
+var _idbDescriptor = require('./idb-descriptor');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+/**
+ * Show multiEntry warning only once.
+ */
+
+var showWarning = true;
+
+var Index = function () {
+
+  /**
+   * Initialize new `Index`.
+   *
+   * @param {IDBDatabase} db
+   * @param {String} storeName
+   * @param {String} indexName
+   */
+
+  function Index(db, storeName, indexName) {
+    _classCallCheck(this, Index);
+
+    if (typeof storeName !== 'string') throw new TypeError('"storeName" is required');
+    if (typeof indexName !== 'string') throw new TypeError('"indexName" is required');
+    this.db = db;
+    this.storeName = storeName;
+    this.props = (0, _idbDescriptor.indexDescriptor)(db, storeName, indexName);
+
+    if (this.multi && showWarning) {
+      showWarning = false;
+      console.warn('multiEntry index is not supported completely, because it does not work in IE. But it should work in remaining browsers.'); // eslint-disable-line
+    }
+  }
+
+  /**
+   * Property getters.
+   */
+
+  _createClass(Index, [{
+    key: 'get',
+
+    /**
+     * Get a value by `key`.
+     *
+     * @param {Any} key
+     * @return {Promise}
+     */
+
+    value: function get(key) {
+      var index = this.db.transaction(this.storeName, 'readonly').objectStore(this.storeName).index(this.name);
+      return (0, _idbRequest.request)(index.get(key)).then(function (val) {
+        return val !== null ? val : undefined;
+      });
+    }
+
+    /**
+     * Get all values in `range`,
+     * `opts` passes to idb-take.
+     *
+     * @param {Any} [range]
+     * @param {Object} [opts]
+     * @return {Promise}
+     */
+
+  }, {
+    key: 'getAll',
+    value: function getAll(range, opts) {
+      return (0, _idbTake.take)(this, range, opts);
+    }
+
+    /**
+     * Count records in `range`.
+     *
+     * @param {Any} range
+     * @return {Promise}
+     */
+
+  }, {
+    key: 'count',
+    value: function count(range) {
+      try {
+        var index = this.db.transaction(this.storeName, 'readonly').objectStore(this.storeName).index(this.name);
+        return (0, _idbRequest.request)(index.count((0, _idbRange2.default)(range)));
+      } catch (_) {
+        // fix https://github.com/axemclion/IndexedDBShim/issues/202
+        return this.getAll(range).then(function (all) {
+          return all.length;
+        });
+      }
+    }
+
+    /**
+     * Low-level proxy method to open read cursor.
+     *
+     * @param {Any} range
+     * @param {String} [direction]
+     * @return {IDBRequest}
+     */
+
+  }, {
+    key: 'openCursor',
+    value: function openCursor(range) {
+      var direction = arguments.length <= 1 || arguments[1] === undefined ? 'next' : arguments[1];
+
+      var index = this.db.transaction(this.storeName, 'readonly').objectStore(this.storeName).index(this.name);
+      return index.openCursor((0, _idbRange2.default)(range), direction);
+    }
+  }, {
+    key: 'name',
+    get: function get() {
+      return this.props.name;
+    }
+  }, {
+    key: 'key',
+    get: function get() {
+      return this.props.keyPath;
+    }
+  }, {
+    key: 'multi',
+    get: function get() {
+      return this.props.multiEntry;
+    }
+  }, {
+    key: 'unique',
+    get: function get() {
+      return this.props.unique;
+    }
+  }]);
+
+  return Index;
+}();
+
+exports.default = Index;
+module.exports = exports['default'];
+
+},{"./idb-descriptor":11,"./idb-take":14,"idb-range":4,"idb-request":5}],13:[function(require,module,exports){
+'use strict';
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _idbRange = require('idb-range');
+
+var _idbRange2 = _interopRequireDefault(_idbRange);
+
+var _idbRequest = require('idb-request');
+
+var _idbBatch = require('idb-batch');
+
+var _idbBatch2 = _interopRequireDefault(_idbBatch);
+
+var _idbDescriptor = require('./idb-descriptor');
+
+var _idbTake = require('./idb-take');
+
+var _idbIndex = require('./idb-index');
+
+var _idbIndex2 = _interopRequireDefault(_idbIndex);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Store = function () {
+
+  /**
+   * Initialize new `Store`.
+   *
+   * @param {IDBDatabase} db
+   * @param {String} storeName
+   */
+
+  function Store(db, storeName) {
+    var _this = this;
+
+    _classCallCheck(this, Store);
+
+    if (typeof storeName !== 'string') throw new TypeError('"storeName" is required');
+    this.db = db;
+    this.props = (0, _idbDescriptor.storeDescriptor)(db, storeName);
+    this.indexes.forEach(function (indexName) {
+      if (typeof _this[indexName] !== 'undefined') return;
+      Object.defineProperty(_this, indexName, {
+        get: function get() {
+          return this.index(indexName);
+        }
+      });
+    });
+  }
+
+  /**
+   * Property getters.
+   */
+
+  _createClass(Store, [{
+    key: 'index',
+
+    /**
+     * Get index by `name`.
+     *
+     * @param {String} name
+     * @return {Index}
+     */
+
+    value: function index(name) {
+      if (this.indexes.indexOf(name) === -1) throw new TypeError('"' + name + '" index does not exist');
+      return new _idbIndex2.default(this.db, this.name, name);
+    }
+
+    /**
+     * Add `value` to `key`.
+     *
+     * @param {Any} [key] is optional when store.key exists.
+     * @param {Any} val
+     * @return {Promise}
+     */
+
+  }, {
+    key: 'add',
+    value: function add(key, val) {
+      if (typeof val === 'undefined') {
+        val = key;
+        key = undefined;
+      }
+      return (0, _idbBatch2.default)(this.db, this.name, [{ key: key, val: val, type: 'add' }]).then(function (_ref) {
+        var _ref2 = _slicedToArray(_ref, 1);
+
+        var res = _ref2[0];
+        return res;
+      });
+    }
+
+    /**
+     * Put (create or replace) `val` to `key`.
+     *
+     * @param {Any} [key] is optional when store.key exists.
+     * @param {Any} val
+     * @return {Promise}
+     */
+
+  }, {
+    key: 'put',
+    value: function put(key, val) {
+      if (typeof val === 'undefined') {
+        val = key;
+        key = undefined;
+      }
+      return (0, _idbBatch2.default)(this.db, this.name, [{ key: key, val: val, type: 'put' }]).then(function (_ref3) {
+        var _ref4 = _slicedToArray(_ref3, 1);
+
+        var res = _ref4[0];
+        return res;
+      });
+    }
+
+    /**
+     * Del value by `key`.
+     *
+     * @param {String} key
+     * @return {Promise}
+     */
+
+  }, {
+    key: 'del',
+    value: function del(key) {
+      return (0, _idbBatch2.default)(this.db, this.name, [{ key: key, type: 'del' }]).then(function (_ref5) {
+        var _ref6 = _slicedToArray(_ref5, 1);
+
+        var res = _ref6[0];
+        return res;
+      });
+    }
+
+    /**
+     * Proxy to idb-batch.
+     *
+     * @param {Object|Array} ops
+     * @return {Promise}
+     */
+
+  }, {
+    key: 'batch',
+    value: function batch(ops) {
+      return (0, _idbBatch2.default)(this.db, this.name, ops);
+    }
+
+    /**
+     * Clear.
+     *
+     * @return {Promise}
+     */
+
+  }, {
+    key: 'clear',
+    value: function clear() {
+      var tr = this.db.transaction(this.name, 'readwrite');
+      return (0, _idbRequest.request)(tr.objectStore(this.name).clear(), tr);
+    }
+
+    /**
+     * Get a value by `key`.
+     *
+     * @param {Any} key
+     * @return {Promise}
+     */
+
+  }, {
+    key: 'get',
+    value: function get(key) {
+      var store = this.db.transaction(this.name, 'readonly').objectStore(this.name);
+      return (0, _idbRequest.request)(store.get(key));
+    }
+
+    /**
+     * Get all values in `range`,
+     * `opts` passes to idb-take.
+     *
+     * @param {Any} [range]
+     * @param {Object} [opts]
+     * @return {Promise}
+     */
+
+  }, {
+    key: 'getAll',
+    value: function getAll(range, opts) {
+      return (0, _idbTake.take)(this, range, opts);
+    }
+
+    /**
+     * Count.
+     *
+     * @param {Any} [range]
+     * @return {Promise}
+     */
+
+  }, {
+    key: 'count',
+    value: function count(range) {
+      try {
+        var store = this.db.transaction(this.name, 'readonly').objectStore(this.name);
+        return (0, _idbRequest.request)(store.count(range));
+      } catch (_) {
+        // fix https://github.com/axemclion/IndexedDBShim/issues/202
+        return this.getAll(range).then(function (all) {
+          return all.length;
+        });
+      }
+    }
+
+    /**
+     * Low-level proxy method to open read cursor.
+     *
+     * @param {Any} range
+     * @param {String} [direction]
+     * @return {IDBRequest}
+     */
+
+  }, {
+    key: 'openCursor',
+    value: function openCursor(range) {
+      var direction = arguments.length <= 1 || arguments[1] === undefined ? 'next' : arguments[1];
+
+      var store = this.db.transaction(this.name, 'readonly').objectStore(this.name);
+      return store.openCursor((0, _idbRange2.default)(range), direction);
+    }
+  }, {
+    key: 'name',
+    get: function get() {
+      return this.props.name;
+    }
+  }, {
+    key: 'key',
+    get: function get() {
+      return this.props.keyPath;
+    }
+  }, {
+    key: 'indexes',
+    get: function get() {
+      return Object.keys(this.props.indexes);
+    }
+  }]);
+
+  return Store;
+}();
+
+exports.default = Store;
+module.exports = exports['default'];
+
+},{"./idb-descriptor":11,"./idb-index":12,"./idb-take":14,"idb-batch":2,"idb-range":4,"idb-request":5}],14:[function(require,module,exports){
+'use strict';
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.take = take;
+exports.takeRight = takeRight;
+exports.takeOne = takeOne;
+exports.takeRightOne = takeRightOne;
+
+var _objectAssign = require('object-assign');
+
+var _objectAssign2 = _interopRequireDefault(_objectAssign);
+
+var _idbRange = require('idb-range');
+
+var _idbRange2 = _interopRequireDefault(_idbRange);
+
+var _idbRequest = require('idb-request');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Default options.
+ */
+
+var defaultOpts = {
+  limit: Infinity,
+  offset: 0,
+  unique: false,
+  reverse: false
+};
+
+/**
+ * Take values from `store` using `range` and `opts`:
+ * - `limit` set amount of required values
+ * - `offset` skip some values
+ * - `reverse` take values in descendant order
+ * - `unique` use unique values (for indexes)
+ *
+ * @param {Any} range - passes to idb-range and supports { gt, lt, gte, lte, eq }
+ * @param {Object} opts
+ * @return {Promise}
+ */
+
+function take(store) {
+  var range = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+  var opts = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+
+  var _assign = (0, _objectAssign2.default)({}, defaultOpts, opts);
+
+  var offset = _assign.offset;
+  var limit = _assign.limit;
+  var unique = _assign.unique;
+  var reverse = _assign.reverse;
+
+  var direction = (reverse ? 'prev' : 'next') + (unique ? 'unique' : '');
+  var req = store.openCursor((0, _idbRange2.default)(range), direction);
+  var offsetCounter = offset;
+
+  return (0, _idbRequest.mapCursor)(req, function (cursor, result) {
+    if (offsetCounter === 0) {
+      if (limit > result.length) result.push(cursor.value); // FIXME: exit earlier
+      cursor.continue();
+    } else {
+      offsetCounter -= 1;
+      cursor.continue();
+    }
+  });
+}
+
+/**
+ * Shortcuts.
+ */
+
+function takeRight(store, range) {
+  var opts = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+
+  opts.reverse = true;
+  return take(store, range, opts);
+}
+
+function takeOne(store, range) {
+  var opts = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+
+  return take(store, range, opts).then(function (_ref) {
+    var _ref2 = _slicedToArray(_ref, 1);
+
+    var val = _ref2[0];
+    return val;
+  });
+}
+
+function takeRightOne(store, range) {
+  var opts = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+
+  return takeRight(store, range, opts).then(function (_ref3) {
+    var _ref4 = _slicedToArray(_ref3, 1);
+
+    var val = _ref4[0];
+    return val;
+  });
+}
+
+},{"idb-range":4,"idb-request":5,"object-assign":8}],15:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Index = exports.Store = exports.Database = undefined;
+exports.default = treo;
+
+var _storageEmitter = require('storage-emitter');
+
+var _storageEmitter2 = _interopRequireDefault(_storageEmitter);
+
+var _idbFactory = require('idb-factory');
+
+var _idbDatabase = require('./idb-database');
+
+var _idbDatabase2 = _interopRequireDefault(_idbDatabase);
+
+var _idbStore = require('./idb-store');
+
+var _idbStore2 = _interopRequireDefault(_idbStore);
+
+var _idbIndex = require('./idb-index');
+
+var _idbIndex2 = _interopRequireDefault(_idbIndex);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function treo(name, version, upgradeCallback) {
+  if (typeof name !== 'string') throw new TypeError('"name" is required');
+  if (typeof version !== 'undefined') _storageEmitter2.default.emit('versionchange', { name: name, version: version });
+  return (0, _idbFactory.open)(name, version, upgradeCallback).then(function (db) {
+    return new _idbDatabase2.default(db);
+  });
+}
+
+exports.Database = _idbDatabase2.default;
+exports.Store = _idbStore2.default;
+exports.Index = _idbIndex2.default;
+
+},{"./idb-database":10,"./idb-index":12,"./idb-store":13,"idb-factory":3,"storage-emitter":9}]},{},[15])(15)
 });
