@@ -21,6 +21,7 @@ Notable changes:
 * remove support for transactions and `db.transaction([storeNames], mode)` [#34](https://github.com/treojs/treo/issues/34)
 * add array/object batch syntax notation [#39](https://github.com/treojs/treo/issues/39)
 * rename `db.drop()` to `db.del()` + fixed fails in Safari [#33](https://github.com/treojs/treo/issues/33)
+* `db` object is EventEmitter, which supports `close`, `error`, and `versionchange` events
 * remove bower & component support
 * full rewrite on ES2015 using babel@6
 * add automated unit tests using zuul, saucelabs
