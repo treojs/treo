@@ -30,22 +30,24 @@ With treo, we want to save this time for other developers, and help to focus on 
 
     npm install treo --save
 
-Standalone build available as [dist/treo.js](./dist/treo.js).
+Standalone build available as [dist/treo.min.js](./dist/treo.min.js).
 
 ```html
-<script src="treo.js"></script>
+<script src="treo.min.js"></script>
 <script>db = window.treo('library')</script>
 ```
 
 ## Example
 
-Let's rewrite the official [w3c example](http://www.w3.org/TR/IndexedDB/#introduction) with treo:
+Let's rewrite the official [w3c example](http://www.w3.org/TR/IndexedDB/#introduction)
+with treo, [idb-schema](https://github.com/treojs/idb-schema), ES2015, and [ES2016 async/await syntax](https://jakearchibald.com/2014/es7-async-functions/):
 
 ```js
-import treo from 'treo' // or window.treo
+import treo from 'treo'
+import Schema from 'idb-schema'
 
 // define db schema
-const schema = treo.schema()
+const schema = new Schema()
 .version(1)
   .addStore('books', { key: 'isbn' })
   .addIndex('byTitle', 'title', { unique: true })
@@ -58,77 +60,59 @@ const schema = treo.schema()
   .addIndex('byPublisher', 'publisher')
   .addIndex('byFrequency', 'frequency')
 
-// open db synchronously
-const db = treo('library', schema)
+// open database using schema
+const db = await treo('library', schema.version(), schema.callback())
 db.version // 3
 
 // put some data in one transaction
-const books = db.store('books')
-books.batch([
-  { isbn: 123456, title: 'Quarry Memories', author: 'Fred', year: 2012 },
-  { isbn: 234567, title: 'Water Buffaloes', author: 'Fred', year: 2012 },
-  { isbn: 345678, title: 'Bedrock Nights', author: 'Barney', year: 2013 },
-]).then(() => {
-  // Before this point, all actions were synchronous, and you don't need to wait
-  // for db.open, initialize onupgradeneeded event, create readwrite transaction,
-  // and handle all possible errors, and blocks.
-
-  // get a single book by title using an index
-  books.byTitle.get('Bedrock Nights').then(function(book) {})
-
-  // get all books filtered by author
-  books.byAuthor.getAll('Fred').then(function(all) {}) // all.length == 2
+await db.books.batch({
+  123456: { title: 'Quarry Memories', author: 'Fred', year: 2012 },
+  234567: { title: 'Water Buffaloes', author: 'Fred', year: 2012 },
+  345678: { title: 'Bedrock Nights', author: 'Barney', year: 2013 },
 })
 
-// If any error happen, you get it as an `err`.
-// But it's better to handle each error separately using .catch
-db.on('error', function(err) {})
+// get a single book by title using an index
+const book = await db.books.byTitle.get('Bedrock Nights')
+
+// get all books filtered by author
+const all = await db.books.byAuthor.getAll('Fred')
 ```
 
-## Documentation
-
-Short version of API is:
+## Documentation (short version)
 
 ```js
-const treo = require('treo') // alternative to window.indexedDB
-treo.schema() // create idb-schema
-treo.Database
-treo.Store
-treo.Index
-treo.Schema // reference to using idb-schema
+import treo, { Database, Store, Index } from 'treo' // standalone classes are also available
 
 // Database represents connection to a database.
-const db = treo('name', schema)
-db.on('error', 'abort', 'versionchange')
-async db.close() // database might be in opening state
-async db.del() // close && deleteDatabase (avoid onversionchange)
+const db = await treo('name', version, upgradeCallback) // new Database(rawDb)
+await db.del() // close && deleteDatabase
+db.close() // close db and emit "close"
+db.on('error', 'close', 'versionchange')
 db.name
 db.version
 db.stores // array of stores
-db.store(name) // create store with automatic transactions
 
 // Store is the primary mechanism for storing data.
-const store = db.store('books')
-async store.get(key) // returns undefined when record does not exists
-async store.getAll([range]) // array
-async store.put(key, val) // out-of-line keys
-async store.put(obj) // in-line keys with keyPath
-async store.del(key)
-async store.batch(ops) // best way to reuse transaction
-async store.count([range])
-async store.clear()
-async store.cursor({ [key], [direction], iterator }) // low level
-store.index(name) // new Index()
+const store = db.store(storeName) // new Store(db, storeName)
+await store.get(key) // returns undefined when record does not exists
+await store.getAll([range], [opts]) // array
+await store.count([range])
+await store.add([key], val)
+await store.put([key], val)
+await store.del(key)
+await store.batch(ops) // best way to reuse transaction
+await store.clear()
+store.openCursor(range, [direction]) // low level proxy to native openCursor
 store.name
 store.key
 store.indexes // array of indexes
 
 // Index allows to looking up records in a store using properties of the values.
-const index = store.index('byAuthor')
-async index.get(key) // undefined if record does not exist
-async index.getAll([range])
-async index.count([range])
-async index.cursor({ [key], [direction], iterator }) // low level
+const index = store.index(indexName) // new Index(db, storeName, indexName)
+await index.get(key) // undefined if record does not exist
+await index.getAll([range], [opts])
+await index.count([range])
+index.openCursor(range, [direction]) // low level proxy to native openCursor
 index.name
 index.key
 index.unique

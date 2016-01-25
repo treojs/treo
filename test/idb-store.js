@@ -75,7 +75,7 @@ describe('Store', () => {
     expect(await db.magazines.count()).equal(0)
   })
 
-  it('#batch(opts)', async () => {
+  it('#batch(ops)', async () => {
     await db.magazines.batch({
       id1: null,
       id3: { title: 'Bedrocky Nights', publisher: 'Bob' },
