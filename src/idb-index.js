@@ -1,7 +1,7 @@
 import parseRange from 'idb-range'
 import { request } from 'idb-request'
-import { take } from './packages/idb-take'
-import { indexDescriptor } from './packages/idb-descriptor'
+import { take } from './idb-take'
+import { indexDescriptor } from './idb-descriptor'
 
 /**
  * Show multiEntry warning only once.

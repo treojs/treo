@@ -1,8 +1,8 @@
 import parseRange from 'idb-range'
 import { request } from 'idb-request'
 import batch from 'idb-batch'
-import { storeDescriptor } from './packages/idb-descriptor'
-import { take } from './packages/idb-take'
+import { storeDescriptor } from './idb-descriptor'
+import { take } from './idb-take'
 import Index from './idb-index'
 
 export default class Store {
