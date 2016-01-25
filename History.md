@@ -1,3 +1,9 @@
+## 0.5.1 / 2015-11-03
+
+  * fix IE/Edge InvalidAccessError [#37](https://github.com/treojs/treo/pull/37) [@unkillbob](https://github.com/unkillbob)
+  * deps: IndexedDBShim@2.2.1, idb-request@3.0.0, promise@7.0.4
+  * use component-type@1.1.0 to prevent size blow [#22](https://github.com/component/type/issues/22)
+
 ## 0.6.0-rc2 / 2015-07-17
 
 Beta release for internal testing and improving plugins infrastructure.
