@@ -2,7 +2,7 @@
   "name": "treo",
   "description": "Consistent API to IndexedDB",
   "repository": "treojs/treo",
-  "version": "1.0.0",
+  "version": "1.0.0-beta",
   "license": "MIT",
   "main": "lib/index.js",
   "files": [

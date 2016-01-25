@@ -6,6 +6,8 @@
 
 [![](https://saucelabs.com/browser-matrix/treo.svg)](https://saucelabs.com/u/treo)
 
+**Note: [0.5.x docs](https://github.com/treojs/treo/tree/0.5.1)**
+
 Treo is a wrapper around [IndexedDB](http://www.w3.org/TR/IndexedDB/) to make browser storage more enjoyable to use.
 Think about it as jQuery for IndexedDB. It does not add new abstractions, but simplifies the API, eliminates browsers inconsistency, and increases code reliability.
 
