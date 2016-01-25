@@ -12,7 +12,7 @@ describe('Misc', () => {
   .addIndex('byAuthor', 'author')
   .addIndex('byStars', 'stars')
 
-  const allModules = npmData.map((d) => { return { key: d.name, val: d, type: 'put' } })
+  const allModules = npmData.map((d) => ({ key: d.name, val: d, type: 'put' }))
   const first50Modules = allModules.slice(0, 50)
 
   let db
