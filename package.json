@@ -6,6 +6,7 @@
   "license": "MIT",
   "main": "lib/index.js",
   "files": [
+    "dist",
     "lib"
   ],
   "keywords": [
@@ -15,7 +16,7 @@
     "offline"
   ],
   "scripts": {
-    "prepublish": "babel src --out-dir lib",
+    "prepublish": "npm run build && babel src --out-dir lib",
     "build": "browserify -t babelify src/index.js -s treo > dist/treo.js && uglifyjs dist/treo.js -m > dist/treo.min.js",
     "test": "eslint src/ test/ && browserify-test -t babelify && SAUCE_USERNAME=treo zuul --no-coverage --tunnel-host http://treojs.com -- test/*.js",
     "development": "browserify-test -t babelify -w"
