@@ -10,6 +10,21 @@
 
 The goal of treo is **to make IndexedDB mainstream by providing consistent API across all modern browsers**.
 
+[IndexedDB](https://www.w3.org/TR/IndexedDB/) is a powerful technology, that allows to store and query data in browser. The main problem with IndexedDB is [a swamp color and last 20%](http://caniuse.com/#feat=indexeddb):
+
+![image](https://cloud.githubusercontent.com/assets/158189/13082651/cd6a8b2c-d4d1-11e5-8e0a-3e4841a5140d.png)
+
+Official standard was finalized on 4 July 2013. But major browsers still have a lot of implementation issues. Because of this every library, that relies on IndexedDB, tries to be it's own universe ([lovefield](https://github.com/google/lovefield), [dexie](https://github.com/dfahlander/Dexie.js), [pouchdb](https://github.com/pouchdb/pouchdb)) or limited to basics features ([localforage](https://github.com/mozilla/localforage)).
+
+Treo is developed to provide consistent API to IndexedDB. It limits its features by official specification, hides API complexity and provides new features from coming [IndexedDB 2.0 spec](https://github.com/w3c/IndexedDB). Every existing functionality is automatically tested across wide range of browsers using SauceLabs.
+
+## Main features
+
+- **Focus on IndexedDB itself**. If you know official spec, you can work with treo. And experience with treo helps you to understand the spec.
+- **Cross-browser support**. [Zuul and SauceLabs](https://github.com/defunctzombie/zuul) allow to automate cross-browser testing and iterate faster.
+- **npm and modularity**. Treo contains [a bunch of small modules](https://github.com/treojs), which focus on different IndexedDB features. If integration of treo is too big for your project, you still can benefit from its small parts, like [idb-schema](https://github.com/treojs/idb-schema) or [idb-batch](https://github.com/treojs/idb-batch). Treo doesn't force you to build specific plugins. Just build a module that operates with IndexedDB objects and you can use it with treo or any other library.
+- **ES2015 and async/await syntax**. [Official API](https://www.w3.org/TR/IndexedDB/) was designed in 2010 and looks odd in 2016. Instead treo uses Promise for all asynchronous operations, async/await to simplify callback's flow, and ES2015 for better code readability.
+- **It does not fallback on WebSQL in Safari 9+**. Apple claims [they don't see enough adoption of IndexedDB](https://twitter.com/simevidas/status/610910096097304578), so they don't want to fix major bugs. But since 9.x we can work around some limitations and show them desire to use IndexedDB. Check [design decisions](#design-desicions) for more details.
 
 ## Installation
 
@@ -70,8 +85,8 @@ db.close()
 
 **Explanation notes**:
 - `await` means, that method returns `Promise`.
-- `range` is any argument supported by [idb-range](https://github.com/treojs/idb-range#rangeopts).
-- check [full documentation](https://github.com/treojs/treo#full-documentation) for more details.
+- `range` is any combination supported by [idb-range](https://github.com/treojs/idb-range#rangeopts).
+- check [full documentation](https://github.com/treojs/treo#full-documentation) for details about every method.
 
 ```js
 import treo, { Database, Store, Index } from 'treo' // standalone classes are also available
@@ -105,13 +120,28 @@ const index = store.index(indexName) // new Index(db, storeName, indexName)
 index.name
 index.key
 index.unique
-index.multi
 await index.get(key) // undefined if record does not exist
 await index.getAll([range], [opts])
 await index.count([range])
 index.openCursor(range, [direction]) // low level proxy to native openCursor
 ```
 
+## Design decisions
+
+- * multiEntry indexes (IE), **but** supports compound indexes by enabling shim
+* transaction reuse and transaction to multiple stores (Safari), **but** fixes versionchange and unique indexes validation
+* db.on “abort”, store.transaction, index.store (because no transaction support)
+* store.increment, because of IE (https://msdn.microsoft.com/en-us/library/hh772573(v=vs.85).aspx) (this is minor, but still)
+* index.multy
+
+Next iteration of library should remove some restrictions and add missing features, like transaction reuse, transaction to multiple stores and multiEntry indexes.
+
+- IndexedDB is powerful API, but has complex API. Treo makes it simpler, but completely relies on standard. If you know official specification, you can work with treo and experience with treo will help you to understand the spec.
+- It already implements some features from coming 2.0 specification.
+- Treo build with small modules, which are work with raw IndexedDB's APIs, so we don't build abstractions, which just work around official API.
+- treo and a bunch of useful IndexedDB modules are part of treojs organization, because it has to be community effort.
+- Apple claims they don't see adoption of IndexedDB, and don't want to fix bugs. There're a lot of bugs and some of them major. But Since 9.x we can work around some limitations and actually show usage.
+- IE implementation is limited, there're no WebSQL, so we need to work around this.
 
 ## Full documentation
 

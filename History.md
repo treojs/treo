@@ -1,15 +1,5 @@
 ## 1.0.0-beta / 2016-01-..
 
-Full rewrite with the goal to make IndexedDB mainstream by giving consistent API across all modern browsers, by providing:
-- automated tests in all supported browsers using zuul and sauselabs.
-- use and support Safari 9+ and fallback to WebSQL on early versions
-- separate code on small, testable modules
-- use modern technologies: ES2015 + babel, async/await syntax, eslint
-- highly rely on [official specification](https://github.com/w3c/IndexedDB) and implement some features from 2.0 (like getAll and "close" event)
-- support plugins by using default IndexedDB APIs.
-
-Notable changes:
-
 * use ES2015 Promise by default
 * official support for IE10+, Safari 6+, Firefox, Chrome, Opera, Android 4.4+
 * remove support for synchronous open and make `Schema` optional
