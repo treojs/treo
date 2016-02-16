@@ -1173,11 +1173,6 @@ var Index = function () {
       return this.props.keyPath;
     }
   }, {
-    key: 'multi',
-    get: function get() {
-      return this.props.multiEntry;
-    }
-  }, {
     key: 'unique',
     get: function get() {
       return this.props.unique;

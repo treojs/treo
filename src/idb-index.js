@@ -38,7 +38,6 @@ export default class Index {
 
   get name() { return this.props.name }
   get key() { return this.props.keyPath }
-  get multi() { return this.props.multiEntry }
   get unique() { return this.props.unique }
 
   /**
