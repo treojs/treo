@@ -9,22 +9,21 @@
 [![](https://saucelabs.com/browser-matrix/treo.svg)](https://saucelabs.com/u/treo)
 
 The goal of treo is **to make IndexedDB mainstream by providing consistent API across all modern browsers**.
+It limits its features by official specification, hides API complexity and provides new features from coming [2.0 spec](https://github.com/w3c/IndexedDB).
 
-[IndexedDB](https://www.w3.org/TR/IndexedDB/) is a powerful technology, that allows to store and query data in browser. The main problem with IndexedDB is [a swamp color and last 20%](http://caniuse.com/#feat=indexeddb):
+[IndexedDB](https://www.w3.org/TR/IndexedDB/) is a powerful technology, which main problem is a swamp color and last 20%:
 
-![image](https://cloud.githubusercontent.com/assets/158189/13082651/cd6a8b2c-d4d1-11e5-8e0a-3e4841a5140d.png)
+[![image](https://cloud.githubusercontent.com/assets/158189/13082651/cd6a8b2c-d4d1-11e5-8e0a-3e4841a5140d.png)](http://caniuse.com/#feat=indexeddb)
 
-Official standard was finalized on 4 July 2013. But major browsers still have a lot of implementation issues. Because of this every library, that relies on IndexedDB, tries to be it's own universe ([lovefield](https://github.com/google/lovefield), [dexie](https://github.com/dfahlander/Dexie.js), [pouchdb](https://github.com/pouchdb/pouchdb)) or limited to basics features ([localforage](https://github.com/mozilla/localforage)).
-
-Treo is developed to provide consistent API to IndexedDB. It limits its features by official specification, hides API complexity and provides new features from coming [IndexedDB 2.0 spec](https://github.com/w3c/IndexedDB). Every existing functionality is automatically tested across wide range of browsers using SauceLabs.
+Official standard was finalized on [July 4 2013](https://www.w3.org/TR/2013/CR-IndexedDB-20130704/). But major browsers still have a lot of implementation issues. Because of this every library that relies on IndexedDB tries to be its own universe ([lovefield](https://github.com/google/lovefield), [dexie](https://github.com/dfahlander/Dexie.js), [pouchdb](https://github.com/pouchdb/pouchdb)).
 
 ## Main features
 
 - **Focus on IndexedDB itself**. If you know official spec, you can work with treo. And experience with treo helps you to understand the spec.
-- **Cross-browser support**. [Zuul and SauceLabs](https://github.com/defunctzombie/zuul) allow to automate cross-browser testing and iterate faster.
-- **npm and modularity**. Treo contains [a bunch of small modules](https://github.com/treojs), which focus on different IndexedDB features. If integration of treo is too big for your project, you still can benefit from its small parts, like [idb-schema](https://github.com/treojs/idb-schema) or [idb-batch](https://github.com/treojs/idb-batch). Treo doesn't force you to build specific plugins. Just build a module that operates with IndexedDB objects and you can use it with treo or any other library.
+- **Cross-browser support**. [SauceLabs](https://github.com/defunctzombie/zuul) allows to automate cross-browser testing and gives [nice interactive badge](https://saucelabs.com/u/treo).
+- **npm and modularity**. Treo contains [a bunch of small modules](https://github.com/treojs), which focus on different IndexedDB features. If integration of treo is too big for your project, you still can benefit from small parts, like [idb-schema](https://github.com/treojs/idb-schema) or [idb-batch](https://github.com/treojs/idb-batch). Treo doesn't force you to build specific plugins. Just build a module that operates with IndexedDB objects and you can use it with treo or any other library.
 - **ES2015 and async/await syntax**. [Official API](https://www.w3.org/TR/IndexedDB/) was designed in 2010 and looks odd in 2016. Instead treo uses Promise for all asynchronous operations, async/await to simplify callback's flow, and ES2015 for better code readability.
-- **It does not fallback on WebSQL in Safari 9+**. Apple claims [they don't see enough adoption of IndexedDB](https://twitter.com/simevidas/status/610910096097304578), so they don't want to fix major bugs. But since 9.x we can work around some limitations and show them desire to use IndexedDB. Check [design decisions](#design-desicions) for more details.
+- **It does not fallback on WebSQL in Safari 9+**. Apple claims [they don't see enough adoption of IndexedDB](https://twitter.com/simevidas/status/610910096097304578), so they don't want to fix major bugs. But since 9.x we can work around some limitations and show them desire to use IndexedDB. Check [design decisions](#design-decisions) for more details.
 
 ## Installation
 
