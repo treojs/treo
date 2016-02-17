@@ -678,47 +678,6 @@ module.exports = function (x) {
 module.exports = typeof navigator !== 'undefined' && /Version\/[\d\.]+.*Safari/.test(navigator.userAgent);
 
 },{}],8:[function(require,module,exports){
-/* eslint-disable no-unused-vars */
-'use strict';
-var hasOwnProperty = Object.prototype.hasOwnProperty;
-var propIsEnumerable = Object.prototype.propertyIsEnumerable;
-
-function toObject(val) {
-	if (val === null || val === undefined) {
-		throw new TypeError('Object.assign cannot be called with null or undefined');
-	}
-
-	return Object(val);
-}
-
-module.exports = Object.assign || function (target, source) {
-	var from;
-	var to = toObject(target);
-	var symbols;
-
-	for (var s = 1; s < arguments.length; s++) {
-		from = Object(arguments[s]);
-
-		for (var key in from) {
-			if (hasOwnProperty.call(from, key)) {
-				to[key] = from[key];
-			}
-		}
-
-		if (Object.getOwnPropertySymbols) {
-			symbols = Object.getOwnPropertySymbols(from);
-			for (var i = 0; i < symbols.length; i++) {
-				if (propIsEnumerable.call(from, symbols[i])) {
-					to[symbols[i]] = from[symbols[i]];
-				}
-			}
-		}
-	}
-
-	return to;
-};
-
-},{}],9:[function(require,module,exports){
 (function (global){
 var Emitter = require('component-emitter')
 var emit = Emitter.prototype.emit
@@ -777,7 +736,7 @@ sEmitter.emit = function(event, args) {
 module.exports = sEmitter
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"component-emitter":1}],10:[function(require,module,exports){
+},{"component-emitter":1}],9:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -916,7 +875,7 @@ var Database = function (_Emitter) {
 exports.default = Database;
 module.exports = exports['default'];
 
-},{"./idb-store":13,"component-emitter":1,"idb-factory":3,"storage-emitter":9}],11:[function(require,module,exports){
+},{"./idb-store":12,"component-emitter":1,"idb-factory":3,"storage-emitter":8}],10:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -1035,7 +994,7 @@ function getKeyPath(keyPath) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],12:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1049,8 +1008,6 @@ var _idbRange = require('idb-range');
 var _idbRange2 = _interopRequireDefault(_idbRange);
 
 var _idbRequest = require('idb-request');
-
-var _idbTake = require('./idb-take');
 
 var _idbDescriptor = require('./idb-descriptor');
 
@@ -1111,18 +1068,27 @@ var Index = function () {
     }
 
     /**
-     * Get all values in `range`,
-     * `opts` passes to idb-take.
+     * Get all values in `range` and with `limit`.
      *
      * @param {Any} [range]
-     * @param {Object} [opts]
+     * @param {Object} [limit]
      * @return {Promise}
      */
 
   }, {
     key: 'getAll',
-    value: function getAll(range, opts) {
-      return (0, _idbTake.take)(this, range, opts);
+    value: function getAll(range) {
+      var limit = arguments.length <= 1 || arguments[1] === undefined ? Infinity : arguments[1];
+
+      try {
+        var store = this.db.transaction(this.name, 'readonly').objectStore(this.name);
+        return (0, _idbRequest.request)(store.getAll((0, _idbRange2.default)(range), limit));
+      } catch (err) {
+        return (0, _idbRequest.mapCursor)(this.openCursor(range), function (cursor, result) {
+          if (limit > result.length) result.push(cursor.value);
+          cursor.continue();
+        });
+      }
     }
 
     /**
@@ -1185,7 +1151,7 @@ var Index = function () {
 exports.default = Index;
 module.exports = exports['default'];
 
-},{"./idb-descriptor":11,"./idb-take":14,"idb-range":4,"idb-request":5}],13:[function(require,module,exports){
+},{"./idb-descriptor":10,"idb-range":4,"idb-request":5}],12:[function(require,module,exports){
 'use strict';
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -1207,8 +1173,6 @@ var _idbBatch = require('idb-batch');
 var _idbBatch2 = _interopRequireDefault(_idbBatch);
 
 var _idbDescriptor = require('./idb-descriptor');
-
-var _idbTake = require('./idb-take');
 
 var _idbIndex = require('./idb-index');
 
@@ -1369,18 +1333,30 @@ var Store = function () {
     }
 
     /**
-     * Get all values in `range`,
-     * `opts` passes to idb-take.
+     * Get all values in `range` and with `limit`.
+     *
+     * Using native implemention when available:
+     * https://developer.mozilla.org/en-US/docs/Web/API/IDBObjectStore/getAll
      *
      * @param {Any} [range]
-     * @param {Object} [opts]
+     * @param {Object} [limit]
      * @return {Promise}
      */
 
   }, {
     key: 'getAll',
-    value: function getAll(range, opts) {
-      return (0, _idbTake.take)(this, range, opts);
+    value: function getAll(range) {
+      var limit = arguments.length <= 1 || arguments[1] === undefined ? Infinity : arguments[1];
+
+      try {
+        var store = this.db.transaction(this.name, 'readonly').objectStore(this.name);
+        return (0, _idbRequest.request)(store.getAll((0, _idbRange2.default)(range), limit));
+      } catch (err) {
+        return (0, _idbRequest.mapCursor)(this.openCursor(range), function (cursor, result) {
+          if (limit > result.length) result.push(cursor.value);
+          cursor.continue();
+        });
+      }
     }
 
     /**
@@ -1443,114 +1419,7 @@ var Store = function () {
 exports.default = Store;
 module.exports = exports['default'];
 
-},{"./idb-descriptor":11,"./idb-index":12,"./idb-take":14,"idb-batch":2,"idb-range":4,"idb-request":5}],14:[function(require,module,exports){
-'use strict';
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.take = take;
-exports.takeRight = takeRight;
-exports.takeOne = takeOne;
-exports.takeRightOne = takeRightOne;
-
-var _objectAssign = require('object-assign');
-
-var _objectAssign2 = _interopRequireDefault(_objectAssign);
-
-var _idbRange = require('idb-range');
-
-var _idbRange2 = _interopRequireDefault(_idbRange);
-
-var _idbRequest = require('idb-request');
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/**
- * Default options.
- */
-
-var defaultOpts = {
-  limit: Infinity,
-  offset: 0,
-  unique: false,
-  reverse: false
-};
-
-/**
- * Take values from `store` using `range` and `opts`:
- * - `limit` set amount of required values
- * - `offset` skip some values
- * - `reverse` take values in descendant order
- * - `unique` use unique values (for indexes)
- *
- * @param {Any} range - passes to idb-range and supports { gt, lt, gte, lte, eq }
- * @param {Object} opts
- * @return {Promise}
- */
-
-function take(store) {
-  var range = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
-  var opts = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
-
-  var _assign = (0, _objectAssign2.default)({}, defaultOpts, opts);
-
-  var offset = _assign.offset;
-  var limit = _assign.limit;
-  var unique = _assign.unique;
-  var reverse = _assign.reverse;
-
-  var direction = (reverse ? 'prev' : 'next') + (unique ? 'unique' : '');
-  var req = store.openCursor((0, _idbRange2.default)(range), direction);
-  var offsetCounter = offset;
-
-  return (0, _idbRequest.mapCursor)(req, function (cursor, result) {
-    if (offsetCounter === 0) {
-      if (limit > result.length) result.push(cursor.value); // FIXME: exit earlier
-      cursor.continue();
-    } else {
-      offsetCounter -= 1;
-      cursor.continue();
-    }
-  });
-}
-
-/**
- * Shortcuts.
- */
-
-function takeRight(store, range) {
-  var opts = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
-
-  opts.reverse = true;
-  return take(store, range, opts);
-}
-
-function takeOne(store, range) {
-  var opts = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
-
-  return take(store, range, opts).then(function (_ref) {
-    var _ref2 = _slicedToArray(_ref, 1);
-
-    var val = _ref2[0];
-    return val;
-  });
-}
-
-function takeRightOne(store, range) {
-  var opts = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
-
-  return takeRight(store, range, opts).then(function (_ref3) {
-    var _ref4 = _slicedToArray(_ref3, 1);
-
-    var val = _ref4[0];
-    return val;
-  });
-}
-
-},{"idb-range":4,"idb-request":5,"object-assign":8}],15:[function(require,module,exports){
+},{"./idb-descriptor":10,"./idb-index":11,"idb-batch":2,"idb-range":4,"idb-request":5}],13:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1591,5 +1460,5 @@ exports.Database = _idbDatabase2.default;
 exports.Store = _idbStore2.default;
 exports.Index = _idbIndex2.default;
 
-},{"./idb-database":10,"./idb-index":12,"./idb-store":13,"idb-factory":3,"storage-emitter":9}]},{},[15])(15)
+},{"./idb-database":9,"./idb-index":11,"./idb-store":12,"idb-factory":3,"storage-emitter":8}]},{},[13])(13)
 });

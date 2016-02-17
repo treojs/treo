@@ -101,17 +101,14 @@ describe('Store', () => {
     expect(await db.magazines.get('id5')).equal(undefined)
   })
 
-  it('#getAll([range], [opts]) - return multiple records with simple conditions', async () => {
+  it('#getAll([range], [limit]) - return multiple records', async () => {
     await db.magazines.batch(data)
 
     const result1 = await db.magazines.getAll()
     expect(map(result1, 'id')).eql(['id1', 'id2', 'id3', 'id4'])
 
-    const result2 = await db.magazines.getAll({ lte: 'id2' }, { reverse: true })
-    expect(map(result2, 'id')).eql(['id2', 'id1'])
-
-    const result3 = await db.magazines.getAll(null, { limit: 2, offset: 1 })
-    expect(map(result3, 'id')).eql(['id2', 'id3'])
+    const result2 = await db.magazines.getAll(null, 2)
+    expect(map(result2, 'id')).eql(['id1', 'id2'])
   })
 
   it('#count([range]) - count values in range', async () => {

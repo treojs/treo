@@ -28,13 +28,11 @@ describe('Index', () => {
     expect(byAuthor.name).equal('byAuthor')
     expect(byAuthor.key).equal('author')
     expect(byAuthor.unique).equal(false)
-    expect(byAuthor.multi).equal(false)
 
     const byNameAndFrequency = db.store('magazines').index('byNameAndFrequency')
     expect(byNameAndFrequency.name).equal('byNameAndFrequency')
     expect(byNameAndFrequency.key).eql(['name', 'frequency'])
     expect(byNameAndFrequency.unique).equal(true)
-    expect(byNameAndFrequency.multi).equal(false)
   })
 
   it('#get(key) - returns one record', async () => {
@@ -45,20 +43,17 @@ describe('Index', () => {
     expect(await byFrequency.get(100)).equal(undefined)
   })
 
-  it('#getAll([range], [opts]) - returns many recors', async () => {
+  it('#getAll([range], [limit]) - returns many recors', async () => {
     const { byName, byFrequency } = db.magazines
 
     const records1 = await byName.getAll()
     expect(records1).length(5)
 
-    const records2 = await byName.getAll({ gte: 'M2' }, { offset: 1, limit: 2 })
-    expect(map(records2, 'name')).eql(['M3', 'M4'])
+    const records2 = await byName.getAll({ gte: 'M2' }, 2)
+    expect(map(records2, 'name')).eql(['M2', 'M3'])
 
-    const records3 = await byFrequency.getAll({ gte: 30 }, { reverse: true })
-    expect(map(records3, 'name').sort()).eql(['M3', 'M5']) // 52 and 52 are the same keys
-
-    const records4 = await byFrequency.getAll(null, { unique: true })
-    expect(map(records4, 'name')).eql(['M2', 'M1', 'M4', 'M3'])
+    const records3 = await byFrequency.getAll(null, 3)
+    expect(map(records3, 'name')).eql(['M2', 'M1', 'M4'])
   })
 
   it('#count(range) - count records in optional range', async () => {

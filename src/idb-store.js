@@ -1,8 +1,7 @@
 import parseRange from 'idb-range'
-import { request } from 'idb-request'
+import { request, mapCursor } from 'idb-request'
 import batch from 'idb-batch'
 import { storeDescriptor } from './idb-descriptor'
-import { take } from './idb-take'
 import Index from './idb-index'
 
 export default class Store {
@@ -124,16 +123,26 @@ export default class Store {
   }
 
   /**
-   * Get all values in `range`,
-   * `opts` passes to idb-take.
+   * Get all values in `range` and with `limit`.
+   *
+   * Using native implemention when available:
+   * https://developer.mozilla.org/en-US/docs/Web/API/IDBObjectStore/getAll
    *
    * @param {Any} [range]
-   * @param {Object} [opts]
+   * @param {Object} [limit]
    * @return {Promise}
    */
 
-  getAll(range, opts) {
-    return take(this, range, opts)
+  getAll(range, limit = Infinity) {
+    try {
+      const store = this.db.transaction(this.name, 'readonly').objectStore(this.name)
+      return request(store.getAll(parseRange(range), limit))
+    } catch (err) {
+      return mapCursor(this.openCursor(range), (cursor, result) => {
+        if (limit > result.length) result.push(cursor.value)
+        cursor.continue()
+      })
+    }
   }
 
   /**

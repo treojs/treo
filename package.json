@@ -19,7 +19,7 @@
     "prepublish": "npm run build && babel src --out-dir lib",
     "build": "browserify -t babelify src/index.js -s treo > dist/treo.js && uglifyjs dist/treo.js -m > dist/treo.min.js",
     "test": "eslint src/ test/ && browserify-test -t babelify && SAUCE_USERNAME=treo zuul --no-coverage --tunnel-host http://treojs.com -- test/*.js",
-    "development": "browserify-test -t babelify -w"
+    "dev": "browserify-test -t babelify -w"
   },
   "dependencies": {
     "component-emitter": "^1.2.0",
@@ -27,7 +27,6 @@
     "idb-factory": "^1.0.0",
     "idb-range": "^3.1.3",
     "idb-request": "^3.1.0",
-    "object-assign": "^4.0.1",
     "storage-emitter": "^1.0.0"
   },
   "devDependencies": {
