@@ -6,24 +6,23 @@
 [![](https://img.shields.io/travis/treojs/treo.svg)](https://travis-ci.org/treojs/treo)
 [![](http://img.shields.io/npm/dm/treo.svg)](https://npmjs.org/package/treo)
 
-[![](https://saucelabs.com/browser-matrix/treo.svg)](https://saucelabs.com/u/treo)
-
 The goal of treo is **to make IndexedDB mainstream by providing consistent API across all modern browsers**.
 [IndexedDB](https://www.w3.org/TR/IndexedDB/) is a powerful technology, which main problem is swamp color or last 20%:
 
 [![image](https://cloud.githubusercontent.com/assets/158189/13082651/cd6a8b2c-d4d1-11e5-8e0a-3e4841a5140d.png)](http://caniuse.com/#feat=indexeddb)
 
-Official standard was finalized on [July 4 2013](https://www.w3.org/TR/2013/CR-IndexedDB-20130704/). But major browsers still have a lot of implementation issues. Because of this every library that relies on IndexedDB tries to be its own universe ([lovefield](https://github.com/google/lovefield), [dexie](https://github.com/dfahlander/Dexie.js), [pouchdb](https://github.com/pouchdb/pouchdb)).
+Official standard was finalized on [July 4 2013](https://www.w3.org/TR/2013/CR-IndexedDB-20130704/). But major browsers still have a lot of implementation bugs ([IE], [Safari]). Because of this every library that relies on IndexedDB tries to be its own universe ([lovefield](https://github.com/google/lovefield), [dexie](https://github.com/dfahlander/Dexie.js), [pouchdb](https://github.com/pouchdb/pouchdb)).
 
 Treo limits its features by official specification, hides API complexity, works across all modern browsers and provides new features from coming [2.0 spec](https://github.com/w3c/IndexedDB).
+
+[![](https://saucelabs.com/browser-matrix/treo.svg)](https://saucelabs.com/u/treo)
 
 ## Main features
 
 - **Focus on IndexedDB itself**. If you know official spec, you can work with treo. And experience with treo helps you to understand the spec.
-- **Cross-browser support**. [SauceLabs](https://github.com/defunctzombie/zuul) allows to automate cross-browser testing and gives [nice interactive badge](https://saucelabs.com/u/treo).
-- **npm and modularity**. Treo contains [a bunch of small modules](https://github.com/treojs), which focus on different IndexedDB features. If integration of treo is too big for your project, you still can benefit from small parts, like [idb-schema](https://github.com/treojs/idb-schema) or [idb-batch](https://github.com/treojs/idb-batch).
-- **ES2015 and async/await syntax**. [Official API](https://www.w3.org/TR/IndexedDB/) was designed in 2010 and looks odd in 2016. Instead treo uses Promise for all asynchronous operations, async/await to simplify callback's flow, and ES2015 for better code readability.
-- **It does not fallback on WebSQL in Safari 9+**. Apple claims [they don't see enough adoption of IndexedDB](https://twitter.com/simevidas/status/610910096097304578), so they don't want to fix major bugs. But since 9.x we can work around some limitations and show them desire to use IndexedDB. Check [design decisions](#design-decisions) for more details.
+- **Cross-browser support**. [SauceLabs](https://github.com/defunctzombie/zuul) allows to automate cross-browser testing.
+- **npm and modularity**. Treo contains [a bunch of small modules](#useful-modules), which focus on different IndexedDB features. If integration of treo is too big for your project, you still can benefit from small parts, like [idb-schema](https://github.com/treojs/idb-schema) or [idb-batch](https://github.com/treojs/idb-batch). The whole library is ~230 SLOC and just 4.84 kB (minified + gzipped).
+- **ES2015 and async/await syntax**. [IndexedDB API](https://www.w3.org/TR/IndexedDB/) was designed in 2010 and looks odd in 2016. Instead treo uses Promise for all asynchronous operations, async/await to simplify callback's flow, and ES2015 for better code readability.
 
 ## Installation
 
@@ -80,7 +79,22 @@ const all = await byAuthor.getAll('Fred') // get all books filtered by author
 db.close()
 ```
 
-## Modules
+## Cross-browser support
+
+https://github.com/treojs/treo-websql
+
+- **It uses native implementation in Safari 9+ and fallback on WebSQL**. Apple claims [they don't see enough adoption of IndexedDB](https://twitter.com/simevidas/status/610910096097304578), so they don't want to fix major bugs. But since 9.x we can work around some limitations and show them desire to use IndexedDB. Check [design decisions](#design-decisions) for more details.
+
+- * multiEntry indexes (IE), **but** supports compound indexes by enabling shim
+* transaction reuse and transaction to multiple stores (Safari), **but** fixes versionchange and unique indexes validation
+* db.on “abort”, store.transaction, index.store (because no transaction support)
+* store.increment, because of IE (https://msdn.microsoft.com/en-us/library/hh772573(v=vs.85).aspx) (this is minor, but still)
+* index.multy
+
+Next iteration of library should remove some restrictions and add missing features, like transaction reuse, transaction to multiple stores and multiEntry indexes.
+IE implementation is limited, there're no WebSQL, so we need to work around this.
+
+## Useful modules
 
 Treo doesn't force you to build custom plugins. Just build a module that operates with IndexedDB objects and you can use it with `treo` or any other library.
 Below is a list of useful modules, that can extend default functionality. Feel free to share your module here.
@@ -138,17 +152,6 @@ await index.getAll([range], [limit])
 await index.count([range])
 index.openCursor(range, [direction]) // low level proxy to native openCursor
 ```
-
-## Design decisions
-
-- * multiEntry indexes (IE), **but** supports compound indexes by enabling shim
-* transaction reuse and transaction to multiple stores (Safari), **but** fixes versionchange and unique indexes validation
-* db.on “abort”, store.transaction, index.store (because no transaction support)
-* store.increment, because of IE (https://msdn.microsoft.com/en-us/library/hh772573(v=vs.85).aspx) (this is minor, but still)
-* index.multy
-
-Next iteration of library should remove some restrictions and add missing features, like transaction reuse, transaction to multiple stores and multiEntry indexes.
-IE implementation is limited, there're no WebSQL, so we need to work around this.
 
 ## Full documentation
 
