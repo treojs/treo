@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import { del } from 'idb-factory'
 import { mapCursor } from 'idb-request'
+import { takeRight } from 'idb-take'
 import map from 'lodash.map'
 import schema from './support/schema'
 import treo from '../src'
@@ -65,10 +66,13 @@ describe('Index', () => {
 
   it('#openCursor(range, [direction]) - proxy to native openCursor', async () => {
     const req = db.magazines.byFrequency.openCursor({ gte: 10, lt: 30 }, 'prevunique')
-    const result = await mapCursor(req, (cursor, memo) => {
+    const res1 = await mapCursor(req, (cursor, memo) => {
       memo.push(cursor.value)
       cursor.continue()
     })
-    expect(map(result, 'name')).eql(['M4', 'M1'])
+    expect(map(res1, 'name')).eql(['M4', 'M1'])
+
+    const res2 = await takeRight(db.magazines.byFrequency, { gte: 10, lt: 30 })
+    expect(res2).eql(res1)
   })
 })
